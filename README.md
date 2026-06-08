@@ -1,0 +1,210 @@
+# Sales Intelligence Briefing Tool
+
+> AI-powered pre-call intelligence for sales engineers, powered by IBM watsonx.ai
+
+Transform hours of manual research into seconds with AI-generated, comprehensive sales briefings. Simply provide a LinkedIn profile and company name to receive strategic insights, discovery questions, and product recommendations tailored to your prospect.
+
+![Sales Intelligence Briefing Tool](./docs/screenshot.png)
+
+## 🚀 Features
+
+- **Instant Briefing Generation**: 30-second AI-powered briefings from LinkedIn profiles
+- **Multiple Call Types**: Discovery, Competitive, Executive Business Center (EBC), and Retention/Upsell
+- **Comprehensive Insights**:
+  - Company background and recent news
+  - Contact profile and strategic priorities
+  - 8 tailored discovery questions
+  - 3 IBM product recommendations
+  - Opportunity qualification framework
+  - Sales strategy and talking points
+- **Professional PDF Export**: Beautifully formatted briefings with company logos
+- **Real-time Streaming**: Watch insights generate in real-time
+- **Smart Fallbacks**: Automatic image handling with profile photo → company logo → generated avatar
+
+## 🛠️ Technology Stack
+
+### Frontend
+- **React 18** with TypeScript
+- **Vite** for blazing-fast development
+- **Tailwind CSS** for styling
+- **jsPDF** for PDF generation
+- **shadcn/ui** components
+
+### Backend
+- **Node.js** with Express
+- **TypeScript** for type safety
+- **Pino** for structured logging
+
+### AI Integration
+- **IBM watsonx.ai**: Enterprise-grade AI with Granite foundation models
+- **Streaming responses**: Real-time content generation
+- **Context-aware**: Adapts to industry, role, and call type
+
+## 📋 Prerequisites
+
+- Node.js 18+ and pnpm
+- IBM watsonx.ai API credentials
+
+## 🚀 Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/yourusername/sales-intelligence-briefing.git
+cd sales-intelligence-briefing
+```
+
+### 2. Install Dependencies
+
+```bash
+# Install frontend dependencies
+cd frontend
+pnpm install
+
+# Install backend dependencies
+cd ../backend
+pnpm install
+```
+
+### 3. Configure Environment Variables
+
+Create a `.env` file in the `backend` directory:
+
+```env
+# Required: IBM watsonx.ai API Key
+WATSONX_API_KEY=your_watsonx_api_key_here
+
+# Optional: Custom watsonx API URL
+WATSONX_API_URL=https://us-south.ml.cloud.ibm.com
+
+# Optional: watsonx Project ID
+WATSONX_PROJECT_ID=your_project_id_here
+
+# Server Configuration
+NODE_ENV=development
+PORT=3000
+```
+
+### 4. Start the Application
+
+```bash
+# Terminal 1: Start the backend server
+cd backend
+pnpm run dev
+
+# Terminal 2: Start the frontend development server
+cd frontend
+pnpm run dev
+```
+
+The application will be available at:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:3000
+
+## 📖 Usage
+
+1. **Enter Contact Information**
+   - Paste a LinkedIn profile URL (e.g., `https://www.linkedin.com/in/username`)
+   - Add the company name (optional if included in LinkedIn profile)
+
+2. **Select Call Type**
+   - **Discovery**: Initial prospect meetings
+   - **Competitive**: Displacing incumbent vendors
+   - **EBC**: Executive Business Center presentations
+   - **Retention & Upsell**: Existing customer expansion
+
+3. **Add Context** (Optional)
+   - Provide additional information about the opportunity
+   - Mention specific pain points or initiatives
+
+4. **Generate Briefing**
+   - Click "Generate Briefing" and watch insights stream in real-time
+   - Review the comprehensive briefing with all sections
+
+5. **Export to PDF**
+   - Click "Export PDF" to download a professional briefing document
+   - Share with your team or use during the call
+
+## 🏗️ Project Structure
+
+```
+sales-intelligence-briefing/
+├── frontend/                 # React frontend application
+│   ├── src/
+│   │   ├── pages/           # Main application pages
+│   │   ├── components/      # Reusable UI components
+│   │   ├── hooks/           # Custom React hooks
+│   │   └── lib/             # Utility functions
+│   ├── public/              # Static assets
+│   └── package.json
+│
+├── backend/                  # Express backend API
+│   ├── src/
+│   │   ├── routes/          # API route handlers
+│   │   ├── lib/             # Shared utilities
+│   │   └── middlewares/     # Express middlewares
+│   └── package.json
+│
+├── docs/                     # Documentation and assets
+└── README.md
+```
+
+## 🔧 Configuration
+
+### Call Type Templates
+
+The application supports four call types, each with tailored prompts:
+
+- **Discovery**: Focus on understanding needs and challenges
+- **Competitive**: Emphasize differentiation and displacement strategies
+- **EBC**: Executive-level strategic discussions
+- **Retention & Upsell**: Expansion opportunities with existing customers
+
+### Customizing AI Prompts
+
+Edit `backend/src/routes/briefing.ts` to customize the AI prompts for each call type.
+
+### PDF Styling
+
+Modify `frontend/src/pages/BriefingPage.tsx` in the `buildPDF` function to customize:
+- Layout and spacing
+- Font sizes and styles
+- Color scheme
+- Section organization
+
+## 🔐 Security Notes
+
+- Never commit your `.env` file or API keys to version control
+- Use environment variables for all sensitive configuration
+- Implement rate limiting in production
+- Add authentication for production deployments
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🙏 Acknowledgments
+
+- **IBM watsonx.ai** for enterprise-grade AI capabilities with Granite foundation models
+- **Bob AI Assistant** for development acceleration
+- **shadcn/ui** for beautiful UI components
+
+## 📧 Contact
+
+Marco Sesay - [LinkedIn](https://www.linkedin.com/in/marcosesay)
+
+Project Link: [https://github.com/yourusername/sales-intelligence-briefing](https://github.com/yourusername/sales-intelligence-briefing)
+
+---
+
+**Built with ❤️ using IBM watsonx.ai and Bob AI Assistant**
