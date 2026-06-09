@@ -57,13 +57,16 @@ function buildSections(callType: string, company: string, industry: string, titl
   const t = title || "senior leader";
   const sections: Record<string, string> = {
     "Discovery": `## Who is ${contactName || "the Contact"}?
+
+CRITICAL: The section header above must stand alone on its own line. Do NOT add any text after the question mark on the header line.
+
 Provide a focused profile of the contact covering:
 1) What a ${t} typically cares about (their priorities, pain points, and success metrics)
 2) How someone in this role influences technology decisions
 3) Key challenges they likely face in their position
 4) What would make them a champion for new solutions
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Start your content on a new line after the header.
 
 ## Company Background
 Provide a comprehensive company overview covering:
@@ -89,13 +92,16 @@ Recommend exactly 3 IBM products. For each use this format:
 Combined positioning (2-3 sentences): Explain why it fits ${company} and how to position it in a single cohesive paragraph.`,
 
     "Renewal": `## Who is ${contactName || "the Contact"}?
+
+CRITICAL: The section header above must stand alone on its own line. Do NOT add any text after the question mark on the header line.
+
 Provide a focused profile of the contact covering:
 1) What a ${t} typically cares about in renewal discussions
 2) Their satisfaction indicators and pain points with current solutions
 3) How they influence renewal and expansion decisions
 4) What would motivate them to expand the relationship
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Start your content on a new line after the header.
 
 ## Account Health & Risk
 Provide a comprehensive account assessment covering:
@@ -119,13 +125,16 @@ Recommend exactly 3 IBM products for expansion. For each use this format:
 Combined positioning (2-3 sentences): Explain why it fits now and how to position it in a single cohesive paragraph.`,
 
     "Competitive": `## Who is ${contactName || "the Contact"}?
+
+CRITICAL: The section header above must stand alone on its own line. Do NOT add any text after the question mark on the header line.
+
 Provide a focused profile of the contact covering:
 1) What a ${t} values when evaluating competitive alternatives
 2) Their likely relationship with incumbent vendors
 3) How they influence vendor selection decisions
 4) What would make them advocate for a change
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Start your content on a new line after the header.
 
 ## Competitive Landscape
 Provide a comprehensive competitive analysis covering:
@@ -146,13 +155,16 @@ CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE 
 Recommend exactly 3 IBM products to displace or surround the incumbent. For each: *product name* (italic, not bold), key differentiator vs rival (one sentence), top objection + reframe (one sentence).`,
 
     "EBC": `## Who is ${contactName || "the Contact"}?
+
+CRITICAL: The section header above must stand alone on its own line. Do NOT add any text after the question mark on the header line.
+
 Provide a focused executive profile covering:
 1) Strategic priorities for a ${t} at ${company} over the next 3 years
 2) What drives their decision-making at the board level
 3) How they measure success and define ROI
 4) What would make them champion a strategic technology investment
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable for executive engagement.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Start your content on a new line after the header.
 
 ## Company Strategic Agenda
 Provide a comprehensive strategic overview covering:
