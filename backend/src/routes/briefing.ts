@@ -131,7 +131,7 @@ router.post("/generate", async (req, res) => {
 
   const ct = callType || "Discovery";
   const ind = industry || "";
-  const title = contactTitle || "senior leader";
+  const title = contactTitle || "professional";
 
   const prompt = `You are an expert enterprise sales coach helping a Solutions Engineer prepare for a ${ct} call.
 
@@ -144,6 +144,13 @@ Call details:
 
 IBM products available:
 ${IBM_PRODUCTS}
+
+IMPORTANT INSTRUCTIONS:
+- Base ALL insights ONLY on the information provided above
+- DO NOT make assumptions about seniority level, tenure, or experience unless explicitly stated in the title
+- If the title is generic (like "professional"), tailor content for a mid-level professional, not executives
+- Focus on practical, actionable insights rather than assumptions about the contact's influence or authority
+- Be accurate and conservative in your assessments
 
 CRITICAL: Write a pre-call briefing with EXACTLY FOUR sections using ## headers. Each section should appear ONLY ONCE. Do not repeat any section headers. Follow the formatting instructions in each section exactly.
 
