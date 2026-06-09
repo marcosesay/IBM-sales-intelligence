@@ -226,9 +226,16 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
   doc.setFontSize(9);
   doc.text(co, titleX, 20);
   
+  // Add job title if available
+  if (ind) {
+    doc.setFontSize(8);
+    doc.setTextColor(220, 235, 255);
+    doc.text(ind, titleX, 25);
+  }
+  
   doc.setFontSize(7);
   doc.setTextColor(200, 220, 255);
-  doc.text(`${new Date().toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"})}`, titleX, 26);
+  doc.text(`${new Date().toLocaleDateString("en-US", {month:"short", day:"numeric", year:"numeric"})}`, titleX, ind ? 30 : 26);
   
   // ═══ DYNAMIC CONTENT ═══
   let y = 38;
