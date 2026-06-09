@@ -202,9 +202,9 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
     headerImageData = await loadImageViaProxy(logoUrl);
   }
   
-  // Add image to header if available
+  // Add image to header on the left if available
   const imageSize = 24;
-  const imageX = W - m - imageSize;
+  const imageX = m;
   const imageY = 5.5;
   
   if (headerImageData) {
@@ -215,8 +215,8 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
     }
   }
   
-  // Text stacked vertically, aligned with box titles (m + 3)
-  const titleX = m + 3;
+  // Text stacked vertically, positioned to the right of the image
+  const titleX = headerImageData ? (m + imageSize + 4) : (m + 3);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.setTextColor(255, 255, 255);
@@ -1107,15 +1107,15 @@ export default function BriefingPage() {
                 {title:"Product Fit",sub:"Recommended solutions & value proposition"},
               ].map(f=>(
                 <div key={f.title} style={{
-                  borderRadius:12,padding:"14px 14px",
+                  borderRadius:10,padding:"10px 12px",
                   background:t.card,backdropFilter:"blur(28px) saturate(160%)",
                   WebkitBackdropFilter:"blur(28px) saturate(160%)",
-                  border:`1px solid ${t.cardBorder}`,boxShadow:t.cardShadow,minHeight:85,
+                  border:`1px solid ${t.cardBorder}`,boxShadow:t.cardShadow,minHeight:65,
                   transition:"transform 0.2s, box-shadow 0.2s",
                   cursor:"default",
                 }}>
-                  <p style={{fontSize:12,fontWeight:600,color:t.text,margin:"0 0 4px",letterSpacing:"-0.2px"}}>{f.title}</p>
-                  <p style={{fontSize:10.5,color:t.textMuted,margin:0,lineHeight:1.4}}>{f.sub}</p>
+                  <p style={{fontSize:10.5,fontWeight:600,color:t.text,margin:"0 0 3px",letterSpacing:"-0.2px"}}>{f.title}</p>
+                  <p style={{fontSize:9,color:t.textMuted,margin:0,lineHeight:1.35}}>{f.sub}</p>
                 </div>
               ))}
             </div>

@@ -57,7 +57,14 @@ function buildSections(callType: string, company: string, industry: string, titl
   const t = title || "senior leader";
   const sections: Record<string, string> = {
     "Discovery": `## Company & Contact Background
-Overview of ${company}, strategic priorities in ${industry}, and what a ${t} cares about. Include likely AI maturity level. Write in clear prose paragraphs — no sub-headers, no bullet lists in this section.
+Provide a comprehensive overview covering:
+1) ${company}'s business model, market position, and recent strategic initiatives in ${industry}
+2) Key challenges and opportunities the company is likely facing
+3) What a ${t} typically cares about (their priorities, pain points, and success metrics)
+4) The company's likely AI/technology maturity level and digital transformation stage
+5) Any relevant context about the contact's role and how they might influence decisions
+
+Write in clear, informative prose paragraphs (3-4 paragraphs minimum). No sub-headers, no bullet lists. Make this section substantive and actionable.
 
 ## Discovery Questions
 List exactly 8 discovery questions as a simple numbered list. Each question on its own line. No sub-headers. No explanations after each question. Just the questions.
@@ -74,7 +81,14 @@ Recommend exactly 3 IBM products. For each use this format:
 Combined positioning (2-3 sentences): Explain why it fits ${company} and how to position it in a single cohesive paragraph.`,
 
     "Renewal": `## Account Health & Risk
-Current account health for ${company}. Signs of risk, champion turnover, or expansion opportunity. Write in clear prose — no sub-headers or nested bullets.
+Provide a comprehensive account assessment covering:
+1) Current relationship health with ${company} and deployment status
+2) Key stakeholders and champion strength (or risks of champion turnover)
+3) Signs of satisfaction, risk factors, or competitive threats
+4) Expansion opportunities based on ${industry} trends and the ${t}'s priorities
+5) Contract timing considerations and renewal risk factors
+
+Write in clear, informative prose paragraphs (3-4 paragraphs minimum). No sub-headers, no bullet lists. Make this section substantive and actionable.
 
 ## Renewal & Expansion Questions
 List exactly 8 questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
@@ -88,7 +102,14 @@ Recommend exactly 3 IBM products for expansion. For each use this format:
 Combined positioning (2-3 sentences): Explain why it fits now and how to position it in a single cohesive paragraph.`,
 
     "Competitive": `## Competitive Landscape
-Likely incumbent at ${company} and their weaknesses. Write in clear prose — no sub-headers or nested bullets.
+Provide a comprehensive competitive analysis covering:
+1) Likely incumbent vendors at ${company} in ${industry} and their market position
+2) Specific weaknesses or gaps in the incumbent's solution
+3) Recent competitive wins/losses in similar ${industry} accounts
+4) What a ${t} values when evaluating alternatives
+5) Key differentiation opportunities for IBM based on ${company}'s needs
+
+Write in clear, informative prose paragraphs (3-4 paragraphs minimum). No sub-headers, no bullet lists. Make this section substantive and actionable.
 
 ## Competitive Discovery Questions
 List exactly 8 questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
@@ -100,7 +121,14 @@ CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE 
 Recommend exactly 3 IBM products to displace or surround the incumbent. For each: *product name* (italic, not bold), key differentiator vs rival (one sentence), top objection + reframe (one sentence).`,
 
     "EBC": `## Executive Profile & Strategic Agenda
-What a ${t} at ${company} cares about at board level. 3-year horizon and AI investment priorities. Write in clear prose — no sub-headers or nested bullets.
+Provide a comprehensive executive-level overview covering:
+1) Strategic priorities for a ${t} at ${company} over the next 3 years
+2) Board-level concerns and shareholder expectations in ${industry}
+3) Digital transformation and AI investment priorities
+4) Competitive pressures and market dynamics affecting strategic decisions
+5) How technology investments tie to business outcomes and executive KPIs
+
+Write in clear, informative prose paragraphs (3-4 paragraphs minimum). No sub-headers, no bullet lists. Make this section substantive and actionable for executive engagement.
 
 ## Executive Engagement Questions
 List exactly 8 strategic C-suite questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
