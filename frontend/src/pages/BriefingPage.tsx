@@ -1,6 +1,21 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useGetBriefingNews, useGetBriefingLogo, useGetBriefingIndustry } from "@workspace/api-client-react";
 
+/* ─── User Info Hook ─── */
+function useUserInfo() {
+  const [userName, setUserName] = useState("");
+  const [userRole, setUserRole] = useState("");
+
+  useEffect(() => {
+    const name = localStorage.getItem("userName") || "";
+    const role = localStorage.getItem("userRole") || "";
+    setUserName(name);
+    setUserRole(role);
+  }, []);
+
+  return { userName, userRole };
+}
+
 /* ─── Types ─── */
 type Theme = "dark" | "light";
 
@@ -979,13 +994,51 @@ export default function BriefingPage() {
         {!showResult ? (
           /* ─── Hero ─── */
           <div style={{padding:"24px 40px 48px",height:"100%",display:"flex",flexDirection:"column"}}>
-            <div style={{
-              display:"inline-flex",alignItems:"center",gap:8,margin:"24px 0 6px",alignSelf:"flex-start",
-              background:t.pill,backdropFilter:"blur(28px)",border:`1px solid ${t.pillBorder}`,
-              borderRadius:100,padding:"9px 16px",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",
-            }}>
-              <div className="animate-pulse-dot" style={{width:7,height:7,borderRadius:"50%",background:t.accent,flexShrink:0,boxShadow:`0 0 8px ${t.accentGlow}`}} />
-              <span style={{fontSize:13,color:t.textSub,fontWeight:400}}>{greeting}, Marco — Your pre-call assistant is ready</span>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
+              <div style={{
+                display:"inline-flex",alignItems:"center",gap:8,margin:"24px 0 0",
+                background:t.pill,backdropFilter:"blur(28px)",border:`1px solid ${t.pillBorder}`,
+                borderRadius:100,padding:"9px 16px",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",
+              }}>
+                <div className="animate-pulse-dot" style={{width:7,height:7,borderRadius:"50%",background:t.accent,flexShrink:0,boxShadow:`0 0 8px ${t.accentGlow}`}} />
+                <span style={{fontSize:13,color:t.textSub,fontWeight:400}}>
+                  {greeting}, {(() => {
+                    const { userName, userRole } = useUserInfo();
+                    return userName ? (
+                      <>
+                        <span style={{fontWeight:500}}>{userName}</span>
+                        {userRole && <span style={{opacity:0.7}}> · {userRole}</span>}
+                      </>
+                    ) : "there";
+                  })()} — Your pre-call assistant is ready
+                </span>
+              </div>
+              <button
+                onClick={() => window.location.href = "/setup"}
+                style={{
+                  background:t.btnSm,
+                  border:`1px solid ${t.btnSmBorder}`,
+                  color:t.btnSmText,
+                  borderRadius:8,
+                  padding:"6px 12px",
+                  fontSize:11,
+                  fontWeight:500,
+                  cursor:"pointer",
+                  fontFamily:"var(--app-font-sans)",
+                  transition:"all 0.2s",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = t.btn;
+                  e.currentTarget.style.transform = "scale(1.02)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = t.btnSm;
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+                title="Update your name and role"
+              >
+                ⚙️ Settings
+              </button>
             </div>
 
             <div>
