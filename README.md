@@ -72,10 +72,8 @@ pnpm install
 Create a `.env` file in the `backend` directory (use `.env.example` as a template):
 
 ```env
-# Required: Anthropic API Key for Claude integration
-AI_INTEGRATIONS_ANTHROPIC_API_KEY=your_anthropic_api_key_here
-
-# Optional: Custom Anthropic API URL
+# AI Integration (Optional - uses IBM watsonx.ai by default)
+AI_INTEGRATIONS_ANTHROPIC_API_KEY=your_api_key_here
 AI_INTEGRATIONS_ANTHROPIC_BASE_URL=https://api.anthropic.com
 
 # Server Configuration
@@ -83,7 +81,7 @@ NODE_ENV=development
 PORT=3000
 ```
 
-**Note**: The application currently uses Anthropic's Claude API. IBM watsonx.ai integration is available but requires additional configuration.
+**Note**: The application uses IBM watsonx.ai by default. The Anthropic API key is optional and only needed if you want to use Claude instead.
 
 ### 4. Start the Application
 
