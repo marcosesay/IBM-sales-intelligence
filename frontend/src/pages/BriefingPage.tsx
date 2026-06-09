@@ -839,13 +839,28 @@ export default function BriefingPage() {
           <div style={{padding:"22px 18px 28px",paddingTop:56}}>
             {/* Profile row */}
             <div style={{display:"flex",alignItems:"center",gap:10,paddingBottom:18,marginBottom:16,borderBottom:`1px solid ${t.divider}`}}>
-              <div style={{width:38,height:38,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:`1.5px solid ${t.toggleBorder}`}}>
-                <img src="/avatar.jpeg" alt="Marco Sesay" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-              </div>
-              <div style={{flex:1,minWidth:0}}>
-                <p style={{fontSize:13,fontWeight:500,color:t.text,margin:"0 0 2px"}}>Marco Sesay</p>
-                <p style={{fontSize:11,color:t.textMuted,margin:0,fontWeight:300}}>Solutions Engineer</p>
-              </div>
+              {(() => {
+                const { userName, userRole } = useUserInfo();
+                const isMarco = userName === "Marco Sesay";
+                
+                return (
+                  <>
+                    {isMarco && (
+                      <div style={{width:38,height:38,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:`1.5px solid ${t.toggleBorder}`}}>
+                        <img src="/avatar.jpeg" alt="Marco Sesay" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                      </div>
+                    )}
+                    <div style={{flex:1,minWidth:0}}>
+                      <p style={{fontSize:13,fontWeight:500,color:t.text,margin:"0 0 2px"}}>
+                        {userName || "User"}
+                      </p>
+                      <p style={{fontSize:11,color:t.textMuted,margin:0,fontWeight:300}}>
+                        {userRole || "Sales Professional"}
+                      </p>
+                    </div>
+                  </>
+                );
+              })()}
               <div style={{display:"flex",alignItems:"center",gap:6}}>
                 <div className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:t.accent,boxShadow:`0 0 7px ${t.accentGlow}`}} />
                 {/* Theme toggle */}
