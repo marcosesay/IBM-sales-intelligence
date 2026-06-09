@@ -145,9 +145,17 @@ sales-intelligence-briefing/
 │   │   └── middlewares/     # Express middlewares
 │   └── package.json
 │
-├── docs/                     # Documentation and assets
-└── README.md
+├── docs/                     # Documentation
+│   ├── PROJECT_STRUCTURE.md # Detailed project organization guide
+│   ├── CONTRIBUTING.md      # Contribution guidelines
+│   └── DEPLOYMENT.md        # Deployment instructions
+│
+├── .gitignore               # Git ignore rules
+├── LICENSE                  # MIT License
+└── README.md                # This file
 ```
+
+For a detailed explanation of the project organization, see [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md).
 
 ## 🔧 Configuration
 
@@ -181,7 +189,7 @@ Modify `frontend/src/pages/BriefingPage.tsx` in the `buildPDF` function to custo
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please see our [Contributing Guidelines](docs/CONTRIBUTING.md) for details.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
