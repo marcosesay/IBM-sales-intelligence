@@ -4,22 +4,23 @@
 
 Transform hours of manual research into seconds with AI-generated, comprehensive sales briefings. Simply provide a LinkedIn profile and company name to receive strategic insights, discovery questions, and product recommendations tailored to your prospect.
 
-![Sales Intelligence Briefing Tool](./docs/screenshot.png)
-
 ## 🚀 Features
 
-- **Instant Briefing Generation**: 30-second AI-powered briefings from LinkedIn profiles
-- **Multiple Call Types**: Discovery, Competitive, Executive Business Center (EBC), and Retention/Upsell
+- **Instant Briefing Generation**: Sub-2-second AI-powered briefings from LinkedIn profiles
+- **User Profile Setup**: Personalized experience with name, role, and profile picture
+- **Multiple Call Types**: Discovery, Competitive, Renewal/Upsell
 - **Comprehensive Insights**:
-  - Company background and recent news
-  - Contact profile and strategic priorities
+  - Company background with real-time news (last 24 hours)
+  - Contact profile extraction from LinkedIn
   - 8 tailored discovery questions
-  - 3 IBM product recommendations
-  - Opportunity qualification framework
+  - 3 IBM product recommendations with positioning
+  - BANT + MEDDIC opportunity qualification
   - Sales strategy and talking points
-- **Professional PDF Export**: Beautifully formatted briefings with company logos
-- **Real-time Streaming**: Watch insights generate in real-time
-- **Smart Fallbacks**: Automatic image handling with profile photo → company logo → generated avatar
+- **Professional PDF Export**: Beautifully formatted briefings with company logos and contact photos
+- **Real-time Streaming**: Watch insights generate in real-time with Server-Sent Events
+- **Smart Image Handling**: Automatic fallback chain (profile photo → company logo → generated avatar)
+- **Architecture Visualization**: Interactive flow diagram showing the complete briefing generation process
+- **Dark/Light Mode**: Theme toggle for comfortable viewing
 
 ## 🛠️ Technology Stack
 
@@ -68,22 +69,21 @@ pnpm install
 
 ### 3. Configure Environment Variables
 
-Create a `.env` file in the `backend` directory:
+Create a `.env` file in the `backend` directory (use `.env.example` as a template):
 
 ```env
-# Required: IBM watsonx.ai API Key
-WATSONX_API_KEY=your_watsonx_api_key_here
+# Required: Anthropic API Key for Claude integration
+AI_INTEGRATIONS_ANTHROPIC_API_KEY=your_anthropic_api_key_here
 
-# Optional: Custom watsonx API URL
-WATSONX_API_URL=https://us-south.ml.cloud.ibm.com
-
-# Optional: watsonx Project ID
-WATSONX_PROJECT_ID=your_project_id_here
+# Optional: Custom Anthropic API URL
+AI_INTEGRATIONS_ANTHROPIC_BASE_URL=https://api.anthropic.com
 
 # Server Configuration
 NODE_ENV=development
 PORT=3000
 ```
+
+**Note**: The application currently uses Anthropic's Claude API. IBM watsonx.ai integration is available but requires additional configuration.
 
 ### 4. Start the Application
 
@@ -103,27 +103,48 @@ The application will be available at:
 
 ## 📖 Usage
 
+### First-Time Setup
+
+1. **User Profile Setup** (Optional)
+   - On first launch, you'll see a setup page
+   - Enter your name and role (e.g., "Sales Engineer")
+   - Optionally upload a profile picture
+   - Click "Save and Continue" or "Skip for now"
+
+### Generating Briefings
+
 1. **Enter Contact Information**
    - Paste a LinkedIn profile URL (e.g., `https://www.linkedin.com/in/username`)
-   - Add the company name (optional if included in LinkedIn profile)
+   - The system will automatically extract the contact's name and company
+   - Add the company name manually if needed
 
 2. **Select Call Type**
-   - **Discovery**: Initial prospect meetings
+   - **Discovery**: Initial prospect meetings and needs assessment
    - **Competitive**: Displacing incumbent vendors
-   - **EBC**: Executive Business Center presentations
-   - **Retention & Upsell**: Existing customer expansion
+   - **Renewal & Upsell**: Existing customer expansion opportunities
 
 3. **Add Context** (Optional)
    - Provide additional information about the opportunity
-   - Mention specific pain points or initiatives
+   - Mention specific pain points, initiatives, or background
 
 4. **Generate Briefing**
    - Click "Generate Briefing" and watch insights stream in real-time
-   - Review the comprehensive briefing with all sections
+   - The briefing generates in under 2 seconds
+   - Review comprehensive sections including:
+     - Company & Contact Background
+     - Real-time news from the last 24 hours
+     - 8 tailored discovery questions
+     - BANT + MEDDIC qualification framework
+     - 3 IBM product recommendations with positioning
 
 5. **Export to PDF**
    - Click "Export PDF" to download a professional briefing document
+   - Includes company logo and contact photo (when available)
    - Share with your team or use during the call
+
+6. **View Architecture**
+   - Click "Architecture" in the sidebar to see the complete system flow
+   - Interactive diagram showing the briefing generation process
 
 ## 🏗️ Project Structure
 
