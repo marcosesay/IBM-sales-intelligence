@@ -211,7 +211,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Marco Sesay - [LinkedIn](https://www.linkedin.com/in/marcosesay)
 
-Project Link: [https://github.com/yourusername/sales-intelligence-briefing](https://github.com/yourusername/sales-intelligence-briefing)
+Project Link: https://github.com/marcosesay/sales-intelligence-briefing
 
 ---
 
