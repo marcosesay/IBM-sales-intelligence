@@ -5,15 +5,18 @@ import { useGetBriefingNews, useGetBriefingLogo, useGetBriefingIndustry } from "
 function useUserInfo() {
   const [userName, setUserName] = useState("");
   const [userRole, setUserRole] = useState("");
+  const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);
 
   useEffect(() => {
     const name = localStorage.getItem("userName") || "";
     const role = localStorage.getItem("userRole") || "";
+    const picture = localStorage.getItem("userProfilePicture");
     setUserName(name);
     setUserRole(role);
+    if (picture) setUserProfilePicture(picture);
   }, []);
 
-  return { userName, userRole };
+  return { userName, userRole, userProfilePicture };
 }
 
 /* ─── Types ─── */
@@ -585,6 +588,8 @@ function ThemeIcon({ theme }: { theme: Theme }) {
 
 /* ─── Main Page ─── */
 export default function BriefingPage() {
+  const greeting = getGreeting();
+  const { userName, userRole, userProfilePicture } = useUserInfo();
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("theme") as Theme) || "dark");
   const t = theme === "dark" ? DARK : LIGHT;
 
@@ -798,7 +803,6 @@ export default function BriefingPage() {
     buildPDF(currentBriefing.text, currentBriefing.co, currentBriefing.ct, currentBriefing.ind, currentBriefing.contactPhotoUrl, currentBriefing.logoUrl);
   };
 
-  const greeting = getGreeting();
   const showResult = generating || briefingReady;
   const displayBriefing = briefingReady ? currentBriefing : pendingBriefing;
   const logoUrl = displayBriefing?.logoUrl || (briefingReady ? undefined : logoData?.url);
@@ -816,13 +820,32 @@ export default function BriefingPage() {
 
       {/* ─── Sidebar toggle ─── */}
       <button onClick={() => setSidebarOpen(!sidebarOpen)} title="Toggle sidebar" style={{
-        position:"fixed",top:12,left:12,zIndex:50,width:32,height:32,
-        background:t.toggleBg, border:`1px solid ${t.toggleBorder}`, borderRadius:8,
+        position:"fixed",top:"50%",left:sidebarOpen?264:8,transform:"translateY(-50%)",zIndex:50,
+        width:28,height:28,
+        background:sidebarOpen?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.05)",
+        border:`1px solid ${sidebarOpen?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.12)"}`,
+        borderRadius:6,
         display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",
-        backdropFilter:"blur(12px)", color:t.toggleIcon,
-      }}>
-        <svg width="15" height="15" viewBox="0 0 20 20" fill="none">
-          <path d="M2 5h16M2 10h16M2 15h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+        color:t.textMuted, transition:"all 0.2s ease",
+        backdropFilter:"blur(8px)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.color = t.text;
+        e.currentTarget.style.background = "rgba(255,255,255,0.08)";
+        e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)";
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.color = t.textMuted;
+        e.currentTarget.style.background = sidebarOpen?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.05)";
+        e.currentTarget.style.borderColor = sidebarOpen?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.12)";
+      }}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          {sidebarOpen ? (
+            <path d="M15 18l-6-6 6-6"/>
+          ) : (
+            <path d="M9 18l6-6-6-6"/>
+          )}
         </svg>
       </button>
 
@@ -839,28 +862,21 @@ export default function BriefingPage() {
           <div style={{padding:"22px 18px 28px",paddingTop:56}}>
             {/* Profile row */}
             <div style={{display:"flex",alignItems:"center",gap:10,paddingBottom:18,marginBottom:16,borderBottom:`1px solid ${t.divider}`}}>
-              {(() => {
-                const { userName, userRole } = useUserInfo();
-                const isMarco = userName === "Marco Sesay";
-                
-                return (
-                  <>
-                    {isMarco && (
-                      <div style={{width:38,height:38,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:`1.5px solid ${t.toggleBorder}`}}>
-                        <img src="/avatar.jpeg" alt="Marco Sesay" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                      </div>
-                    )}
-                    <div style={{flex:1,minWidth:0}}>
-                      <p style={{fontSize:13,fontWeight:500,color:t.text,margin:"0 0 2px"}}>
-                        {userName || "User"}
-                      </p>
-                      <p style={{fontSize:11,color:t.textMuted,margin:0,fontWeight:300}}>
-                        {userRole || "Sales Professional"}
-                      </p>
-                    </div>
-                  </>
-                );
-              })()}
+              <>
+                {userProfilePicture && (
+                  <div style={{width:38,height:38,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:`1.5px solid ${t.toggleBorder}`}}>
+                    <img src={userProfilePicture} alt={userName} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                  </div>
+                )}
+                <div style={{flex:1,minWidth:0}}>
+                  <p style={{fontSize:13,fontWeight:500,color:t.text,margin:"0 0 2px"}}>
+                    {userName || "User"}
+                  </p>
+                  <p style={{fontSize:11,color:t.textMuted,margin:0,fontWeight:300}}>
+                    {userRole || "Sales Professional"}
+                  </p>
+                </div>
+              </>
               <div style={{display:"flex",alignItems:"center",gap:6}}>
                 <div className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:t.accent,boxShadow:`0 0 7px ${t.accentGlow}`}} />
                 {/* Theme toggle */}
@@ -1017,15 +1033,7 @@ export default function BriefingPage() {
               }}>
                 <div className="animate-pulse-dot" style={{width:7,height:7,borderRadius:"50%",background:t.accent,flexShrink:0,boxShadow:`0 0 8px ${t.accentGlow}`}} />
                 <span style={{fontSize:13,color:t.textSub,fontWeight:400}}>
-                  {greeting}, {(() => {
-                    const { userName, userRole } = useUserInfo();
-                    return userName ? (
-                      <>
-                        <span style={{fontWeight:500}}>{userName}</span>
-                        {userRole && <span style={{opacity:0.7}}> · {userRole}</span>}
-                      </>
-                    ) : "there";
-                  })()} — Your pre-call assistant is ready
+                  {greeting}, {userName ? <span style={{fontWeight:500}}>{userName.split(' ')[0]}</span> : "there"} — Your pre-call assistant is ready
                 </span>
               </div>
               <button
@@ -1078,7 +1086,7 @@ export default function BriefingPage() {
                 onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
               >
-                → See How This Works
+                → See How It Works
               </a>
             </div>
 
@@ -1099,15 +1107,15 @@ export default function BriefingPage() {
                 {title:"Product Fit",sub:"Recommended solutions & value proposition"},
               ].map(f=>(
                 <div key={f.title} style={{
-                  borderRadius:14,padding:"20px 18px",
+                  borderRadius:12,padding:"14px 14px",
                   background:t.card,backdropFilter:"blur(28px) saturate(160%)",
                   WebkitBackdropFilter:"blur(28px) saturate(160%)",
-                  border:`1px solid ${t.cardBorder}`,boxShadow:t.cardShadow,minHeight:110,
+                  border:`1px solid ${t.cardBorder}`,boxShadow:t.cardShadow,minHeight:85,
                   transition:"transform 0.2s, box-shadow 0.2s",
                   cursor:"default",
                 }}>
-                  <p style={{fontSize:13,fontWeight:600,color:t.text,margin:"0 0 6px",letterSpacing:"-0.2px"}}>{f.title}</p>
-                  <p style={{fontSize:11,color:t.textMuted,margin:0,lineHeight:1.5}}>{f.sub}</p>
+                  <p style={{fontSize:12,fontWeight:600,color:t.text,margin:"0 0 4px",letterSpacing:"-0.2px"}}>{f.title}</p>
+                  <p style={{fontSize:10.5,color:t.textMuted,margin:0,lineHeight:1.4}}>{f.sub}</p>
                 </div>
               ))}
             </div>
@@ -1223,10 +1231,14 @@ export default function BriefingPage() {
                 <span style={{fontSize:12,color:t.textMuted}}>{displayBriefing?.ind}</span>
               </div>
               <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <span style={{fontSize:12,color:t.textSub,fontWeight:400}}>Marco Sesay</span>
-                <div style={{width:30,height:30,borderRadius:"50%",overflow:"hidden",border:`1.5px solid ${t.toggleBorder}`,flexShrink:0}}>
-                  <img src="/avatar.jpeg" alt="Marco Sesay" style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                </div>
+                <>
+                  <span style={{fontSize:12,color:t.textSub,fontWeight:400}}>{userName || "User"}</span>
+                  {userProfilePicture && (
+                    <div style={{width:30,height:30,borderRadius:"50%",overflow:"hidden",border:`1.5px solid ${t.toggleBorder}`,flexShrink:0}}>
+                      <img src={userProfilePicture} alt={userName} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    </div>
+                  )}
+                </>
               </div>
             </div>
 
