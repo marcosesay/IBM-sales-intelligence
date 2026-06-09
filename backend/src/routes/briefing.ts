@@ -53,18 +53,26 @@ IBM Turbonomic — AIOps and resource management
 IBM Cloud Pak for Data — unified data and AI platform
 `;
 
-function buildSections(callType: string, company: string, industry: string, title: string): string {
+function buildSections(callType: string, company: string, industry: string, title: string, contactName?: string): string {
   const t = title || "senior leader";
   const sections: Record<string, string> = {
-    "Discovery": `## Company & Contact Background
-Provide a comprehensive overview covering:
-1) ${company}'s business model, market position, and recent strategic initiatives in ${industry}
-2) Key challenges and opportunities the company is likely facing
-3) What a ${t} typically cares about (their priorities, pain points, and success metrics)
-4) The company's likely AI/technology maturity level and digital transformation stage
-5) Any relevant context about the contact's role and how they might influence decisions
+    "Discovery": `## Who is ${contactName || "the Contact"}?
+Provide a focused profile of the contact covering:
+1) What a ${t} typically cares about (their priorities, pain points, and success metrics)
+2) How someone in this role influences technology decisions
+3) Key challenges they likely face in their position
+4) What would make them a champion for new solutions
 
-Write in clear, informative prose paragraphs (3-4 paragraphs minimum). No sub-headers, no bullet lists. Make this section substantive and actionable.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
+
+## Company Background
+Provide a comprehensive company overview covering:
+1) ${company}'s business model, market position, and recent strategic initiatives in ${industry}
+2) Key challenges and opportunities the company is facing
+3) The company's likely AI/technology maturity level and digital transformation stage
+4) Recent news or developments that might create urgency
+
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
 
 ## Discovery Questions
 List exactly 8 discovery questions as a simple numbered list. Each question on its own line. No sub-headers. No explanations after each question. Just the questions.
@@ -80,15 +88,24 @@ Recommend exactly 3 IBM products. For each use this format:
 *Product name* on its own line (italic, not bold).
 Combined positioning (2-3 sentences): Explain why it fits ${company} and how to position it in a single cohesive paragraph.`,
 
-    "Renewal": `## Account Health & Risk
+    "Renewal": `## Who is ${contactName || "the Contact"}?
+Provide a focused profile of the contact covering:
+1) What a ${t} typically cares about in renewal discussions
+2) Their satisfaction indicators and pain points with current solutions
+3) How they influence renewal and expansion decisions
+4) What would motivate them to expand the relationship
+
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
+
+## Account Health & Risk
 Provide a comprehensive account assessment covering:
 1) Current relationship health with ${company} and deployment status
 2) Key stakeholders and champion strength (or risks of champion turnover)
 3) Signs of satisfaction, risk factors, or competitive threats
-4) Expansion opportunities based on ${industry} trends and the ${t}'s priorities
+4) Expansion opportunities based on ${industry} trends
 5) Contract timing considerations and renewal risk factors
 
-Write in clear, informative prose paragraphs (3-4 paragraphs minimum). No sub-headers, no bullet lists. Make this section substantive and actionable.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
 
 ## Renewal & Expansion Questions
 List exactly 8 questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
@@ -101,15 +118,23 @@ Recommend exactly 3 IBM products for expansion. For each use this format:
 *Product name* on its own line (italic, not bold).
 Combined positioning (2-3 sentences): Explain why it fits now and how to position it in a single cohesive paragraph.`,
 
-    "Competitive": `## Competitive Landscape
+    "Competitive": `## Who is ${contactName || "the Contact"}?
+Provide a focused profile of the contact covering:
+1) What a ${t} values when evaluating competitive alternatives
+2) Their likely relationship with incumbent vendors
+3) How they influence vendor selection decisions
+4) What would make them advocate for a change
+
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
+
+## Competitive Landscape
 Provide a comprehensive competitive analysis covering:
 1) Likely incumbent vendors at ${company} in ${industry} and their market position
 2) Specific weaknesses or gaps in the incumbent's solution
 3) Recent competitive wins/losses in similar ${industry} accounts
-4) What a ${t} values when evaluating alternatives
-5) Key differentiation opportunities for IBM based on ${company}'s needs
+4) Key differentiation opportunities for IBM based on ${company}'s needs
 
-Write in clear, informative prose paragraphs (3-4 paragraphs minimum). No sub-headers, no bullet lists. Make this section substantive and actionable.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
 
 ## Competitive Discovery Questions
 List exactly 8 questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
@@ -120,15 +145,23 @@ CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE 
 ## IBM Differentiation
 Recommend exactly 3 IBM products to displace or surround the incumbent. For each: *product name* (italic, not bold), key differentiator vs rival (one sentence), top objection + reframe (one sentence).`,
 
-    "EBC": `## Executive Profile & Strategic Agenda
-Provide a comprehensive executive-level overview covering:
+    "EBC": `## Who is ${contactName || "the Contact"}?
+Provide a focused executive profile covering:
 1) Strategic priorities for a ${t} at ${company} over the next 3 years
-2) Board-level concerns and shareholder expectations in ${industry}
-3) Digital transformation and AI investment priorities
-4) Competitive pressures and market dynamics affecting strategic decisions
-5) How technology investments tie to business outcomes and executive KPIs
+2) What drives their decision-making at the board level
+3) How they measure success and define ROI
+4) What would make them champion a strategic technology investment
 
-Write in clear, informative prose paragraphs (3-4 paragraphs minimum). No sub-headers, no bullet lists. Make this section substantive and actionable for executive engagement.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable for executive engagement.
+
+## Company Strategic Agenda
+Provide a comprehensive strategic overview covering:
+1) Board-level concerns and shareholder expectations in ${industry}
+2) Digital transformation and AI investment priorities at ${company}
+3) Competitive pressures and market dynamics affecting strategic decisions
+4) How technology investments tie to business outcomes and KPIs
+
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
 
 ## Executive Engagement Questions
 List exactly 8 strategic C-suite questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
@@ -185,7 +218,7 @@ CRITICAL: Write a pre-call briefing with EXACTLY FOUR sections using ## headers.
 For product names: Use *italic* format (single asterisks), NOT bold (**).
 Keep everything clean and professional — no extra markdown symbols like ---, or ### in the output.
 
-${buildSections(ct, company, ind, title)}`;
+${buildSections(ct, company, ind, title, contactName)}`;
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
