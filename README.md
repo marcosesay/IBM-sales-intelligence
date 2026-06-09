@@ -51,7 +51,7 @@ Transform hours of manual research into seconds with AI-generated, comprehensive
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/sales-intelligence-briefing.git
+git clone https://github.com/marcosesay/sales-intelligence-briefing.git
 cd sales-intelligence-briefing
 ```
 
@@ -72,16 +72,16 @@ pnpm install
 Create a `.env` file in the `backend` directory (use `.env.example` as a template):
 
 ```env
-# AI Integration (Optional - uses IBM watsonx.ai by default)
-AI_INTEGRATIONS_ANTHROPIC_API_KEY=your_api_key_here
-AI_INTEGRATIONS_ANTHROPIC_BASE_URL=https://api.anthropic.com
-
 # Server Configuration
 NODE_ENV=development
 PORT=3000
+
+# Optional: Alternative AI Integration (Anthropic Claude)
+# AI_INTEGRATIONS_ANTHROPIC_API_KEY=your_api_key_here
+# AI_INTEGRATIONS_ANTHROPIC_BASE_URL=https://api.anthropic.com
 ```
 
-**Note**: The application uses IBM watsonx.ai by default. The Anthropic API key is optional and only needed if you want to use Claude instead.
+**Note**: The application uses IBM watsonx.ai by default. No API keys are required for basic functionality. The Anthropic variables are optional and only needed if you want to use Claude instead.
 
 ### 4. Start the Application
 
@@ -223,8 +223,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - **IBM watsonx.ai** for enterprise-grade AI capabilities with Granite foundation models
-- **Bob AI Assistant** for development acceleration
 - **shadcn/ui** for beautiful UI components
+- Built with AI-assisted development tools
 
 ## 📧 Contact
 
@@ -234,4 +234,4 @@ Project Link: https://github.com/marcosesay/sales-intelligence-briefing
 
 ---
 
-**Built with ❤️ using IBM watsonx.ai and Bob AI Assistant**
+**Built with ❤️ using IBM watsonx.ai**
