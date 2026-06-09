@@ -81,7 +81,7 @@ PORT=3000
 # AI_INTEGRATIONS_ANTHROPIC_BASE_URL=https://api.anthropic.com
 ```
 
-**Note**: The application uses IBM watsonx.ai by default. No API keys are required for basic functionality. The Anthropic variables are optional and only needed if you want to use Claude instead.
+**Note**: IBM watsonx.ai credentials are required (see Prerequisites). The Anthropic variables are optional and only needed if you want to use Claude instead.
 
 ### 4. Start the Application
 
