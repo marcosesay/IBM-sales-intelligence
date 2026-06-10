@@ -66,9 +66,9 @@ const FLOW_STEPS = [
   {
     emoji: "🤖",
     gradient: ["#6ee7b7", "#34d399"],
-    w: 480, h: 90,
-    title: "IBM watsonx.ai",
-    sub: "Granite 13B · Enterprise governance",
+    w: 520, h: 90,
+    title: "AI Generation",
+    sub: "Anthropic Claude 3.5 Sonnet · IBM Granite",
     phase: "GENERATE",
     highlight: true
   },
