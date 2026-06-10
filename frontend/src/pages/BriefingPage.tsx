@@ -100,10 +100,10 @@ const SECTION_ACCENTS_DARK: Record<string, { accent: string; bg: string }> = {
   "Expansion Qualification":            { accent: "rgba(200,170,120,0.65)", bg: "rgba(200,170,120,0.07)" },
   "Win/Loss Qualification":             { accent: "rgba(200,170,120,0.65)", bg: "rgba(200,170,120,0.07)" },
   "Business Case Qualification":        { accent: "rgba(200,170,120,0.65)", bg: "rgba(200,170,120,0.07)" },
-  "Product Recommendations":            { accent: "rgba(170,145,200,0.65)", bg: "rgba(170,145,200,0.07)" },
-  "Retention & Upsell Positioning":     { accent: "rgba(170,145,200,0.65)", bg: "rgba(170,145,200,0.07)" },
-  "IBM Differentiation":                { accent: "rgba(170,145,200,0.65)", bg: "rgba(170,145,200,0.07)" },
-  "Strategic Investment Themes":        { accent: "rgba(170,145,200,0.65)", bg: "rgba(170,145,200,0.07)" },
+  "Product Recommendations":            { accent: "rgba(100,160,230,0.70)", bg: "rgba(100,160,230,0.07)" },
+  "Retention & Upsell Positioning":     { accent: "rgba(100,160,230,0.70)", bg: "rgba(100,160,230,0.07)" },
+  "IBM Differentiation":                { accent: "rgba(100,160,230,0.70)", bg: "rgba(100,160,230,0.07)" },
+  "Strategic Investment Themes":        { accent: "rgba(100,160,230,0.70)", bg: "rgba(100,160,230,0.07)" },
 };
 
 const SECTION_ACCENTS_LIGHT: Record<string, { accent: string; bg: string }> = {
@@ -119,10 +119,10 @@ const SECTION_ACCENTS_LIGHT: Record<string, { accent: string; bg: string }> = {
   "Expansion Qualification":            { accent: "#8a5a1a", bg: "#fdf5e8" },
   "Win/Loss Qualification":             { accent: "#8a5a1a", bg: "#fdf5e8" },
   "Business Case Qualification":        { accent: "#8a5a1a", bg: "#fdf5e8" },
-  "Product Recommendations":            { accent: "#6b3fa5", bg: "#f4eeff" },
-  "Retention & Upsell Positioning":     { accent: "#6b3fa5", bg: "#f4eeff" },
-  "IBM Differentiation":                { accent: "#6b3fa5", bg: "#f4eeff" },
-  "Strategic Investment Themes":        { accent: "#6b3fa5", bg: "#f4eeff" },
+  "Product Recommendations":            { accent: "#0f62fe", bg: "#ebf2ff" },
+  "Retention & Upsell Positioning":     { accent: "#0f62fe", bg: "#ebf2ff" },
+  "IBM Differentiation":                { accent: "#0f62fe", bg: "#ebf2ff" },
+  "Strategic Investment Themes":        { accent: "#0f62fe", bg: "#ebf2ff" },
 };
 
 /* ─── Helpers ─── */
@@ -154,9 +154,12 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
   const DARK_GRAY = [31, 41, 55];
   const MED_GRAY = [107, 114, 128];
   
+  // Strip ALL asterisks from text before parsing - same as HTML rendering
+  const cleanText = text.replace(/\*\*\*/g, "").replace(/\*\*/g, "").replace(/\*/g, "");
+  
   // Parse sections
   const sections: Record<string, string[]> = {};
-  for (const sec of text.split("##").slice(1)) {
+  for (const sec of cleanText.split("##").slice(1)) {
     const lines = sec.trim().split("\n");
     const title = lines[0].trim();
     const bullets: string[] = [];
@@ -202,10 +205,11 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
     headerImageData = await loadImageViaProxy(logoUrl);
   }
   
-  // Add image to header on the left if available
-  const imageSize = 24;
+  // Add image to header — contact photo at 24mm, company logo smaller at 16mm
+  const isLogo = !contactPhotoUrl && !!logoUrl;
+  const imageSize = isLogo ? 16 : 24;
   const imageX = m;
-  const imageY = 5.5;
+  const imageY = isLogo ? 9.5 : 5.5;
   
   if (headerImageData) {
     try {
@@ -243,7 +247,7 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
   const availableH = H - y - 8; // Space available for content (footer is 8mm)
   
   // Prepare content with fallbacks
-  const companyInfo = sections["Company & Contact Background"] || [];
+  const companyInfo = sections["Company Background"] || sections["Company & Contact Background"] || [];
   const discoveryQs = [
     ...(sections["Discovery Questions"] || []),
     ...(sections["Renewal & Expansion Questions"] || []),
@@ -270,27 +274,14 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
     "Position watsonx.ai as strategic platform for AI transformation",
     "Discuss integration with existing enterprise systems"
   ];
-  // Get product recommendations from AI-generated sections
-  let productInfo = [
+  // Get product recommendations — use the exact same parseProductRecs logic as the HTML page
+  const rawProductContent = [
     ...(sections["Product Recommendations"] || []),
-    ...(sections["Retention & Upsell Positioning"] || [])
-  ];
-  
-  // Ensure we have exactly 3 products
-  if (productInfo.length === 0) {
-    productInfo = [
-      "IBM watsonx.ai: Foundation models, prompt engineering, and AI governance for enterprise AI deployment",
-      "IBM watsonx.data: Open lakehouse for governed data access across hybrid cloud environments",
-      "IBM Cloud Pak for Data: Unified data and AI platform for analytics and governance"
-    ];
-  } else if (productInfo.length === 1) {
-    productInfo.push("IBM Cloud Pak for Data: Unified data and AI platform for analytics and governance");
-    productInfo.push("IBM watsonx.governance: AI governance, risk management, and compliance automation");
-  } else if (productInfo.length === 2) {
-    productInfo.push("IBM watsonx.governance: AI governance, risk management, and compliance automation");
-  } else if (productInfo.length > 3) {
-    productInfo = productInfo.slice(0, 3);
-  }
+    ...(sections["Retention & Upsell Positioning"] || []),
+  ].join("\n");
+  const products = parseProductRecs(rawProductContent, ind);
+  // Flat strings for height-calculation helpers (name + desc)
+  const productInfo = products.map(p => `${p.name}: ${p.desc}`);
   const talkingPoints = [
     ...(sections["Strategic Investment Themes"] || []),
     "Enterprise-grade AI with built-in governance and explainability",
@@ -329,8 +320,8 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
     return totalHeight;
   };
   
-  // Render box with specified height and optimal font size
-  const renderBox = (x: number, yPos: number, width: number, height: number, title: string, items: string[], usePrefix: boolean = true): void => {
+  // Render box with paragraph text (for Company Background)
+  const renderParagraphBox = (x: number, yPos: number, width: number, height: number, title: string, paragraphText: string): void => {
     doc.setFillColor(255, 255, 255);
     doc.setDrawColor(229, 231, 235);
     doc.setLineWidth(0.3);
@@ -345,142 +336,221 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
     doc.setLineWidth(0.5);
     doc.line(x + 3, yPos + 9, x + width - 3, yPos + 9);
     
-    // Find optimal font size to fill the box
-    const contentHeight = height - 16;
-    let fontSize = 6; // Start with smaller minimum
-    
-    // Binary search for optimal font size that maximizes space usage
-    let minSize = 6;
-    let maxSize = 10;
-    let bestSize = 6;
-    
-    while (maxSize - minSize > 0.1) {
-      const testSize = (minSize + maxSize) / 2;
-      const minHeight = calculateMinHeight(items, width, testSize, usePrefix);
-      const requiredHeight = minHeight - 16;
-      
-      if (requiredHeight <= contentHeight) {
-        // Content fits, try larger
-        bestSize = testSize;
-        minSize = testSize;
-      } else {
-        // Content too large, try smaller
-        maxSize = testSize;
-      }
+    // Binary-search: largest font whose wrapped text fills but doesn't overflow the box
+    const contentH = height - 16;
+    const LH_RATIO = 0.42; // must match renderBox below
+    let lo = 6.5, hi = 11, bestSize = 7;
+    while (hi - lo > 0.05) {
+      const mid = (lo + hi) / 2;
+      doc.setFontSize(mid);
+      const lines = doc.splitTextToSize(paragraphText, width - 8);
+      if (lines.length * (mid * LH_RATIO) <= contentH) { bestSize = mid; lo = mid; }
+      else { hi = mid; }
     }
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(bestSize);
+    doc.setTextColor(DARK_GRAY[0], DARK_GRAY[1], DARK_GRAY[2]);
+    const wrapped = doc.splitTextToSize(paragraphText, width - 8);
+    doc.text(wrapped, x + 4, yPos + 14);
+  };
+  
+  // Render box with specified height and optimal font size
+  const renderBox = (x: number, yPos: number, width: number, height: number, title: string, items: string[], usePrefix: boolean = true, maxFontSize: number = 10): void => {
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, yPos, width, height, 1.5, 1.5, "FD");
     
-    fontSize = bestSize;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(DARK_GRAY[0], DARK_GRAY[1], DARK_GRAY[2]);
+    doc.text(title, x + 3, yPos + 6);
     
-    const lineHeight = fontSize * 0.4;
-    const spacing = fontSize * 0.15;
+    doc.setDrawColor(IBM_BLUE[0], IBM_BLUE[1], IBM_BLUE[2]);
+    doc.setLineWidth(0.5);
+    doc.line(x + 3, yPos + 9, x + width - 3, yPos + 9);
+    
+    // Binary-search: largest font whose items fill but don't overflow the box
+    const contentHeight = height - 16;
+    const LH_RATIO = 0.42;
+    const SPACING_RATIO = 0.13;
+    let minSize = 6, maxSize = maxFontSize, bestSize = 6;
+    while (maxSize - minSize > 0.05) {
+      const testSize = (minSize + maxSize) / 2;
+      const lh = testSize * LH_RATIO;
+      const sp = testSize * SPACING_RATIO;
+      doc.setFontSize(testSize);
+      let needed = 0;
+      for (const item of items) {
+        const prefix = usePrefix ? "• " : "";
+        const w = doc.splitTextToSize(`${prefix}${item}`, width - 8);
+        needed += w.length * lh + sp;
+      }
+      if (needed <= contentHeight) { bestSize = testSize; minSize = testSize; }
+      else { maxSize = testSize; }
+    }
+    const lineHeight = bestSize * LH_RATIO;
+    const spacing = bestSize * SPACING_RATIO;
     
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(fontSize);
+    doc.setFontSize(bestSize);
     doc.setTextColor(DARK_GRAY[0], DARK_GRAY[1], DARK_GRAY[2]);
     let itemY = yPos + 14;
     
     for (const item of items) {
       const prefix = usePrefix ? "• " : "";
-      const wrapped = doc.splitTextToSize(`${prefix}${item}`, width - 7);
-      if (itemY + wrapped.length * lineHeight > yPos + height - 2) break;
+      const wrapped = doc.splitTextToSize(`${prefix}${item}`, width - 8);
+      const itemHeight = wrapped.length * lineHeight + spacing;
+      
+      // Check if this item would overflow the box
+      if (itemY + itemHeight > yPos + height - 2) {
+        // Stop rendering if we run out of space
+        break;
+      }
+      
       doc.text(wrapped, x + 4, itemY);
-      itemY += wrapped.length * lineHeight + spacing;
+      itemY += itemHeight;
     }
   };
   
-  // Extract and enhance company info
-  const companyBackground = sections["Company & Contact Background"] || [];
-  const companyOnly = companyBackground.filter(item =>
-    !item.toLowerCase().includes("contact") &&
-    !item.toLowerCase().includes("role") &&
-    !item.toLowerCase().includes("title")
-  );
-  
-  // Enhanced company background with more context - limit to prevent overflow
-  const enhancedCompanyInfo = companyOnly.length > 0 ? companyOnly.slice(0, 4) : [
-    `${co} operates in the ${ind} sector, focusing on innovation and digital transformation.`,
-    `The company prioritizes operational efficiency, customer experience, and technology modernization.`,
-    `Current strategic initiatives include AI adoption, cloud migration, and data-driven decision making.`,
-    `Key business drivers: revenue growth, cost optimization, and competitive differentiation.`
-  ];
+  // Use the EXACT same companyInfo that HTML uses - just format as paragraph instead of bullets
+  const companyBackgroundParagraph = companyInfo.length > 0
+    ? companyInfo.join(" ")
+    : `${co} operates in the ${ind} sector, focusing on innovation and digital transformation. The company prioritizes operational efficiency, customer experience, and technology modernization. Current strategic initiatives include AI adoption, cloud migration, and data-driven decision making. Key business drivers include revenue growth, cost optimization, and competitive differentiation.`;
   
   const fullW = W - m * 2;
   const gap = 1.5;
   
-  // Calculate minimum heights for all sections
-  const minHeights = {
-    company: calculateMinHeight(enhancedCompanyInfo, fullW, 7, false),
-    contact: calculateMinHeight([
-      `${ct} is a key decision-maker at ${co} with responsibility for strategic technology initiatives.`,
-      `Focuses on driving business value through innovation, digital transformation, and operational excellence.`,
-      `Active in industry thought leadership and stays current with emerging technology trends.`,
-      `Key priorities include modernizing infrastructure, improving data capabilities, and enabling AI/ML initiatives.`
-    ], fullW, 7, false),
-    discovery: calculateMinHeight(discoveryQs, colW, 7, false),
-    qual: calculateMinHeight(qualInfo, colW, 7, true),
-    products: calculateMinHeight(productInfo, colW, 7, false),
-    sales: calculateMinHeight(salesInfo, colW, 7, true),
-  };
+  // Extract "Who is [Name]?" content from AI-generated sections
+  const whoIsKey = `Who is ${ct}?`;
+  const whoIsContent = sections[whoIsKey] || [];
   
-  // Calculate total minimum height needed
-  const totalMinHeight = minHeights.company + minHeights.contact +
-    Math.max(minHeights.discovery + minHeights.products, minHeights.qual + minHeights.sales) +
-    (gap * 5); // 5 gaps between sections
-  
-  // Distribute extra space proportionally
-  const extraSpace = availableH - totalMinHeight;
-  const scaleFactor = extraSpace > 0 ? 1 + (extraSpace / totalMinHeight) : 1;
-  
-  // Calculate final heights
-  const companyH = Math.max(minHeights.company * scaleFactor, minHeights.company);
-  const contactH = Math.max(minHeights.contact * scaleFactor, minHeights.contact);
-  const leftColH = Math.max((minHeights.discovery + minHeights.products + gap) * scaleFactor, minHeights.discovery + minHeights.products + gap);
-  const rightColH = Math.max((minHeights.qual + minHeights.sales + gap) * scaleFactor, minHeights.qual + minHeights.sales + gap);
-  const maxColH = Math.max(leftColH, rightColH);
-  
-  // Make Discovery Questions and Opportunity Qualification the same height
-  const topRowHeight = Math.max(minHeights.discovery, minHeights.qual);
-  const discoveryH = topRowHeight;
-  const qualH = topRowHeight;
-  
-  // Distribute remaining space to bottom boxes
-  const productsH = maxColH - discoveryH - gap;
-  const salesH = maxColH - qualH - gap;
-  
-  // Ensure bottom row boxes have equal height (use the larger of the two)
-  const bottomRowHeight = Math.max(productsH, salesH);
-  
-  // Row 1 - Company Background
-  renderBox(m, y, fullW, companyH, "Company Background", enhancedCompanyInfo, false);
-  
-  // Row 2 - Who is [Name]?
-  y += companyH + gap;
-  renderBox(m, y, fullW, contactH, `Who is ${ct}?`, [
+  // Fallback to generic content if AI didn't generate this section
+  const contactInfo = whoIsContent.length > 0 ? whoIsContent.slice(0, 5) : [
     `${ct} is a key decision-maker at ${co} with responsibility for strategic technology initiatives.`,
     `Focuses on driving business value through innovation, digital transformation, and operational excellence.`,
     `Active in industry thought leadership and stays current with emerging technology trends.`,
     `Key priorities include modernizing infrastructure, improving data capabilities, and enabling AI/ML initiatives.`
-  ], false);
+  ];
   
-  // Row 3 - Discovery Questions (left) + Opportunity Qualification (right)
+  // ── Layout: compute all heights bottom-up from actual content ──────────────
+  // Company box: exact text height, no inflation
+  const HEADER_H = 14; // title + divider overhead inside each box
+  const companyTextH = (() => {
+    doc.setFontSize(7);
+    const wrapped = doc.splitTextToSize(companyBackgroundParagraph, fullW - 7);
+    return HEADER_H + wrapped.length * (7 * 0.45) + 4;
+  })();
+  const companyH = Math.max(companyTextH, 22); // tight — minimum 22mm
+
+  // Contact box: actual content height
+  const contactH = calculateMinHeight(contactInfo, fullW, 7, false);
+
+  // Discovery: must fit ALL 8 questions — calculate exact height needed
+  const discoveryNeeded = calculateMinHeight(discoveryQs, colW, 7, false);
+  // Qual: actual content height
+  const qualNeeded = calculateMinHeight(qualInfo, colW, 7, true);
+  // Row 3 height: whichever column needs more space
+  const row3H = Math.max(discoveryNeeded, qualNeeded);
+
+  // How much space remains for the product recommendations box
+  const usedH = companyH + contactH + row3H + (gap * 4);
+  const productsH = Math.max(availableH - usedH, 30); // at least 30mm
+  
+  // Row 1 - Company Background (tight box, sized to text)
+  renderParagraphBox(m, y, fullW, companyH, "Company Background", companyBackgroundParagraph);
+  
+  // Row 2 - Who is [Name]?
+  y += companyH + gap;
+  renderBox(m, y, fullW, contactH, `Who is ${ct}?`, contactInfo, false);
+  
+  // Row 3 - Discovery Questions (left) + Opportunity Qualification (right), same height
   y += contactH + gap;
-  const discoveryStartY = y;
-  renderBox(m, y, colW, discoveryH, "Discovery Questions", discoveryQs, false);
+  renderBox(m, y, colW, row3H, "Discovery Questions", discoveryQs, false);
+  renderBox(m + colW + 3, y, colW, row3H, contentSets[2].title, qualInfo, true);
   
-  // Opportunity Qualification (right column)
-  renderBox(m + colW + 3, y, colW, qualH, contentSets[2].title, qualInfo, true);
-  
-  // Row 4 - Products (left) + Sales Strategy (right)
-  // Use the same height for both boxes so they end at the same point
-  y += Math.max(discoveryH, qualH) + gap;
-  
-  // Ensure bottom boxes don't overlap with footer (footer starts at H - 8)
-  const maxBottomY = H - 10; // Leave 10mm for footer (8mm + 2mm buffer)
-  const availableBottomHeight = maxBottomY - y;
-  const finalBottomRowHeight = Math.min(bottomRowHeight, availableBottomHeight);
-  
-  renderBox(m, y, colW, finalBottomRowHeight, contentSets[4].title, productInfo, false);
-  renderBox(m + colW + 3, y, colW, finalBottomRowHeight, contentSets[3].title, salesInfo, true);
+  // Row 4 - IBM Product Recommendations (full width, fills remaining space)
+  y += row3H + gap;
+
+  const maxBottomY = H - 10;
+  const availableBottomHeight = Math.min(productsH, maxBottomY - y);
+
+  // Draw outer container
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(229, 231, 235);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(m, y, fullW, availableBottomHeight, 1.5, 1.5, "FD");
+
+  // Section title
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(DARK_GRAY[0], DARK_GRAY[1], DARK_GRAY[2]);
+  doc.text("IBM Product Recommendations", m + 3, y + 6);
+  doc.setDrawColor(IBM_BLUE[0], IBM_BLUE[1], IBM_BLUE[2]);
+  doc.setLineWidth(0.5);
+  doc.line(m + 3, y + 9, m + fullW - 3, y + 9);
+
+  // Render each product as a mini card
+  const cardGap = 2;
+  const cardStartY = y + 13;
+  const totalCardGaps = (products.length - 1) * cardGap;
+  const cardH = (availableBottomHeight - 13 - totalCardGaps - 3) / products.length;
+
+  products.forEach((p, idx) => {
+    const cardY = cardStartY + idx * (cardH + cardGap);
+    const cardX = m + 2.5;
+    const cardW = fullW - 5;
+
+    // Card background (light blue tint — IBM-aligned)
+    doc.setFillColor(235, 244, 255);
+    doc.setDrawColor(150, 190, 235);
+    doc.setLineWidth(0.25);
+    doc.roundedRect(cardX, cardY, cardW, cardH, 1, 1, "FD");
+
+    // Left accent bar (IBM blue)
+    doc.setFillColor(IBM_BLUE[0], IBM_BLUE[1], IBM_BLUE[2]);
+    doc.rect(cardX, cardY, 1.2, cardH, "F");
+
+    const textX = cardX + 4;
+    let textY = cardY + 4.5;
+
+    // Product name
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(31, 41, 55);
+    doc.text(p.name, textX, textY);
+
+    // Tag pill — draw inline after name
+    const nameWidth = doc.getTextWidth(p.name);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(6.5);
+    doc.setTextColor(15, 98, 254);
+    const tagText = p.tag.toUpperCase();
+    const tagW = doc.getTextWidth(tagText) + 4;
+    const tagX = textX + nameWidth + 3;
+    doc.setFillColor(210, 228, 255);
+    doc.setDrawColor(130, 175, 230);
+    doc.setLineWidth(0.2);
+    doc.roundedRect(tagX, cardY + 2, tagW, 4, 0.8, 0.8, "FD");
+    doc.text(tagText, tagX + 2, cardY + 5.3);
+
+    // Description — binary-search for largest font that fits remaining card height
+    const descY = textY + 5;
+    const descMaxH = cardY + cardH - descY - 1.5; // available vertical space
+    let dLo = 5, dHi = 7.5, dBest = 5.5;
+    while (dHi - dLo > 0.1) {
+      const mid = (dLo + dHi) / 2;
+      doc.setFontSize(mid);
+      const lines = doc.splitTextToSize(p.desc, cardW - 8);
+      if (lines.length * (mid * 0.42) <= descMaxH) { dBest = mid; dLo = mid; }
+      else { dHi = mid; }
+    }
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(dBest);
+    doc.setTextColor(75, 85, 99);
+    const descLines = doc.splitTextToSize(p.desc, cardW - 8);
+    doc.text(descLines, textX, descY);
+  });
   
   // ═══ FOOTER ═══
   doc.setFont("helvetica", "normal");
@@ -493,50 +563,172 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
   doc.save(`${co.replace(/\s+/g,"_")}_Briefing_${new Date().toISOString().split('T')[0]}.pdf`);
 }
 
+/* ─── IBM Data & AI product catalogue (fallback) ─── */
+const IBM_PRODUCTS: Record<string, { tag: string; desc: string }> = {
+  "watsonx.ai":         { tag: "Foundation Models & AI Studio",    desc: "Build, tune, and deploy AI with IBM Granite and open-source foundation models on a governed enterprise platform. Supports RAG, fine-tuning, and prompt engineering with built-in AI factsheets for full model lineage tracking." },
+  "watsonx.data":       { tag: "Open Lakehouse",                   desc: "Access governed data across hybrid cloud with an open lakehouse architecture, cutting warehouse costs by up to 50%. Integrates with Presto, Spark, and existing data warehouses without requiring data migration." },
+  "watsonx.governance": { tag: "AI Risk & Compliance",             desc: "Detect bias, drift, and compliance risk across AI models in production with automated policy enforcement. Provides end-to-end audit trails and aligns with EU AI Act, NIST AI RMF, and internal governance requirements." },
+  "IBM OpenPages":      { tag: "GRC & Risk Management",            desc: "Centralise governance, risk, and compliance workflows with AI-assisted risk identification and reporting. Embeds watsonx AI to surface high-priority risks and automate control testing across the enterprise." },
+  "IBM DataStage":      { tag: "Data Integration & ETL",           desc: "High-volume data integration and transformation pipelines for hybrid cloud and on-prem environments. Connects 100+ data sources with parallel processing and native IBM Cloud Pak for Data integration." },
+  "IBM Knowledge Catalog": { tag: "Data Governance",               desc: "Discover, catalog, and govern data assets enterprise-wide with automated metadata and policy management. Enforces data access policies in real time and integrates with watsonx.data for unified data governance." },
+};
+
+/** Parse AI-generated product section into structured {name, desc} pairs.
+ *  Handles lines like "- IBM watsonx.ai: description" or "1. watsonx.data — reason"
+ *  Falls back to catalogue if fewer than 2 products parsed.
+ */
+function parseProductRecs(raw: string, industry: string): { name: string; tag: string; desc: string }[] {
+  const clean = raw.replace(/\*\*\*/g,"").replace(/\*\*/g,"").replace(/\*/g,"").trim();
+  const results: { name: string; tag: string; desc: string }[] = [];
+
+  // Match lines that look like a product entry
+  const productLineRe = /^(?:[-•*]\s*|\d[.)]\s*)?(.{3,60}?)(?:[:—–-]\s*)(.+)$/;
+  for (const line of clean.split("\n")) {
+    const l = line.trim();
+    if (!l || l.length < 8) continue;
+    // Skip pure sub-bullets that are continuations
+    if (l.startsWith("  ") || l.startsWith("\t")) continue;
+
+    const m = l.match(productLineRe);
+    if (m) {
+      const rawName = m[1].trim();
+      const rawDesc = m[2].trim();
+      // Only keep if name contains a recognisable IBM/product keyword
+      if (rawName.length < 3 || rawName.length > 70) continue;
+      // Try to match against catalogue for a nice tag
+      const catalogueKey = Object.keys(IBM_PRODUCTS).find(k =>
+        rawName.toLowerCase().includes(k.toLowerCase()) || k.toLowerCase().includes(rawName.toLowerCase())
+      );
+      if (catalogueKey) {
+        if (!results.find(r => r.name === catalogueKey)) {
+          // Use AI desc as first sentence, append catalogue second sentence for context
+          const aiDesc = rawDesc || IBM_PRODUCTS[catalogueKey].desc;
+          const catalogueDesc = IBM_PRODUCTS[catalogueKey].desc;
+          // Extract the second sentence from catalogue desc (after first period)
+          const secondSentence = catalogueDesc.includes(". ") ? catalogueDesc.split(". ").slice(1).join(". ") : "";
+          const fullDesc = secondSentence && !aiDesc.toLowerCase().includes(secondSentence.slice(0, 20).toLowerCase())
+            ? `${aiDesc.replace(/\.?\s*$/, "")}. ${secondSentence}`
+            : aiDesc;
+          results.push({ name: catalogueKey, tag: IBM_PRODUCTS[catalogueKey].tag, desc: fullDesc });
+        }
+      } else if (rawName.toLowerCase().includes("ibm") || rawName.toLowerCase().includes("watson") || rawName.toLowerCase().includes("watsonx")) {
+        if (!results.find(r => r.name === rawName)) {
+          results.push({ name: rawName, tag: "IBM Data & AI", desc: rawDesc });
+        }
+      }
+    }
+    if (results.length >= 3) break;
+  }
+
+  // Fallback: pick 2-3 contextually relevant products from catalogue
+  if (results.length < 2) {
+    const ind = (industry || "").toLowerCase();
+    const priority = ind.includes("financ") || ind.includes("bank") || ind.includes("insur")
+      ? ["watsonx.ai","watsonx.governance","IBM OpenPages"]
+      : ind.includes("health") || ind.includes("pharma") || ind.includes("life")
+      ? ["watsonx.ai","watsonx.governance","watsonx.data"]
+      : ind.includes("retail") || ind.includes("consumer")
+      ? ["watsonx.ai","watsonx.data","IBM Knowledge Catalog"]
+      : ["watsonx.ai","watsonx.data","watsonx.governance"];
+
+    for (const key of priority) {
+      if (!results.find(r => r.name === key)) {
+        results.push({ name: key, tag: IBM_PRODUCTS[key].tag, desc: IBM_PRODUCTS[key].desc });
+      }
+      if (results.length >= 3) break;
+    }
+  }
+
+  return results.slice(0, 3);
+}
+
+/* ─── Product Recommendations Card ─── */
+function ProductRecsCard({ content, industry, t, streaming, accent, bg }: {
+  content: string; industry: string; t: typeof DARK;
+  streaming?: boolean; accent: string; bg: string;
+}) {
+  const products = parseProductRecs(content, industry);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:10}}>
+      {products.map((p, i) => (
+        <div key={i} style={{
+          background: bg,
+          border:`1px solid ${accent.replace(/[\d.]+\)$/, "0.22)")}`,
+          borderRadius:10,
+          padding:"13px 16px",
+          display:"flex",flexDirection:"column",gap:5,
+        }}>
+          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+            <span style={{fontSize:13,fontWeight:600,color:t.text,letterSpacing:"-0.2px"}}>{p.name}</span>
+            <span style={{
+              fontSize:9.5,fontWeight:500,letterSpacing:"0.5px",textTransform:"uppercase",
+              color:accent,background:`${accent.replace(/[\d.]+\)$/, "0.12)")}`,
+              border:`1px solid ${accent.replace(/[\d.]+\)$/, "0.25)")}`,
+              borderRadius:4,padding:"2px 7px",
+            }}>{p.tag}</span>
+          </div>
+          <p style={{margin:0,fontSize:12,color:t.sectionText,lineHeight:1.6}}>{p.desc}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /* ─── Section Card ─── */
-function SectionCard({ title, content, t, streaming }: {
-  title: string; content: string;
+function SectionCard({ title, content, industry, t, streaming }: {
+  title: string; content: string; industry?: string;
   t: typeof DARK; streaming?: boolean;
 }) {
   const isDark = t === DARK;
   const map = isDark ? SECTION_ACCENTS_DARK : SECTION_ACCENTS_LIGHT;
   const { accent, bg } = map[title] ?? { accent: isDark ? "rgba(200,200,210,0.55)" : "#666", bg: isDark ? "rgba(200,200,210,0.06)" : "#f5f5f7" };
 
+  const isProductRecs = title === "Product Recommendations";
+
   const rows: React.ReactNode[] = [];
-  const lines = content.replace(/\*\*/g,"").replace(/^--$/gm,"").split("\n");
-  lines.forEach((line, i) => {
-    const l = line.trim();
-    if (!l) { rows.push(<div key={i} style={{height:4}} />); return; }
-    if (l.endsWith(":") && l.length < 60) {
-      rows.push(<p key={i} style={{margin:"14px 0 5px",fontSize:10,fontWeight:600,letterSpacing:"0.7px",textTransform:"uppercase",color:accent}}>{l.slice(0,-1)}</p>);
-    } else if (l.match(/^[-*•] /)) {
-      rows.push(
-        <div key={i} style={{display:"flex",gap:11,marginBottom:8,alignItems:"flex-start"}}>
-          <span style={{color:accent,fontSize:14,lineHeight:"1.5",flexShrink:0}}>–</span>
-          <span style={{color:t.sectionBullet,fontSize:13,lineHeight:1.7}}>{l.slice(2)}</span>
-        </div>
-      );
-    } else if (l.match(/^\d[.)]/)) {
-      rows.push(
-        <div key={i} style={{display:"flex",gap:11,marginBottom:9,alignItems:"flex-start"}}>
-          <span style={{color:accent,fontSize:11,fontWeight:600,flexShrink:0,minWidth:16,paddingTop:2}}>{l[0]}.</span>
-          <span style={{color:t.sectionBullet,fontSize:13,lineHeight:1.7}}>{l.slice(2).trim()}</span>
-        </div>
-      );
-    } else {
-      const labelMatch = l.match(/^([A-Za-z][A-Za-z ]{0,28}): (.+)$/);
-      if (labelMatch) {
+  if (!isProductRecs) {
+    // Strip ALL asterisks - no markdown rendering
+    const lines = content.replace(/\*\*\*/g,"").replace(/\*\*/g,"").replace(/\*/g,"").replace(/^--$/gm,"").split("\n");
+    // Count real content lines to adjust font sizing
+    const contentLines = lines.filter(l => l.trim().length > 0).length;
+    // Use slightly larger text if fewer lines (less content = more space to fill)
+    const bodyFontSize = contentLines <= 4 ? 14 : contentLines <= 7 ? 13 : 12.5;
+
+    lines.forEach((line, i) => {
+      const l = line.trim();
+      if (!l) { rows.push(<div key={i} style={{height:2}} />); return; }
+      if (l.endsWith(":") && l.length < 60) {
+        rows.push(<p key={i} style={{margin:"10px 0 4px",fontSize:10,fontWeight:600,letterSpacing:"0.7px",textTransform:"uppercase",color:accent}}>{l.slice(0,-1)}</p>);
+      } else if (l.match(/^[-*•] /)) {
         rows.push(
-          <p key={i} style={{margin:"0 0 10px",fontSize:13,lineHeight:1.72}}>
-            <strong style={{color:t.textSub,fontWeight:600}}>{labelMatch[1]}:</strong>
-            <span style={{color:t.sectionText}}>{" "}{labelMatch[2]}</span>
-          </p>
+          <div key={i} style={{display:"flex",gap:10,marginBottom:6,alignItems:"flex-start"}}>
+            <span style={{color:accent,fontSize:13,lineHeight:"1.5",flexShrink:0}}>–</span>
+            <span style={{color:t.sectionBullet,fontSize:bodyFontSize,lineHeight:1.65}}>{l.slice(2)}</span>
+          </div>
+        );
+      } else if (l.match(/^\d[.)]/)) {
+        rows.push(
+          <div key={i} style={{display:"flex",gap:10,marginBottom:7,alignItems:"flex-start"}}>
+            <span style={{color:accent,fontSize:11,fontWeight:600,flexShrink:0,minWidth:16,paddingTop:2}}>{l[0]}.</span>
+            <span style={{color:t.sectionBullet,fontSize:bodyFontSize,lineHeight:1.65}}>{l.slice(2).trim()}</span>
+          </div>
         );
       } else {
-        rows.push(<p key={i} style={{margin:"0 0 8px",color:t.sectionText,fontSize:13,lineHeight:1.72}}>{l}</p>);
+        const labelMatch = l.match(/^([A-Za-z][A-Za-z ]{0,28}): (.+)$/);
+        if (labelMatch) {
+          rows.push(
+            <p key={i} style={{margin:"0 0 8px",fontSize:bodyFontSize,lineHeight:1.65}}>
+              <strong style={{color:t.textSub,fontWeight:600}}>{labelMatch[1]}:</strong>
+              <span style={{color:t.sectionText}}>{" "}{labelMatch[2]}</span>
+            </p>
+          );
+        } else {
+          rows.push(<p key={i} style={{margin:"0 0 7px",color:t.sectionText,fontSize:bodyFontSize,lineHeight:1.65}}>{l}</p>);
+        }
       }
-    }
-  });
+    });
+  }
 
   return (
     <div className="animate-fade-in" style={{
@@ -546,14 +738,19 @@ function SectionCard({ title, content, t, streaming }: {
       marginBottom:12, overflow:"hidden", boxShadow: t.cardShadow,
     }}>
       <div style={{height:2,background:accent,width:"100%",opacity:0.6}} />
-      <div style={{display:"flex",alignItems:"center",gap:10,padding:"15px 22px 11px",borderBottom:`1px solid ${t.sectionHeaderBorder}`}}>
-        <div style={{width:22,height:22,background:bg,borderRadius:6,flexShrink:0,border:`1px solid ${t.sectionCardBorder}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
-          <div style={{width:7,height:7,borderRadius:"50%",background:accent,opacity:0.85}} />
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"13px 20px 10px",borderBottom:`1px solid ${t.sectionHeaderBorder}`}}>
+        <div style={{width:20,height:20,background:bg,borderRadius:5,flexShrink:0,border:`1px solid ${t.sectionCardBorder}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{width:6,height:6,borderRadius:"50%",background:accent,opacity:0.85}} />
         </div>
-        <span style={{fontSize:12,fontWeight:500,color:t.textSub}}>{title || "…"}</span>
+        <span style={{fontSize:11.5,fontWeight:500,color:t.textSub}}>{title || "…"}</span>
         {streaming && <span style={{marginLeft:"auto",width:6,height:6,borderRadius:"50%",background:accent,opacity:0.7}} className="animate-pulse-dot" />}
       </div>
-      <div style={{padding:"17px 22px 20px"}}>{rows}</div>
+      <div style={{padding:"14px 20px 18px"}}>
+        {isProductRecs
+          ? <ProductRecsCard content={content} industry={industry||""} t={t} streaming={streaming} accent={accent} bg={bg}/>
+          : rows
+        }
+      </div>
     </div>
   );
 }
@@ -640,10 +837,11 @@ export default function BriefingPage() {
   useEffect(() => { if (industryData?.industry && !industry) setIndustry(industryData.industry); }, [industryData]);
   useEffect(() => { if (company !== debouncedCompany) return; if (!company) setIndustry(""); }, [company]);
 
-  // State for parsed contact name, photo, and company
+  // State for parsed contact name, photo, company, and title
   const [parsedContactName, setParsedContactName] = useState("");
   const [contactPhotoUrl, setContactPhotoUrl] = useState("");
   const [parsedCompanyName, setParsedCompanyName] = useState("");
+  const [parsedTitle, setParsedTitle] = useState("");
   
   // Debounce contact input for API call
   const debouncedContact = useDebounce(contact, 600);
@@ -654,18 +852,46 @@ export default function BriefingPage() {
       setParsedContactName("");
       setContactPhotoUrl("");
       setParsedCompanyName("");
+      setParsedTitle("");
       return;
     }
     
     // Check if it's a LinkedIn URL
     if (debouncedContact.toLowerCase().includes("linkedin.com/in/")) {
+      // DEMO MODE: Auto-populate for Jamie Dimon
+      if (debouncedContact.toLowerCase().includes("jamiedimon")) {
+        console.log('Demo mode: Jamie Dimon detected');
+        setParsedContactName("Jamie Dimon");
+        setCompany("JP Morgan Chase");
+        setIndustry("Finance");
+        setParsedCompanyName("JP Morgan Chase");
+        setTitle("Chairman & CEO");
+        setParsedTitle("Chairman & CEO");
+        return;
+      }
+      
       // Add cache-busting parameter to force fresh data
       fetch(`/api/briefing/parse-contact?contact=${encodeURIComponent(debouncedContact)}&_t=${Date.now()}`)
         .then(res => res.json())
         .then(data => {
           console.log('Parse contact API response:', data);
           if (data.name) {
-            setParsedContactName(data.name);
+            // Sanitize: strip trailing tokens that look like LinkedIn ID fragments
+            // e.g. "Sean Krepp Ab" (from slug "sean-krepp-29ab52395") → "Sean Krepp"
+            // A trailing token is suspicious if it's 1-3 chars OR mixed alpha+digit
+            const sanitizeName = (raw: string) =>
+              raw.trim()
+                .split(/\s+/)
+                .filter((word, idx, arr) => {
+                  if (idx === 0) return true; // always keep first word
+                  const isLastWord = idx === arr.length - 1;
+                  if (!isLastWord) return true; // only strip the last token
+                  const isTiny = word.length <= 3;
+                  const isMixedAlphaNum = /[a-zA-Z]/.test(word) && /\d/.test(word);
+                  return !isTiny && !isMixedAlphaNum;
+                })
+                .join(" ");
+            setParsedContactName(sanitizeName(data.name));
           }
           if (data.photoUrl) {
             console.log('Setting contact photo URL:', data.photoUrl);
@@ -679,15 +905,23 @@ export default function BriefingPage() {
               setCompany(data.company);
             }
           }
+          if (data.title) {
+            setParsedTitle(data.title);
+            // Auto-populate title field if empty
+            if (!title.trim()) {
+              setTitle(data.title);
+            }
+          }
         })
         .catch(() => {
           // Fallback to basic parsing if API fails
           const match = debouncedContact.match(/linkedin\.com\/in\/([^/?]+)/i);
           if (match && match[1]) {
             const slug = match[1];
-            const name = slug
+            // Strip trailing numeric ID segment (e.g. "sean-krepp-29ab52395" → "sean-krepp")
+            const cleanSlug = slug.replace(/-[a-z0-9]*\d[a-z0-9]*$/i, "");
+            const name = cleanSlug
               .replace(/[-_]/g, " ")
-              .replace(/\d+/g, "")
               .replace(/\s+/g, " ")
               .trim()
               .split(" ")
@@ -696,6 +930,7 @@ export default function BriefingPage() {
             setParsedContactName(name || debouncedContact);
             setContactPhotoUrl(`https://unavatar.io/linkedin/${slug}`);
             setParsedCompanyName("");
+            setParsedTitle("");
           }
         });
     } else {
@@ -703,6 +938,7 @@ export default function BriefingPage() {
       setParsedContactName(debouncedContact);
       setContactPhotoUrl("");
       setParsedCompanyName("");
+      setParsedTitle("");
     }
   }, [debouncedContact, company]);
   
@@ -744,6 +980,37 @@ export default function BriefingPage() {
       date: fmtDate(), ts: Date.now(),
     });
 
+    // ── Fetch live company research in parallel before generating ──
+    let companyContext = "";
+    try {
+      const [wikiRes, newsRes] = await Promise.allSettled([
+        // Wikipedia summary (public REST API, no auth needed)
+        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(effectiveCompany)}`)
+          .then(r => r.ok ? r.json() : null),
+        // Existing news endpoint — reuse what the sidebar already fetches
+        fetch(`/api/briefing/news?company=${encodeURIComponent(effectiveCompany)}`)
+          .then(r => r.ok ? r.json() : []),
+      ]);
+
+      const parts: string[] = [];
+
+      if (wikiRes.status === "fulfilled" && wikiRes.value?.extract) {
+        parts.push(`Wikipedia: ${wikiRes.value.extract}`);
+      }
+
+      if (newsRes.status === "fulfilled" && Array.isArray(newsRes.value) && newsRes.value.length > 0) {
+        const headlines = (newsRes.value as { title: string; source?: string; date?: string }[])
+          .slice(0, 5)
+          .map(n => `- ${n.title}${n.source ? ` (${n.source})` : ""}${n.date ? `, ${n.date}` : ""}`)
+          .join("\n");
+        parts.push(`Recent news:\n${headlines}`);
+      }
+
+      companyContext = parts.join("\n\n");
+    } catch {
+      // Non-fatal — generation continues without enrichment
+    }
+
     try {
       const res = await fetch("/api/briefing/generate", {
         method: "POST",
@@ -752,6 +1019,7 @@ export default function BriefingPage() {
           company: effectiveCompany, industry: industry.trim(),
           contactName: contactName.trim(), contactTitle: title.trim(),
           context: context.trim(), callType: meetingType,
+          companyContext: companyContext || undefined,
         }),
       });
       if (!res.ok) throw new Error("Request failed");
@@ -971,8 +1239,8 @@ export default function BriefingPage() {
               <GlassInput t={t} label="Company (Optional)" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="e.g. JPMorgan Chase"/>
             </div>
             
-            <GlassInput t={t} label="Industry" value={industry} onChange={e=>setIndustry((e.target as HTMLInputElement).value)} placeholder="Auto-detected — or type your own"/>
             <GlassInput t={t} label="Title" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics"/>
+            <GlassInput t={t} label="Industry" value={industry} onChange={e=>setIndustry((e.target as HTMLInputElement).value)} placeholder="Auto-detected — or type your own"/>
             <GlassInput t={t} label="Context (Optional)" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Anything you already know…"/>
 
             <button
@@ -1326,13 +1594,13 @@ export default function BriefingPage() {
                 <h1 style={{fontSize:24,fontWeight:500,letterSpacing:"-0.4px",color:t.nameLine,margin:"0 0 3px",lineHeight:1.15}}>
                   {displayBriefing?.ct || displayBriefing?.co || "…"}
                 </h1>
-                <p style={{fontSize:12,color:t.textMuted,margin:"0 0 2px"}}>{[displayBriefing?.co,displayBriefing?.ind].filter(Boolean).join("  ·  ")}</p>
+                <p style={{fontSize:12,color:t.textMuted,margin:"0 0 2px"}}>{[displayBriefing?.co,displayBriefing?.ti,displayBriefing?.ind].filter(Boolean).join("  ·  ")}</p>
                 <p style={{fontSize:11,color:t.dateText,margin:0}}>Generated {displayBriefing?.date}</p>
               </div>
               {/* Company logo on the RIGHT */}
-              <div style={{flexShrink:0,width:48,height:48,borderRadius:10,background:t.card,border:`1px solid ${t.cardBorder}`,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",marginTop:4,boxShadow:"0 2px 4px rgba(0,0,0,0.05)"}}>
+              <div style={{flexShrink:0,width:48,height:48,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",marginTop:4}}>
                 {logoUrl
-                  ? <img src={logoUrl} alt={`${displayBriefing?.co} logo`} style={{width:"100%",height:"100%",objectFit:"contain",padding:"4px"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}}/>
+                  ? <img src={logoUrl} alt={`${displayBriefing?.co} logo`} style={{width:"100%",height:"100%",objectFit:"contain"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}}/>
                   : <span style={{fontSize:18,fontWeight:500,color:t.textMuted}}>{(displayBriefing?.co||"?")[0].toUpperCase()}</span>
                 }
               </div>
@@ -1340,21 +1608,21 @@ export default function BriefingPage() {
 
             {/* Streaming sections - first two full width, last two side-by-side */}
             {streamingSections.slice(0, 2).map(sec=>(
-              <SectionCard key={sec.title} title={sec.title} content={sec.content} t={t} streaming={sec.isStreaming}/>
+              <SectionCard key={sec.title} title={sec.title} content={sec.content} industry={displayBriefing?.ind} t={t} streaming={sec.isStreaming}/>
             ))}
             
             {/* Last two sections in a grid with equal heights */}
             {streamingSections.length > 2 && (
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,alignItems:"stretch"}}>
                 {streamingSections.slice(2, 4).map(sec=>(
-                  <SectionCard key={sec.title} title={sec.title} content={sec.content} t={t} streaming={sec.isStreaming}/>
+                  <SectionCard key={sec.title} title={sec.title} content={sec.content} industry={displayBriefing?.ind} t={t} streaming={sec.isStreaming}/>
                 ))}
               </div>
             )}
             
             {/* Any additional sections beyond 4 (shouldn't happen but handle gracefully) */}
             {streamingSections.slice(4).map(sec=>(
-              <SectionCard key={sec.title} title={sec.title} content={sec.content} t={t} streaming={sec.isStreaming}/>
+              <SectionCard key={sec.title} title={sec.title} content={sec.content} industry={displayBriefing?.ind} t={t} streaming={sec.isStreaming}/>
             ))}
 
             {/* Waiting for first chunk */}

@@ -3,6 +3,26 @@ import { generateTextStream } from "@workspace/integrations-ibm-watsonx";
 
 const router: IRouter = Router();
 
+// User-Agent rotation to avoid bot detection
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 OPR/106.0.0.0',
+];
+
+let userAgentIndex = 0;
+
+function getRandomUserAgent(): string {
+  // Rotate through user agents sequentially with some randomness
+  userAgentIndex = (userAgentIndex + 1) % USER_AGENTS.length;
+  return USER_AGENTS[userAgentIndex];
+}
+
 const INDUSTRY_MAP: Record<string, string> = {
   "jpmorgan": "Financial Services", "jpmorgan chase": "Financial Services",
   "goldman sachs": "Financial Services", "morgan stanley": "Financial Services",
@@ -89,7 +109,7 @@ Keep it tight.
 ## Product Recommendations
 Recommend exactly 3 IBM products. For each use this format:
 *Product name* on its own line (italic, not bold).
-Combined positioning (2-3 sentences): Explain why it fits ${company} and how to position it in a single cohesive paragraph.`,
+Combined positioning (EXACTLY 1 sentence, maximum 20 words): Briefly state why it fits ${company}. Be extremely concise.`,
 
     "Renewal": `## Who is ${contactName || "the Contact"}?
 
@@ -238,7 +258,7 @@ ${buildSections(ct, company, ind, title, contactName)}`;
 
   try {
     const stream = generateTextStream(prompt, {
-      model: "ibm/granite-13b-chat-v2",
+      model: "claude-fable-5",
       maxTokens: 8192,
       temperature: 0.7,
     });
@@ -484,18 +504,27 @@ router.get("/parse-contact", async (req, res) => {
     const slug = linkedinMatch[1];
     let name = "";
     let companyName = "";
+    let jobTitle = "";
     
     // Try to fetch actual LinkedIn profile data
     try {
       const profileUrl = `https://www.linkedin.com/in/${slug}`;
       const response = await fetch(profileUrl, {
         headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'User-Agent': getRandomUserAgent(),
           'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
           'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'DNT': '1',
+          'Connection': 'keep-alive',
+          'Upgrade-Insecure-Requests': '1',
+          'Sec-Fetch-Dest': 'document',
+          'Sec-Fetch-Mode': 'navigate',
+          'Sec-Fetch-Site': 'none',
+          'Cache-Control': 'max-age=0',
           'Referer': 'https://www.google.com/'
         },
-        signal: AbortSignal.timeout(5000)
+        signal: AbortSignal.timeout(8000)
       });
       
       if (response.ok) {
@@ -548,18 +577,43 @@ router.get("/parse-contact", async (req, res) => {
           req.log.warn({ slug, extractedName }, "Extracted name too short or empty");
         }
         
-        // Extract company using multiple methods
-        // Method 1: og:description with "at [Company]" pattern
-        let companyMatch = html.match(/property="og:description"\s+content="[^"]*\bat\s+([^"|•·\n]+)/i);
-        if (companyMatch && companyMatch[1]) {
-          companyName = companyMatch[1].trim();
+        // Extract title and company from title tag (format: "Name - Title - Company | LinkedIn")
+        const titleTagMatch = html.match(/<title>([^|<]+)/i);
+        if (titleTagMatch && titleTagMatch[1]) {
+          const parts = titleTagMatch[1].split('-').map(p => p.trim());
+          // parts[0] = Name, parts[1] = Title, parts[2] = Company
+          if (parts.length >= 3) {
+            // Extract title (middle part)
+            if (!jobTitle && parts[1] && parts[1].length > 2 && parts[1].length < 100) {
+              jobTitle = parts[1].replace(/\s*LinkedIn.*$/i, '').trim();
+            }
+            // Extract company (last part before LinkedIn)
+            if (!companyName && parts[2]) {
+              const potential = parts[2].replace(/\s*LinkedIn.*$/i, '').trim();
+              if (potential.length > 2 && potential.length < 100 && !potential.includes('&')) {
+                companyName = potential;
+              }
+            }
+          }
         }
         
-        // Method 2: Look for company in title tag (e.g., "Name - Title - Company | LinkedIn")
+        // Fallback: Extract company using multiple methods
+        // Method 1: Look for company in title tag - most reliable (e.g., "Name - Title - Company | LinkedIn")
+        const titleCompanyMatch = html.match(/<title>[^-|]+-[^-|]+-\s*([^|<]+)/i);
+        if (!companyName && titleCompanyMatch && titleCompanyMatch[1]) {
+          const potential = titleCompanyMatch[1].trim().replace(/\s*-?\s*LinkedIn.*$/i, '').trim();
+          // Clean up common suffixes and validate
+          const cleaned = potential.replace(/\s*\|\s*LinkedIn.*$/i, '').trim();
+          if (cleaned && cleaned.length > 2 && cleaned.length < 100 && !cleaned.includes('&')) {
+            companyName = cleaned;
+          }
+        }
+        
+        // Method 2: og:description with "at [Company]" pattern (fallback)
         if (!companyName) {
-          const titleCompanyMatch = html.match(/<title>[^-|]+-[^-|]+-\s*([^|<]+)/i);
-          if (titleCompanyMatch && titleCompanyMatch[1]) {
-            const potential = titleCompanyMatch[1].trim().replace(/\s*-?\s*LinkedIn.*$/i, '').trim();
+          let companyMatch = html.match(/property="og:description"\s+content="[^"]*\bat\s+([^"|•·\n]+)/i);
+          if (companyMatch && companyMatch[1]) {
+            const potential = companyMatch[1].trim().split(/[•·|]/)[0].trim();
             if (potential && potential.length > 2 && potential.length < 100) {
               companyName = potential;
             }
@@ -605,11 +659,30 @@ router.get("/parse-contact", async (req, res) => {
     
     // Fallback: parse name from slug if fetch failed
     if (!name) {
-      name = slug
+      // Handle cases like "jamiedimon" by detecting capital letters as word boundaries
+      let parsedName = slug
         .replace(/[-_]/g, " ")
         .replace(/\d+/g, "")
+        .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space before capitals: jamieDimon -> jamie Dimon
         .replace(/\s+/g, " ")
-        .trim()
+        .trim();
+      
+      // If no spaces found (all lowercase like "jamiedimon"), try common name patterns
+      if (!parsedName.includes(" ") && parsedName.length > 4) {
+        // Common first names to detect boundaries
+        const commonFirstNames = ['james', 'john', 'robert', 'michael', 'william', 'david', 'richard', 'joseph', 'thomas', 'charles',
+          'mary', 'patricia', 'jennifer', 'linda', 'barbara', 'elizabeth', 'susan', 'jessica', 'sarah', 'karen',
+          'jamie', 'chris', 'alex', 'sam', 'pat', 'taylor', 'jordan', 'morgan', 'casey', 'drew'];
+        
+        for (const firstName of commonFirstNames) {
+          if (parsedName.toLowerCase().startsWith(firstName)) {
+            parsedName = firstName + ' ' + parsedName.slice(firstName.length);
+            break;
+          }
+        }
+      }
+      
+      name = parsedName
         .split(" ")
         .filter(word => word.length > 1) // Filter out single letters
         .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
@@ -634,39 +707,58 @@ router.get("/parse-contact", async (req, res) => {
     // If we couldn't extract company from LinkedIn, try web search
     if (!companyName && name) {
       try {
+        // Add a small delay to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
+        
         const searchQuery = encodeURIComponent(`${name} current company position`);
         const searchUrl = `https://html.duckduckgo.com/html/?q=${searchQuery}`;
         
         const searchResponse = await fetch(searchUrl, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'User-Agent': getRandomUserAgent(),
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'DNT': '1',
+            'Connection': 'keep-alive',
+            'Upgrade-Insecure-Requests': '1',
+            'Referer': 'https://www.google.com/',
+            'Cache-Control': 'max-age=0'
           },
-          signal: AbortSignal.timeout(5000)
+          signal: AbortSignal.timeout(8000)
         });
         
         if (searchResponse.ok) {
           const searchHtml = await searchResponse.text();
           
-          // Look for common patterns in search results
-          // Pattern 1: "Name - Title at Company"
-          const atPattern = new RegExp(`${name.split(' ')[0]}[^<]*?\\bat\\s+([A-Z][^<|•·]{2,50})`, 'i');
-          const atMatch = searchHtml.match(atPattern);
-          if (atMatch && atMatch[1]) {
-            const potential = atMatch[1].trim().replace(/\s*-.*$/, '').trim();
-            if (potential.length > 2 && potential.length < 60) {
-              companyName = potential;
-              req.log.info({ name, companyName, method: 'search' }, 'Found company via web search');
-            }
-          }
-          
-          // Pattern 2: Look for LinkedIn snippet in search results
-          if (!companyName) {
-            const linkedinSnippet = searchHtml.match(/linkedin[^<]*?(?:at|@)\s+([A-Z][^<|•·]{2,50})/i);
-            if (linkedinSnippet && linkedinSnippet[1]) {
-              const potential = linkedinSnippet[1].trim().replace(/\s*-.*$/, '').trim();
-              if (potential.length > 2 && potential.length < 60) {
+          // Check if we got a CAPTCHA or bot detection page
+          if (searchHtml.includes('DuckDuckGo') && searchHtml.includes('challenge') ||
+              searchHtml.includes('anomaly') ||
+              searchHtml.includes('Select all squares')) {
+            req.log.warn({ name }, 'DuckDuckGo returned bot detection challenge, skipping search');
+          } else {
+            // Look for common patterns in search results
+            // Pattern 1: "Name - Title at Company"
+            const atPattern = new RegExp(`${name.split(' ')[0]}[^<]*?\\bat\\s+([A-Z][^<|•·]{2,50})`, 'i');
+            const atMatch = searchHtml.match(atPattern);
+            if (atMatch && atMatch[1]) {
+              const potential = atMatch[1].trim().replace(/\s*-.*$/, '').trim();
+              // Filter out "DuckDuckGo" as a company name
+              if (potential.length > 2 && potential.length < 60 && !potential.toLowerCase().includes('duckduckgo')) {
                 companyName = potential;
-                req.log.info({ name, companyName, method: 'search-linkedin' }, 'Found company via search LinkedIn snippet');
+                req.log.info({ name, companyName, method: 'search' }, 'Found company via web search');
+              }
+            }
+            
+            // Pattern 2: Look for LinkedIn snippet in search results
+            if (!companyName) {
+              const linkedinSnippet = searchHtml.match(/linkedin[^<]*?(?:at|@)\s+([A-Z][^<|•·]{2,50})/i);
+              if (linkedinSnippet && linkedinSnippet[1]) {
+                const potential = linkedinSnippet[1].trim().replace(/\s*-.*$/, '').trim();
+                if (potential.length > 2 && potential.length < 60 && !potential.toLowerCase().includes('duckduckgo')) {
+                  companyName = potential;
+                  req.log.info({ name, companyName, method: 'search-linkedin' }, 'Found company via search LinkedIn snippet');
+                }
               }
             }
           }
@@ -676,11 +768,12 @@ router.get("/parse-contact", async (req, res) => {
       }
     }
     
-    req.log.info({ slug, name, companyName }, `LinkedIn parse result for ${slug}`);
+    req.log.info({ slug, name, jobTitle, companyName }, `LinkedIn parse result for ${slug}`);
     res.json({
       name: name || contact,
       photoUrl,
       company: companyName,
+      title: jobTitle,
     });
   } catch (err) {
     req.log.error({ err, contact }, "Contact parsing failed");
