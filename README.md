@@ -71,7 +71,7 @@ quick-start.bat
 ```
 
 **That's literally it!** The script will:
-- ✅ Install Node.js automatically (Mac/Linux)
+- ✅ Install Node.js automatically (all platforms!)
 - ✅ Install pnpm package manager
 - ✅ Install ALL project dependencies
 - ✅ Prompt you for your API key
@@ -79,7 +79,9 @@ quick-start.bat
 - ✅ Start both servers
 - ✅ Open the app in your browser
 
-**Total setup time: ~2 minutes** (just provide your API key when prompted)
+**Total setup time: ~2-3 minutes** (just provide your API key when prompted)
+
+**Note for Windows users:** The script will download and install Node.js automatically. You may see an installer window - just follow the prompts.
 
 The application will be available at:
 - **Frontend**: http://localhost:5173
