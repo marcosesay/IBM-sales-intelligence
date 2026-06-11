@@ -43,50 +43,69 @@ Transform hours of manual research into seconds with AI-generated, comprehensive
 
 ## 📋 Prerequisites
 
-**Only IBM watsonx.ai API credentials are required** - everything else is installed automatically!
+**ONLY your IBM watsonx.ai API key is required** - everything else is installed automatically!
 
 Get your API key from [IBM Cloud](https://cloud.ibm.com/iam/apikeys)
 
-## 🚀 Quick Start (Automated Setup)
+## 🚀 Ultimate Quick Start (One Command!)
 
-### For Mac/Linux Users:
+### Mac/Linux - Just run this:
 
 ```bash
-# 1. Clone the repository
-git clone https://github.com/marcosesay/sales-intelligence-briefing.git
-cd sales-intelligence-briefing
-
-# 2. Run the automated setup (installs Node.js, pnpm, and all dependencies)
-./setup.sh
-
-# 3. Start the application
-./start.sh
+curl -fsSL https://raw.githubusercontent.com/marcosesay/sales-intelligence-briefing/main/quick-start.sh | bash
 ```
 
-### For Windows Users:
+Or clone first:
+```bash
+git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+cd sales-intelligence-briefing
+./quick-start.sh
+```
+
+### Windows - Just run this:
 
 ```batch
-REM 1. Clone the repository
 git clone https://github.com/marcosesay/sales-intelligence-briefing.git
 cd sales-intelligence-briefing
-
-REM 2. Run the automated setup (installs pnpm and all dependencies)
-setup.bat
-
-REM 3. Start the application
-start.bat
+quick-start.bat
 ```
 
-**That's it!** The setup script will:
-- ✅ Check and install Node.js (Mac/Linux only - Windows users install from [nodejs.org](https://nodejs.org))
+**That's literally it!** The script will:
+- ✅ Install Node.js automatically (Mac/Linux)
 - ✅ Install pnpm package manager
-- ✅ Install all project dependencies
-- ✅ Create and configure your `.env` file
-- ✅ Guide you through API key setup
+- ✅ Install ALL project dependencies
+- ✅ Prompt you for your API key
+- ✅ Configure everything
+- ✅ Start both servers
+- ✅ Open the app in your browser
+
+**Total setup time: ~2 minutes** (just provide your API key when prompted)
 
 The application will be available at:
 - **Frontend**: http://localhost:5173
 - **Backend API**: http://localhost:3000
+
+---
+
+## 🔧 Alternative Setup Methods
+
+### Method 1: Two-Step Setup (Recommended if one-liner doesn't work)
+
+**Mac/Linux:**
+```bash
+git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+cd sales-intelligence-briefing
+./setup.sh    # Installs everything
+./start.sh    # Starts the app
+```
+
+**Windows:**
+```batch
+git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+cd sales-intelligence-briefing
+setup.bat     REM Installs everything
+start.bat     REM Starts the app
+```
 
 ---
 
