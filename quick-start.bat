@@ -13,14 +13,50 @@ where node >nul 2>nul
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Node.js is not installed
     echo.
-    echo Please install Node.js first:
-    echo   1. Go to https://nodejs.org
-    echo   2. Download the LTS version ^(18.x or higher^)
-    echo   3. Run the installer
-    echo   4. Run this script again
+    echo Installing Node.js automatically...
     echo.
-    pause
-    exit /b 1
+    
+    REM Download Node.js installer
+    echo Downloading Node.js LTS installer...
+    powershell -Command "& {Invoke-WebRequest -Uri 'https://nodejs.org/dist/v20.11.0/node-v20.11.0-x64.msi' -OutFile '%TEMP%\nodejs-installer.msi'}"
+    
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ERROR] Failed to download Node.js installer
+        echo.
+        echo Please install Node.js manually:
+        echo   1. Go to https://nodejs.org
+        echo   2. Download the LTS version ^(18.x or higher^)
+        echo   3. Run the installer
+        echo   4. Run this script again
+        echo.
+        pause
+        exit /b 1
+    )
+    
+    echo Installing Node.js...
+    echo This will open an installer window - please follow the prompts
+    echo.
+    start /wait msiexec /i "%TEMP%\nodejs-installer.msi" /qn
+    
+    REM Clean up
+    del "%TEMP%\nodejs-installer.msi"
+    
+    REM Refresh environment variables
+    echo Refreshing environment...
+    call refreshenv >nul 2>nul
+    
+    REM Check again
+    where node >nul 2>nul
+    if %ERRORLEVEL% NEQ 0 (
+        echo [ERROR] Node.js installation may have failed
+        echo Please close this window, open a new command prompt, and run this script again
+        echo.
+        pause
+        exit /b 1
+    )
+    
+    echo [OK] Node.js installed successfully!
+    echo.
 )
 
 for /f "tokens=*" %%i in ('node -v') do set NODE_VERSION=%%i
