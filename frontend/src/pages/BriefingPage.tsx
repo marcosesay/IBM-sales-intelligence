@@ -643,9 +643,9 @@ function parseProductRecs(raw: string, industry: string): { name: string; tag: s
 }
 
 /* ─── Product Recommendations Card ─── */
-function ProductRecsCard({ content, industry, t, streaming, accent, bg }: {
+function ProductRecsCard({ content, industry, t, accent, bg }: {
   content: string; industry: string; t: typeof DARK;
-  streaming?: boolean; accent: string; bg: string;
+  accent: string; bg: string;
 }) {
   const products = parseProductRecs(content, industry);
 
@@ -747,7 +747,7 @@ function SectionCard({ title, content, industry, t, streaming }: {
       </div>
       <div style={{padding:"14px 20px 18px"}}>
         {isProductRecs
-          ? <ProductRecsCard content={content} industry={industry||""} t={t} streaming={streaming} accent={accent} bg={bg}/>
+          ? <ProductRecsCard content={content} industry={industry||""} t={t} accent={accent} bg={bg}/>
           : rows
         }
       </div>
@@ -841,7 +841,7 @@ export default function BriefingPage() {
   const [parsedContactName, setParsedContactName] = useState("");
   const [contactPhotoUrl, setContactPhotoUrl] = useState("");
   const [parsedCompanyName, setParsedCompanyName] = useState("");
-  const [parsedTitle, setParsedTitle] = useState("");
+  const [_parsedTitle, setParsedTitle] = useState("");
   
   // Debounce contact input for API call
   const debouncedContact = useDebounce(contact, 600);
