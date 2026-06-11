@@ -1,10 +1,27 @@
 # Team Onboarding Guide - Sales Intelligence Briefing Tool
 
-> Quick start guide for getting your team members up and running with the Sales Intelligence Briefing Tool
+> Get your team up and running in 2 minutes - just provide an API key!
+
+## 🎯 TL;DR - Fastest Way to Get Started
+
+**Mac/Linux users - run this ONE command:**
+```bash
+curl -fsSL https://raw.githubusercontent.com/marcosesay/sales-intelligence-briefing/main/quick-start.sh | bash
+```
+
+**Windows users - run these TWO commands:**
+```batch
+git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+cd sales-intelligence-briefing && quick-start.bat
+```
+
+**That's it!** Just provide your IBM watsonx.ai API key when prompted. Everything else is automatic.
+
+---
 
 ## 📋 What Your Team Needs
 
-### 1. **IBM watsonx.ai API Credentials** (Required)
+### 1. **IBM watsonx.ai API Credentials** (Required - ONLY thing you need!)
 
 **What does the IBM Cloud API do?**
 
@@ -67,20 +84,70 @@ Share the repository with your team:
 
 ## 🚀 Setup Options
 
-Your team can run the Sales Intelligence Briefing Tool in three ways:
+Your team can run the Sales Intelligence Briefing Tool in four ways:
 
-### Option A: Automated Setup Scripts (Recommended for Most Users)
-Best for: Quick deployment, automatic prerequisite installation, minimal technical knowledge required
+### Option A: One-Command Quick Start (FASTEST - Recommended!)
+Best for: Everyone! Literally just one command + your API key
+**Setup time: ~2 minutes**
 
-### Option B: Bob AI Assistant Setup
-Best for: Team members already using Bob, conversational setup experience
+### Option B: Two-Step Automated Setup
+Best for: When the one-liner doesn't work, still fully automated
+**Setup time: ~3 minutes**
 
-### Option C: Manual Setup
+### Option C: Bob AI Assistant Setup
+Best for: Team members already using Bob, conversational setup
+**Setup time: ~5 minutes**
+
+### Option D: Manual Setup
 Best for: Development, customization, or troubleshooting
+**Setup time: ~10 minutes**
 
 ---
 
-## ⚡ Option A: Automated Setup (Fastest)
+## ⚡ Option A: One-Command Quick Start (FASTEST!)
+
+This is the absolute easiest way - one command does EVERYTHING.
+
+### For Mac/Linux Users:
+
+**Option 1: Direct curl (no git clone needed):**
+```bash
+curl -fsSL https://raw.githubusercontent.com/marcosesay/sales-intelligence-briefing/main/quick-start.sh | bash
+```
+
+**Option 2: Clone first (if you want to keep the code):**
+```bash
+git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+cd sales-intelligence-briefing
+./quick-start.sh
+```
+
+### For Windows Users:
+
+```batch
+REM Clone the repository
+git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+cd sales-intelligence-briefing
+
+REM Run the one-command setup
+quick-start.bat
+```
+
+### What Happens Automatically:
+
+1. ✅ **Checks Node.js** - Installs if missing (Mac/Linux only)
+2. ✅ **Installs pnpm** - Package manager
+3. ✅ **Installs dependencies** - All frontend and backend packages
+4. ✅ **Prompts for API key** - You just paste it in
+5. ✅ **Configures everything** - Creates .env file automatically
+6. ✅ **Starts both servers** - Backend and frontend
+7. ✅ **Opens in browser** - Ready to use!
+
+**Total interaction required:** Paste your API key when prompted. That's it!
+
+---
+
+## ⚡ Option B: Two-Step Automated Setup
 
 The automated setup scripts handle everything for you - no need to manually install Node.js, pnpm, or other prerequisites!
 
