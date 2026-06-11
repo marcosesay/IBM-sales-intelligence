@@ -43,61 +43,101 @@ Transform hours of manual research into seconds with AI-generated, comprehensive
 
 ## 📋 Prerequisites
 
-- Node.js 18+ and pnpm
-- IBM watsonx.ai API credentials
+**Only IBM watsonx.ai API credentials are required** - everything else is installed automatically!
 
-## 🚀 Quick Start
+Get your API key from [IBM Cloud](https://cloud.ibm.com/iam/apikeys)
 
-### 1. Clone the Repository
+## 🚀 Quick Start (Automated Setup)
+
+### For Mac/Linux Users:
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+cd sales-intelligence-briefing
+
+# 2. Run the automated setup (installs Node.js, pnpm, and all dependencies)
+./setup.sh
+
+# 3. Start the application
+./start.sh
+```
+
+### For Windows Users:
+
+```batch
+REM 1. Clone the repository
+git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+cd sales-intelligence-briefing
+
+REM 2. Run the automated setup (installs pnpm and all dependencies)
+setup.bat
+
+REM 3. Start the application
+start.bat
+```
+
+**That's it!** The setup script will:
+- ✅ Check and install Node.js (Mac/Linux only - Windows users install from [nodejs.org](https://nodejs.org))
+- ✅ Install pnpm package manager
+- ✅ Install all project dependencies
+- ✅ Create and configure your `.env` file
+- ✅ Guide you through API key setup
+
+The application will be available at:
+- **Frontend**: http://localhost:5173
+- **Backend API**: http://localhost:3000
+
+---
+
+## 🛠️ Manual Setup (Alternative)
+
+If you prefer manual setup or the automated script doesn't work:
+
+### 1. Install Prerequisites
+
+- **Node.js 18+**: Download from [nodejs.org](https://nodejs.org)
+- **pnpm**: Install with `npm install -g pnpm`
+
+### 2. Clone and Install
 
 ```bash
 git clone https://github.com/marcosesay/sales-intelligence-briefing.git
 cd sales-intelligence-briefing
-```
-
-### 2. Install Dependencies
-
-```bash
-# Install frontend dependencies
-cd frontend
-pnpm install
 
 # Install backend dependencies
-cd ../backend
+cd backend
+pnpm install
+
+# Install frontend dependencies
+cd ../frontend
 pnpm install
 ```
 
-### 3. Configure Environment Variables
+### 3. Configure Environment
 
-Create a `.env` file in the `backend` directory (use `.env.example` as a template):
+Create `backend/.env` from `backend/.env.example`:
 
 ```env
+# IBM watsonx.ai Configuration
+WATSONX_API_KEY=your_api_key_here
+WATSONX_API_URL=https://us-south.ml.cloud.ibm.com
+WATSONX_PROJECT_ID=your_project_id_here
+
 # Server Configuration
 NODE_ENV=development
 PORT=3000
-
-# Optional: Alternative AI Integration (Anthropic Claude)
-# AI_INTEGRATIONS_ANTHROPIC_API_KEY=your_api_key_here
-# AI_INTEGRATIONS_ANTHROPIC_BASE_URL=https://api.anthropic.com
 ```
 
-**Note**: IBM watsonx.ai credentials are required (see Prerequisites). The Anthropic variables are optional and only needed if you want to use Claude instead.
-
-### 4. Start the Application
+### 4. Start Servers
 
 ```bash
-# Terminal 1: Start the backend server
-cd backend
-pnpm run dev
+# Terminal 1: Backend
+cd backend && pnpm run dev
 
-# Terminal 2: Start the frontend development server
-cd frontend
-pnpm run dev
+# Terminal 2: Frontend
+cd frontend && pnpm run dev
 ```
-
-The application will be available at:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3000
 
 ## 📖 Usage
 

@@ -67,13 +67,107 @@ Share the repository with your team:
 
 ## 🚀 Setup Options
 
-Your team can run the Sales Intelligence Briefing Tool in two ways:
+Your team can run the Sales Intelligence Briefing Tool in three ways:
 
-### Option A: Local Development Setup (Traditional)
-Best for: Development, customization, or when Bob is not available
+### Option A: Automated Setup Scripts (Recommended for Most Users)
+Best for: Quick deployment, automatic prerequisite installation, minimal technical knowledge required
 
-### Option B: Bob AI Assistant Setup (Recommended)
-Best for: Quick deployment, team members already using Bob, minimal setup
+### Option B: Bob AI Assistant Setup
+Best for: Team members already using Bob, conversational setup experience
+
+### Option C: Manual Setup
+Best for: Development, customization, or troubleshooting
+
+---
+
+## ⚡ Option A: Automated Setup (Fastest)
+
+The automated setup scripts handle everything for you - no need to manually install Node.js, pnpm, or other prerequisites!
+
+### For Mac/Linux Users:
+
+1. **Clone the Repository**
+   ```bash
+   git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+   cd sales-intelligence-briefing
+   ```
+
+2. **Run the Setup Script**
+   ```bash
+   ./setup.sh
+   ```
+   
+   The script will:
+   - ✅ Check if Node.js is installed (installs if missing on Mac/Linux)
+   - ✅ Install pnpm package manager
+   - ✅ Install all project dependencies
+   - ✅ Create your `.env` configuration file
+   - ✅ Guide you through API key setup
+
+3. **Configure Your API Key**
+   - The script will open the `.env` file for you
+   - Add your IBM watsonx.ai API key
+   - Save and close the file
+
+4. **Start the Application**
+   ```bash
+   ./start.sh
+   ```
+   
+   Both servers will start automatically!
+
+### For Windows Users:
+
+1. **Install Node.js** (if not already installed)
+   - Download from [nodejs.org](https://nodejs.org)
+   - Install the LTS version (18.x or higher)
+
+2. **Clone the Repository**
+   ```batch
+   git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+   cd sales-intelligence-briefing
+   ```
+
+3. **Run the Setup Script**
+   ```batch
+   setup.bat
+   ```
+   
+   The script will:
+   - ✅ Check Node.js installation
+   - ✅ Install pnpm package manager
+   - ✅ Install all project dependencies
+   - ✅ Create your `.env` configuration file
+   - ✅ Open the file for API key configuration
+
+4. **Configure Your API Key**
+   - Notepad will open with the `.env` file
+   - Add your IBM watsonx.ai API key
+   - Save and close
+
+5. **Start the Application**
+   ```batch
+   start.bat
+   ```
+   
+   Two terminal windows will open with the servers running!
+
+### What the Scripts Do
+
+**setup.sh / setup.bat:**
+- Detects your operating system
+- Checks for Node.js (version 18+)
+- Installs Node.js via Homebrew (Mac) or package manager (Linux)
+- Installs pnpm globally
+- Installs all frontend and backend dependencies
+- Creates `.env` file from template
+- Guides you through API key configuration
+
+**start.sh / start.bat:**
+- Starts backend server on port 3000
+- Starts frontend server on port 5173
+- Manages both processes
+- Provides easy shutdown (Ctrl+C on Mac/Linux, close windows on Windows)
 
 ---
 
