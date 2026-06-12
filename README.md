@@ -7,8 +7,14 @@ Transform hours of manual research into seconds with AI-generated, comprehensive
 ## 🚀 Features
 
 - **Instant Briefing Generation**: Sub-2-second AI-powered briefings from LinkedIn profiles
+- **Smart LinkedIn Auto-Population**: 🆕 Paste a LinkedIn URL and automatically extract:
+  - Contact name and photo
+  - Job title and company name
+  - Company website via intelligent web search
+  - Industry classification
+- **Demo Profiles for Testing**: 🆕 Pre-configured profiles (Lisbeth Dereaux, Jamie Dimon) for instant testing
 - **User Profile Setup**: Personalized experience with name, role, and profile picture
-- **Multiple Call Types**: Discovery, Competitive, Renewal/Upsell
+- **Multiple Call Types**: Discovery, Competitive, Renewal/Upsell, Executive Briefing Center (EBC)
 - **Comprehensive Insights**:
   - Company background with real-time news (last 24 hours)
   - Contact profile extraction from LinkedIn
@@ -19,6 +25,7 @@ Transform hours of manual research into seconds with AI-generated, comprehensive
 - **Professional PDF Export**: Beautifully formatted briefings with company logos and contact photos
 - **Real-time Streaming**: Watch insights generate in real-time with Server-Sent Events
 - **Smart Image Handling**: Automatic fallback chain (profile photo → company logo → generated avatar)
+- **Enhanced Error Handling**: 🆕 Robust fallback mechanisms for LinkedIn scraping and API failures
 - **Architecture Visualization**: Interactive flow diagram showing the complete briefing generation process
 - **Dark/Light Mode**: Theme toggle for comfortable viewing
 
@@ -174,8 +181,16 @@ cd frontend && pnpm run dev
 
 1. **Enter Contact Information**
    - Paste a LinkedIn profile URL (e.g., `https://www.linkedin.com/in/username`)
-   - The system will automatically extract the contact's name and company
-   - Add the company name manually if needed
+   - 🆕 **Auto-Population Magic**: The system automatically extracts:
+     - Contact name and profile photo
+     - Job title (e.g., "Vice President, Legal Operations")
+     - Company name (e.g., "Griffitts LLP")
+     - Company website via intelligent search (e.g., "https://www.griffitts.co/")
+     - Industry classification
+   - 🆕 **Try Demo Profiles**: Use these for instant testing:
+     - `https://www.linkedin.com/in/lisbeth-dereaux-90912622/` (Griffitts LLP)
+     - `https://www.linkedin.com/in/jamiedimon` (JP Morgan Chase)
+   - Add or override information manually if needed
 
 2. **Select Call Type**
    - **Discovery**: Initial prospect meetings and needs assessment
