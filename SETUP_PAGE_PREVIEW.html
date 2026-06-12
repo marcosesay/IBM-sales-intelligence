@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup Page Preview - Sales Intelligence</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+      min-height: 100vh;
+      background: linear-gradient(160deg,#2a2a2a 0%,#1e1e1e 35%,#252528 65%,#1a1a1c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: rgba(255,255,255,0.85);
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 480px;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(28px) saturate(160%);
+      -webkit-backdrop-filter: blur(28px) saturate(160%);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.10),0 2px 12px rgba(0,0,0,0.2);
+      padding: 40px;
+    }
+    
+    .theme-toggle {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 16px;
+    }
+    
+    .theme-btn {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: rgba(255,255,255,0.62);
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(28px);
+      border: 1px solid rgba(255,255,255,0.11);
+      border-radius: 100px;
+      padding: 9px 16px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.12);
+    }
+    
+    .dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #6ee7b7;
+      flex-shrink: 0;
+      box-shadow: 0 0 8px rgba(110,231,183,0.7);
+    }
+    
+    .pill-text {
+      font-size: 13px;
+      color: rgba(255,255,255,0.62);
+      font-weight: 400;
+    }
+    
+    h1 {
+      font-size: 48px;
+      font-weight: 200;
+      letter-spacing: -2px;
+      color: rgba(255,255,255,0.85);
+      line-height: 1.1;
+      margin: 0 0 12px;
+    }
+    
+    .subtitle {
+      font-size: 15px;
+      font-weight: 300;
+      color: rgba(255,255,255,0.35);
+      line-height: 1.6;
+      margin: 0;
+    }
+    
+    .profile-section {
+      margin-bottom: 24px;
+      text-align: center;
+    }
+    
+    .profile-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.62);
+      margin-bottom: 12px;
+    }
+    
+    .profile-preview-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .profile-preview {
+      width: 96px;
+      height: 96px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.05);
+      border: 2px solid rgba(255,255,255,0.10);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    
+    .profile-preview svg {
+      color: rgba(255,255,255,0.35);
+    }
+    
+    .profile-buttons {
+      display: flex;
+      gap: 8px;
+    }
+    
+    .profile-btn {
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.65);
+      cursor: pointer;
+      font-family: inherit;
+    }
+    
+    .profile-hint {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      margin: 0;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.62);
+      margin-bottom: 8px;
+    }
+    
+    input {
+      width: 100%;
+      padding: 11px 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.10);
+      border-radius: 10px;
+      font-size: 14px;
+      color: rgba(255,255,255,0.85);
+      font-family: inherit;
+      outline: none;
+    }
+    
+    input::placeholder {
+      color: rgba(255,255,255,0.35);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    button {
+      flex: 1;
+      padding: 11px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      border: none;
+    }
+    
+    .btn-skip {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.65);
+    }
+    
+    .btn-save {
+      background: rgba(200,200,215,0.12);
+      border: 1px solid rgba(255,255,255,0.16);
+      color: rgba(255,255,255,0.82);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.10),0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .footer {
+      font-size: 12px;
+      color: rgba(255,255,255,0.35);
+      text-align: center;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Theme toggle -->
+    <div class="theme-toggle">
+      <button class="theme-btn" title="Switch to light mode">
+        <svg width="14" height="14" viewBox="0 0 20 20" fill="none">
+          <path d="M10 3v1m0 12v1m7-7h-1M4 10H3m13.66 3.66l-.71-.71M5.05 5.05l-.71-.71m11.32 0l-.71.71M5.05 14.95l-.71.71M14 10a4 4 0 11-8 0 4 4 0 018 0z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+      <div class="pill">
+        <div class="dot"></div>
+        <span class="pill-text">Welcome to Sales Intelligence</span>
+      </div>
+      
+      <h1>Let's Get Started</h1>
+      
+      <p class="subtitle">
+        Personalize your experience by adding your details below
+      </p>
+    </div>
+
+    <!-- Profile Picture Upload -->
+    <div class="profile-section">
+      <label class="profile-label">Profile Picture (Optional)</label>
+      
+      <div class="profile-preview-container">
+        <!-- Profile picture preview -->
+        <div class="profile-preview">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="12" cy="7" r="4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
+        <!-- Upload/Remove buttons -->
+        <div class="profile-buttons">
+          <button class="profile-btn">Upload</button>
+        </div>
+        <p class="profile-hint">Max 2MB • JPG, PNG, or GIF</p>
+      </div>
+    </div>
+
+    <!-- Form -->
+    <div class="form-group">
+      <label for="name">Your Name</label>
+      <input type="text" id="name" placeholder="e.g., Marco Sesay">
+    </div>
+
+    <div class="form-group">
+      <label for="role">Your Role</label>
+      <input type="text" id="role" placeholder="e.g., Solutions Engineer">
+    </div>
+
+    <!-- Buttons -->
+    <div class="button-group">
+      <button class="btn-skip">Skip for Now</button>
+      <button class="btn-save">Save & Continue</button>
+    </div>
+
+    <!-- Footer -->
+    <p class="footer">
+      You can update this information anytime from the settings menu
+    </p>
+  </div>
+</body>
+</html>
