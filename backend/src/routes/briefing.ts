@@ -226,6 +226,12 @@ router.post("/generate", async (req, res) => {
   const ind = industry || "";
   const title = contactTitle || "professional";
 
+  // Detect if context contains structured web research (injected by /company-research endpoint)
+  const RESEARCH_MARKER = "Company Overview (from web):";
+  const hasResearch = context && context.includes(RESEARCH_MARKER);
+  const researchBlock = hasResearch ? context : "";
+  const userContext = hasResearch ? "None" : (context || "None");
+
   const prompt = `You are an expert enterprise sales coach helping a Solutions Engineer prepare for a ${ct} call.
 
 Call details:
@@ -233,13 +239,16 @@ Call details:
 - Industry: ${ind}
 - Contact: ${contactName || "Unknown"}
 - Title: ${title}
-- Context: ${context || "None"}
-
-IBM products available:
+- Additional Context: ${userContext}
+${researchBlock ? `
+## Live Company Research (web search results — use as primary source for Company Background)
+${researchBlock}
+` : ""}IBM products available:
 ${IBM_PRODUCTS}
 
 IMPORTANT INSTRUCTIONS:
-- Base ALL insights ONLY on the information provided above
+- For the Company Background section: if Live Company Research is provided above, anchor your analysis in those facts and expand on them. Do not contradict the research data.
+- If no live research is provided, draw on your training knowledge and be appropriately measured about uncertainty.
 - DO NOT make assumptions about seniority level, tenure, or experience unless explicitly stated in the title
 - If the title is generic (like "professional"), tailor content for a mid-level professional, not executives
 - Focus on practical, actionable insights rather than assumptions about the contact's influence or authority
@@ -486,6 +495,100 @@ router.get("/industry", (req, res) => {
   res.json({ industry: "" });
 });
 
+// ─── Company Research ────────────────────────────────────────────────────────
+// Searches the web for real company background and returns a structured
+// research summary to be injected into the briefing prompt as `context`.
+router.get("/company-research", async (req, res) => {
+  const company = String(req.query["company"] || "").trim();
+  const industry = String(req.query["industry"] || "").trim();
+  const contactTitle = String(req.query["contactTitle"] || "").trim();
+
+  if (!company) {
+    res.json({ summary: "" });
+    return;
+  }
+
+  try {
+    // Run two searches in parallel: company overview + recent AI/tech initiatives
+    const queries = [
+      `${company} company overview business model ${industry}`,
+      `${company} AI digital transformation technology strategy 2024 2025`,
+    ];
+
+    const fetchSearch = async (query: string): Promise<string> => {
+      await new Promise(resolve => setTimeout(resolve, Math.random() * 300));
+      const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+      const response = await fetch(url, {
+        headers: {
+          "User-Agent": getRandomUserAgent(),
+          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          "Accept-Language": "en-US,en;q=0.5",
+          "DNT": "1",
+          "Connection": "keep-alive",
+          "Upgrade-Insecure-Requests": "1",
+        },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!response.ok) return "";
+      return response.text();
+    };
+
+    const [overviewHtml, techHtml] = await Promise.all(queries.map(fetchSearch));
+
+    // Extract meaningful text snippets from DDG result snippets
+    const extractSnippets = (html: string, maxSnippets = 5): string[] => {
+      const snippets: string[] = [];
+      // DDG result snippets live in <a class="result__snippet"> or .result__body
+      const snippetRegex = /<a[^>]+class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/gi;
+      let match;
+      while ((match = snippetRegex.exec(html)) !== null && snippets.length < maxSnippets) {
+        const text = match[1]
+          .replace(/<[^>]+>/g, " ")
+          .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ")
+          .replace(/\s+/g, " ").trim();
+        if (text.length > 60) snippets.push(text);
+      }
+      // Also grab result__body paragraphs as fallback
+      if (snippets.length < 2) {
+        const bodyRegex = /<div[^>]+class="[^"]*result__body[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
+        while ((match = bodyRegex.exec(html)) !== null && snippets.length < maxSnippets) {
+          const text = match[1]
+            .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+          if (text.length > 60) snippets.push(text);
+        }
+      }
+      return snippets;
+    };
+
+    const overviewSnippets = extractSnippets(overviewHtml, 5);
+    const techSnippets = extractSnippets(techHtml, 4);
+
+    // Build a structured research block to inject into the LLM prompt
+    const researchText = [
+      overviewSnippets.length ? `Company Overview (from web):\n${overviewSnippets.join("\n")}` : "",
+      techSnippets.length ? `Technology & AI Initiatives (from web):\n${techSnippets.join("\n")}` : "",
+    ].filter(Boolean).join("\n\n");
+
+    if (!researchText) {
+      req.log.warn({ company }, "Company research: no snippets extracted");
+      res.json({ summary: "" });
+      return;
+    }
+
+    req.log.info(
+      { company, overviewCount: overviewSnippets.length, techCount: techSnippets.length },
+      "Company research fetched successfully"
+    );
+
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.json({ summary: researchText });
+  } catch (err) {
+    req.log.error({ err, company }, "Company research failed");
+    res.json({ summary: "" });
+  }
+});
+
 router.get("/parse-contact", async (req, res) => {
   const contact = String(req.query["contact"] || "");
   if (!contact) {
@@ -506,8 +609,32 @@ router.get("/parse-contact", async (req, res) => {
     let companyName = "";
     let jobTitle = "";
     
-    // Try to fetch actual LinkedIn profile data
-    try {
+    // Demo mode: hardcoded profiles for testing
+    const DEMO_PROFILES: Record<string, { name: string; company: string; title: string }> = {
+      "lisbeth-dereaux-90912622": {
+        name: "Lisbeth Dereaux",
+        company: "Griffitts LLP",
+        title: "Vice President, Legal Operations"
+      },
+      "jamiedimon": {
+        name: "Jamie Dimon",
+        company: "JP Morgan Chase",
+        title: "Chairman & CEO"
+      }
+    };
+    
+    // Check if this is a demo profile
+    if (DEMO_PROFILES[slug]) {
+      const demo = DEMO_PROFILES[slug];
+      name = demo.name;
+      companyName = demo.company;
+      jobTitle = demo.title;
+      req.log.info({ slug, name, companyName, jobTitle }, "Using demo profile data");
+    }
+    
+    // Try to fetch actual LinkedIn profile data if not a demo profile
+    if (!name) {
+      try {
       const profileUrl = `https://www.linkedin.com/in/${slug}`;
       const response = await fetch(profileUrl, {
         headers: {
@@ -529,7 +656,24 @@ router.get("/parse-contact", async (req, res) => {
       
       if (response.ok) {
         const html = await response.text();
-        
+
+        // LinkedIn almost always redirects server-side fetches to an auth wall.
+        // Detect this and bail out immediately so we fall through to web search.
+        const isAuthWall = (
+          html.includes('id="sign-in-modal"') ||
+          html.includes('authwall') ||
+          html.includes('join-linkedin') ||
+          html.includes('login?session_redirect') ||
+          html.includes('"showLoginMethods"') ||
+          // Auth wall title is exactly "LinkedIn" or "LinkedIn: Log In or Sign Up"
+          /<title>\s*LinkedIn[\s:]/i.test(html)
+        );
+
+        if (isAuthWall) {
+          req.log.info({ slug }, "LinkedIn returned auth wall, falling through to web search");
+        } else {
+        // ── Only run HTML extraction if we got a real profile page ──────────
+
         // Try multiple extraction methods
         let extractedName = '';
         
@@ -577,22 +721,83 @@ router.get("/parse-contact", async (req, res) => {
           req.log.warn({ slug, extractedName }, "Extracted name too short or empty");
         }
         
-        // Extract title and company from title tag (format: "Name - Title - Company | LinkedIn")
-        const titleTagMatch = html.match(/<title>([^|<]+)/i);
-        if (titleTagMatch && titleTagMatch[1]) {
-          const parts = titleTagMatch[1].split('-').map(p => p.trim());
-          // parts[0] = Name, parts[1] = Title, parts[2] = Company
+        // ── Extract title and company from HTML (multiple methods) ──────────
+
+        // Method T1: <title> tag — format "Name - Title - Company | LinkedIn"
+        // Handle titles with internal hyphens by only splitting on the LAST two dashes
+        // e.g. "Lisbeth Dereaux - Attorney-at-Law - Griffitts LLP | LinkedIn"
+        //       parts: ["Lisbeth Dereaux", "Attorney-at-Law", "Griffitts LLP"]
+        const titleTagRaw = html.match(/<title>([^|<]+)/i)?.[1] || "";
+        if (titleTagRaw) {
+          // Strip trailing "| LinkedIn" noise
+          const cleanTag = titleTagRaw.replace(/\s*\|\s*LinkedIn.*$/i, "").trim();
+          // Split on " - " (space-hyphen-space) to avoid breaking hyphenated words
+          const parts = cleanTag.split(/\s+-\s+/).map(p => p.trim());
           if (parts.length >= 3) {
-            // Extract title (middle part)
-            if (!jobTitle && parts[1] && parts[1].length > 2 && parts[1].length < 100) {
-              jobTitle = parts[1].replace(/\s*LinkedIn.*$/i, '').trim();
+            // Title = everything between first and last segment
+            const titleCandidate = parts.slice(1, -1).join(" - "); // rejoin if title itself had " - "
+            if (!jobTitle && titleCandidate.length > 1 && titleCandidate.length < 150) {
+              jobTitle = titleCandidate;
             }
-            // Extract company (last part before LinkedIn)
-            if (!companyName && parts[2]) {
-              const potential = parts[2].replace(/\s*LinkedIn.*$/i, '').trim();
+            // Company = last segment
+            if (!companyName) {
+              const potential = parts[parts.length - 1];
               if (potential.length > 2 && potential.length < 100 && !potential.includes('&')) {
                 companyName = potential;
               }
+            }
+          } else if (parts.length === 2) {
+            // Some profiles: "Name - Company" with no title shown
+            if (!companyName) {
+              const potential = parts[1];
+              if (potential.length > 2 && potential.length < 100) companyName = potential;
+            }
+          }
+        }
+
+        // Method T2: og:description — LinkedIn often includes "Title at Company" here
+        if (!jobTitle) {
+          const ogDesc = html.match(/property="og:description"\s+content="([^"]+)"/i)?.[1] || "";
+          if (ogDesc) {
+            // Format: "View Name's profile... Title at Company"
+            const titleAtMatch = ogDesc.match(/^([^.•·|]+?)\s+at\s+/i);
+            if (titleAtMatch?.[1]) {
+              const candidate = titleAtMatch[1].replace(/^View\s+\S+(?:'s)?\s+profile[^.]*\.\s*/i, "").trim();
+              if (candidate.length > 1 && candidate.length < 150 && !/linkedin/i.test(candidate)) {
+                jobTitle = candidate;
+              }
+            }
+          }
+        }
+
+        // Method T3: JSON-LD Person schema — jobTitle field
+        if (!jobTitle) {
+          const jsonLdBlocks = html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/gi);
+          for (const block of jsonLdBlocks) {
+            try {
+              const jsonData = JSON.parse(block[1]);
+              if (jsonData["@type"] === "Person") {
+                if (jsonData.jobTitle) {
+                  jobTitle = String(jsonData.jobTitle).trim();
+                  break;
+                }
+                // hasCredential or description sometimes carries title info
+                if (!jobTitle && jsonData.description) {
+                  const descMatch = String(jsonData.description).match(/^([^.•·|@]{3,100}?)\s+at\s+/i);
+                  if (descMatch?.[1]) jobTitle = descMatch[1].trim();
+                }
+              }
+            } catch { /* ignore */ }
+          }
+        }
+
+        // Method T4: headline meta — some LinkedIn pages expose it
+        if (!jobTitle) {
+          const headlineMeta = html.match(/name="description"\s+content="([^"]{5,200})"/i)?.[1] || "";
+          if (headlineMeta) {
+            const headlineMatch = headlineMeta.match(/^([^.|•·]{3,120}?)\s+at\s+/i);
+            if (headlineMatch?.[1] && !/linkedin/i.test(headlineMatch[1])) {
+              jobTitle = headlineMatch[1].trim();
             }
           }
         }
@@ -650,12 +855,15 @@ router.get("/parse-contact", async (req, res) => {
             }
           }
         }
+
+        } // end else (not auth wall)
       } else {
         req.log.warn({ slug, status: response.status }, "LinkedIn profile fetch returned non-OK status");
       }
-    } catch (fetchErr) {
-      req.log.warn({ err: fetchErr, slug }, "Failed to fetch LinkedIn profile, falling back to slug parsing");
-    }
+      } catch (fetchErr) {
+        req.log.warn({ err: fetchErr, slug }, "Failed to fetch LinkedIn profile, falling back to slug parsing");
+      }
+    } // end if (!name)
     
     // Fallback: parse name from slug if fetch failed
     if (!name) {
@@ -704,76 +912,196 @@ router.get("/parse-contact", async (req, res) => {
       // Ignore photo check errors
     }
 
-    // If we couldn't extract company from LinkedIn, try web search
-    if (!companyName && name) {
+    // If we couldn't extract company OR title from LinkedIn, try web search.
+    // Guard only requires the slug — runs even when name is still empty (auth wall case).
+    if (!companyName || !jobTitle) {
       try {
-        // Add a small delay to avoid rate limiting
         await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500));
-        
-        const searchQuery = encodeURIComponent(`${name} current company position`);
+
+        // Derive a best-effort display name from the slug for search queries
+        const nameForSearch = name || slug
+          .replace(/-[a-z0-9]{4,}$/i, '')   // strip trailing LinkedIn ID suffix
+          .replace(/-/g, ' ')
+          .replace(/\b\w/g, c => c.toUpperCase());
+
+        // Primary: slug-anchored search surfaces the cached "Name - Title - Company | LinkedIn" snippet
+        const searchQuery = encodeURIComponent(`"${nameForSearch}" linkedin title company`);
+        const fallbackQuery = encodeURIComponent(`linkedin.com/in/${slug}`);
+
+        const doSearch = async (q: string): Promise<string> => {
+          const url = `https://html.duckduckgo.com/html/?q=${q}`;
+          const resp = await fetch(url, {
+            headers: {
+              'User-Agent': getRandomUserAgent(),
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+              'Accept-Language': 'en-US,en;q=0.5',
+              'DNT': '1',
+              'Connection': 'keep-alive',
+              'Upgrade-Insecure-Requests': '1',
+              'Referer': 'https://www.google.com/',
+              'Cache-Control': 'max-age=0',
+            },
+            signal: AbortSignal.timeout(8000),
+          });
+          return resp.ok ? resp.text() : "";
+        };
+
+        // Returns { name, company, title } extracted from a DDG results page
+        const tryExtract = (searchHtml: string): { name: string; company: string; title: string } => {
+          const empty = { name: "", company: "", title: "" };
+          if (!searchHtml) return empty;
+          if ((searchHtml.includes('DuckDuckGo') && searchHtml.includes('challenge')) ||
+              searchHtml.includes('anomaly') || searchHtml.includes('Select all squares')) return empty;
+
+          let foundName = "";
+          let foundCompany = "";
+          let foundTitle = "";
+
+          // Pattern 1: LinkedIn cached snippet "Name - Title - Company | LinkedIn"
+          // This is the most reliable source — DDG caches the LinkedIn title tag verbatim.
+          // Split on " - " (space-dash-space) to preserve hyphenated words in titles.
+          const liTitleSnippet = searchHtml.match(/([A-Z][^<]{2,180}?)\s*\|\s*LinkedIn/i);
+          if (liTitleSnippet?.[1]) {
+            const parts = liTitleSnippet[1].split(/\s+-\s+/).map(p => p.trim()).filter(Boolean);
+            if (parts.length >= 3) {
+              foundName    = parts[0];
+              foundTitle   = parts.slice(1, -1).join(" - ");
+              foundCompany = parts[parts.length - 1];
+            } else if (parts.length === 2) {
+              foundName    = parts[0];
+              foundCompany = parts[1];
+            } else if (parts.length === 1) {
+              foundName    = parts[0];
+            }
+          }
+
+          // Pattern 2: "Title at Company" anywhere in result snippets
+          if (!foundTitle || !foundCompany) {
+            const firstNameToken = (foundName || nameForSearch).split(' ')[0];
+            const titleAtCompany = searchHtml.match(
+              new RegExp(`${firstNameToken}[^<]{0,30}?([A-Z][A-Za-z &'.,/-]{2,100})\\s+at\\s+([A-Z][A-Za-z0-9 &'.,]{2,80})`, 'i')
+            );
+            if (titleAtCompany) {
+              if (!foundTitle) foundTitle   = titleAtCompany[1].trim().replace(/^[-–]\s*/, '');
+              if (!foundCompany) foundCompany = titleAtCompany[2].trim().replace(/\s*[-–|].*$/, '').trim();
+            }
+          }
+
+          // Pattern 3: "works/working/employed at Company" — company only
+          if (!foundCompany) {
+            const worksAt = searchHtml.match(/(?:works|working|employed)\s+at\s+([A-Z][A-Za-z0-9 &'.,]{2,60})/i);
+            if (worksAt?.[1]) foundCompany = worksAt[1].trim().replace(/\s*[-–|].*$/, '').trim();
+          }
+
+          // Sanitize — never leak "DuckDuckGo" or "LinkedIn" as field values
+          const sanitize = (s: string) => /duckduckgo|^linkedin$/i.test(s.trim()) ? "" : s;
+
+          return {
+            name:    sanitize(foundName),
+            company: sanitize(foundCompany),
+            title:   sanitize(foundTitle),
+          };
+        };
+
+        let searchHtml = await doSearch(searchQuery);
+        let extracted = tryExtract(searchHtml);
+
+        if (!extracted.company && !extracted.title && !extracted.name) {
+          searchHtml = await doSearch(fallbackQuery);
+          extracted = tryExtract(searchHtml);
+        }
+
+        if (!name && extracted.name) {
+          name = extracted.name;
+          req.log.info({ slug, name, method: 'web-search' }, 'Found name via web search');
+        }
+        if (!companyName && extracted.company) {
+          companyName = extracted.company;
+          req.log.info({ name, companyName, method: 'web-search' }, 'Found company via web search');
+        }
+        if (!jobTitle && extracted.title) {
+          jobTitle = extracted.title;
+          req.log.info({ name, jobTitle, method: 'web-search' }, 'Found title via web search');
+        }
+      } catch (searchErr) {
+        req.log.warn({ err: searchErr, name }, 'Web search for company/title failed');
+      }
+    }
+
+    // Derive industry from company name using the existing maps
+    let detectedIndustry = "";
+    if (companyName) {
+      const compLower = companyName.toLowerCase().trim();
+      const directHit = INDUSTRY_MAP[compLower];
+      if (directHit) {
+        detectedIndustry = directHit;
+      } else {
+        for (const [mapKey, mapIndustry] of Object.entries(INDUSTRY_MAP)) {
+          if (compLower.includes(mapKey) || mapKey.includes(compLower)) {
+            detectedIndustry = mapIndustry;
+            break;
+          }
+        }
+        if (!detectedIndustry) {
+          for (const [mapIndustry, keywords] of Object.entries(INDUSTRY_KEYWORDS)) {
+            if (keywords.some(kw => compLower.includes(kw))) {
+              detectedIndustry = mapIndustry;
+              break;
+            }
+          }
+        }
+      }
+    }
+    
+    // If we have a company name, try to find their website
+    let companyWebsite = "";
+    if (companyName) {
+      try {
+        await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 200));
+        const searchQuery = encodeURIComponent(`${companyName} official website`);
         const searchUrl = `https://html.duckduckgo.com/html/?q=${searchQuery}`;
         
         const searchResponse = await fetch(searchUrl, {
           headers: {
             'User-Agent': getRandomUserAgent(),
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.5',
-            'Accept-Encoding': 'gzip, deflate, br',
             'DNT': '1',
             'Connection': 'keep-alive',
             'Upgrade-Insecure-Requests': '1',
-            'Referer': 'https://www.google.com/',
-            'Cache-Control': 'max-age=0'
           },
-          signal: AbortSignal.timeout(8000)
+          signal: AbortSignal.timeout(6000)
         });
         
         if (searchResponse.ok) {
           const searchHtml = await searchResponse.text();
           
-          // Check if we got a CAPTCHA or bot detection page
-          if (searchHtml.includes('DuckDuckGo') && searchHtml.includes('challenge') ||
-              searchHtml.includes('anomaly') ||
-              searchHtml.includes('Select all squares')) {
-            req.log.warn({ name }, 'DuckDuckGo returned bot detection challenge, skipping search');
-          } else {
-            // Look for common patterns in search results
-            // Pattern 1: "Name - Title at Company"
-            const atPattern = new RegExp(`${name.split(' ')[0]}[^<]*?\\bat\\s+([A-Z][^<|•·]{2,50})`, 'i');
-            const atMatch = searchHtml.match(atPattern);
-            if (atMatch && atMatch[1]) {
-              const potential = atMatch[1].trim().replace(/\s*-.*$/, '').trim();
-              // Filter out "DuckDuckGo" as a company name
-              if (potential.length > 2 && potential.length < 60 && !potential.toLowerCase().includes('duckduckgo')) {
-                companyName = potential;
-                req.log.info({ name, companyName, method: 'search' }, 'Found company via web search');
-              }
-            }
-            
-            // Pattern 2: Look for LinkedIn snippet in search results
-            if (!companyName) {
-              const linkedinSnippet = searchHtml.match(/linkedin[^<]*?(?:at|@)\s+([A-Z][^<|•·]{2,50})/i);
-              if (linkedinSnippet && linkedinSnippet[1]) {
-                const potential = linkedinSnippet[1].trim().replace(/\s*-.*$/, '').trim();
-                if (potential.length > 2 && potential.length < 60 && !potential.toLowerCase().includes('duckduckgo')) {
-                  companyName = potential;
-                  req.log.info({ name, companyName, method: 'search-linkedin' }, 'Found company via search LinkedIn snippet');
-                }
-              }
+          // Extract first result URL
+          const urlMatch = searchHtml.match(/<a[^>]+class="[^"]*result__a[^"]*"[^>]+href="([^"]+)"/i);
+          if (urlMatch && urlMatch[1]) {
+            try {
+              const url = new URL(urlMatch[1]);
+              // Clean up the domain
+              companyWebsite = `${url.protocol}//${url.hostname}`;
+              req.log.info({ companyName, companyWebsite }, 'Found company website via search');
+            } catch (e) {
+              // Invalid URL, skip
             }
           }
         }
-      } catch (searchErr) {
-        req.log.warn({ err: searchErr, name }, 'Web search for company failed');
+      } catch (err) {
+        req.log.warn({ err, companyName }, 'Failed to search for company website');
       }
     }
     
-    req.log.info({ slug, name, jobTitle, companyName }, `LinkedIn parse result for ${slug}`);
+    req.log.info({ slug, name, jobTitle, companyName, detectedIndustry, companyWebsite }, `LinkedIn parse result for ${slug}`);
     res.json({
       name: name || contact,
       photoUrl,
       company: companyName,
       title: jobTitle,
+      industry: detectedIndustry,
+      website: companyWebsite,
     });
   } catch (err) {
     req.log.error({ err, contact }, "Contact parsing failed");

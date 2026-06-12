@@ -841,7 +841,8 @@ export default function BriefingPage() {
   const [parsedContactName, setParsedContactName] = useState("");
   const [contactPhotoUrl, setContactPhotoUrl] = useState("");
   const [parsedCompanyName, setParsedCompanyName] = useState("");
-  const [_parsedTitle, setParsedTitle] = useState("");
+  const [, setParsedTitle] = useState("");
+  const [contactLoading, setContactLoading] = useState(false);
   
   // Debounce contact input for API call
   const debouncedContact = useDebounce(contact, 600);
@@ -853,6 +854,7 @@ export default function BriefingPage() {
       setContactPhotoUrl("");
       setParsedCompanyName("");
       setParsedTitle("");
+      setContactLoading(false);
       return;
     }
     
@@ -869,23 +871,24 @@ export default function BriefingPage() {
         setParsedTitle("Chairman & CEO");
         return;
       }
+
+      setContactLoading(true);
       
       // Add cache-busting parameter to force fresh data
       fetch(`/api/briefing/parse-contact?contact=${encodeURIComponent(debouncedContact)}&_t=${Date.now()}`)
         .then(res => res.json())
-        .then(data => {
+        .then(async (data) => {
           console.log('Parse contact API response:', data);
           if (data.name) {
             // Sanitize: strip trailing tokens that look like LinkedIn ID fragments
             // e.g. "Sean Krepp Ab" (from slug "sean-krepp-29ab52395") → "Sean Krepp"
-            // A trailing token is suspicious if it's 1-3 chars OR mixed alpha+digit
             const sanitizeName = (raw: string) =>
               raw.trim()
                 .split(/\s+/)
                 .filter((word, idx, arr) => {
-                  if (idx === 0) return true; // always keep first word
+                  if (idx === 0) return true;
                   const isLastWord = idx === arr.length - 1;
-                  if (!isLastWord) return true; // only strip the last token
+                  if (!isLastWord) return true;
                   const isTiny = word.length <= 3;
                   const isMixedAlphaNum = /[a-zA-Z]/.test(word) && /\d/.test(word);
                   return !isTiny && !isMixedAlphaNum;
@@ -894,23 +897,63 @@ export default function BriefingPage() {
             setParsedContactName(sanitizeName(data.name));
           }
           if (data.photoUrl) {
-            console.log('Setting contact photo URL:', data.photoUrl);
             setContactPhotoUrl(data.photoUrl);
           }
-          if (data.company) {
-            setParsedCompanyName(data.company);
-            // Don't auto-populate company field - let it be used as fallback
-            // Only set if company field is currently empty
-            if (!company.trim()) {
-              setCompany(data.company);
-            }
+
+          // Populate company — use API result first, then fall back to web research
+          let resolvedCompany = data.company || "";
+          if (resolvedCompany && !company.trim()) {
+            setCompany(resolvedCompany);
+            setParsedCompanyName(resolvedCompany);
           }
+
+          // Populate industry — use API result first
+          if (data.industry && !industry.trim()) {
+            setIndustry(data.industry);
+          }
+
+          // If company still unknown, fire company-research as a second pass
+          if (!resolvedCompany && data.name) {
+            try {
+              const researchRes = await fetch(
+                `/api/briefing/company-research?company=${encodeURIComponent(data.name)}&contactTitle=${encodeURIComponent(data.title || "")}`
+              );
+              const researchData = await researchRes.json();
+              // Try to extract a company name from the research snippet
+              if (researchData.summary) {
+                // Look for "works at X", "at X", or "Name - Title - X" patterns
+                const nameFirst = (data.name || "").split(" ")[0];
+                const patterns = [
+                  researchData.summary.match(/(?:works|working|employed)\s+at\s+([A-Z][A-Za-z0-9 &'.,]{2,60})/i),
+                  researchData.summary.match(new RegExp(`${nameFirst}[^\\n]{0,60}?\\bat\\s+([A-Z][A-Za-z0-9 &'.,]{2,60})`, 'i')),
+                ];
+                for (const m of patterns) {
+                  if (m?.[1]) {
+                    const candidate = m[1].trim().replace(/\s*[-–|].*$/, '').trim();
+                    if (candidate.length > 2 && candidate.length < 80 && !company.trim()) {
+                      setCompany(candidate);
+                      setParsedCompanyName(candidate);
+                      resolvedCompany = candidate;
+                      break;
+                    }
+                  }
+                }
+              }
+            } catch { /* silent — best effort */ }
+          }
+
+          // Re-run industry detection once company is known
+          if (resolvedCompany && !industry.trim()) {
+            try {
+              const indRes = await fetch(`/api/briefing/industry?company=${encodeURIComponent(resolvedCompany)}`);
+              const indData = await indRes.json();
+              if (indData.industry) setIndustry(indData.industry);
+            } catch { /* silent */ }
+          }
+
           if (data.title) {
             setParsedTitle(data.title);
-            // Auto-populate title field if empty
-            if (!title.trim()) {
-              setTitle(data.title);
-            }
+            if (!title.trim()) setTitle(data.title);
           }
         })
         .catch(() => {
@@ -918,7 +961,6 @@ export default function BriefingPage() {
           const match = debouncedContact.match(/linkedin\.com\/in\/([^/?]+)/i);
           if (match && match[1]) {
             const slug = match[1];
-            // Strip trailing numeric ID segment (e.g. "sean-krepp-29ab52395" → "sean-krepp")
             const cleanSlug = slug.replace(/-[a-z0-9]*\d[a-z0-9]*$/i, "");
             const name = cleanSlug
               .replace(/[-_]/g, " ")
@@ -932,15 +974,17 @@ export default function BriefingPage() {
             setParsedCompanyName("");
             setParsedTitle("");
           }
-        });
+        })
+        .finally(() => setContactLoading(false));
     } else {
       // Not a LinkedIn URL, use as-is
       setParsedContactName(debouncedContact);
       setContactPhotoUrl("");
       setParsedCompanyName("");
       setParsedTitle("");
+      setContactLoading(false);
     }
-  }, [debouncedContact, company]);
+  }, [debouncedContact]);
   
   const contactName = parsedContactName || contact;
 
@@ -1022,9 +1066,13 @@ export default function BriefingPage() {
           companyContext: companyContext || undefined,
         }),
       });
-      if (!res.ok) throw new Error("Request failed");
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("API Error:", res.status, errorText);
+        throw new Error(`Request failed with status ${res.status}`);
+      }
       const reader = res.body?.getReader();
-      if (!reader) throw new Error("No stream");
+      if (!reader) throw new Error("No stream available");
       const decoder = new TextDecoder();
       while (true) {
         const { done, value } = await reader.read();
@@ -1047,8 +1095,10 @@ export default function BriefingPage() {
       };
       setCurrentBriefing(entry);
       setBriefingReady(true);
-    } catch {
-      setError("Something went wrong. Please try again.");
+    } catch (err) {
+      console.error("Briefing generation error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Something went wrong. Please try again.";
+      setError(errorMessage);
       setBriefingReady(false);
       setPendingBriefing(null);
     } finally {
@@ -1236,7 +1286,13 @@ export default function BriefingPage() {
             </div>
             
             <div>
-              <GlassInput t={t} label="Company (Optional)" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="e.g. JPMorgan Chase"/>
+              <GlassInput t={t} label="Company (Optional)" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder={contactLoading ? "Looking up…" : "e.g. JPMorgan Chase"}/>
+              {contactLoading && (
+                <p style={{fontSize:10,color:t.accent,margin:"-12px 0 12px 0",fontStyle:"italic",display:"flex",alignItems:"center",gap:5}}>
+                  <span className="animate-pulse-dot" style={{display:"inline-block",width:5,height:5,borderRadius:"50%",background:t.accent}}/>
+                  Auto-filling from LinkedIn…
+                </p>
+              )}
             </div>
             
             <GlassInput t={t} label="Title" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics"/>
