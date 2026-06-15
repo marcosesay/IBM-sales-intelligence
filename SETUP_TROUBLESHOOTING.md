@@ -86,6 +86,15 @@ Edit `backend/node_modules/@workspace/integrations-ibm-watsonx/src/client.ts` an
 ```bash
 cd backend
 pnpm install @ibm-cloud/watsonx-ai ibm-cloud-sdk-core
+
+cd ../frontend
+pnpm install vite
+```
+
+**Note**: If you encounter "vite: command not found" errors, run:
+```bash
+cd frontend
+pnpm install --force
 ```
 
 ### Step 5: Start the Application
@@ -141,10 +150,52 @@ Look in Terminal 1 for error messages like:
 
 ### Issue 2: Frontend Won't Load (localhost:5173)
 
+**Cause**: Missing node_modules or corrupted pnpm workspace
+
+**Solution A - Clean Reinstall** (Recommended):
+```bash
+# From project root
+rm -rf node_modules frontend/node_modules backend/node_modules lib/*/node_modules
+rm -rf .pnpm-store
+pnpm install
+```
+
+**Solution B - Force Frontend Install**:
+```bash
+cd frontend
+rm -rf node_modules
+pnpm install --force
+pnpm run dev
+```
+
+**Solution C - Use Original Clean Repository**:
+If the personal copy has corrupted dependencies, use the original:
+```bash
+cd "Python-Tool/artifacts/sales-intelligence-briefing"
+# Add your credentials to backend/.env
+./quick-start.sh
+```
+
+### Issue 3: "vite: command not found"
+
+**Cause**: Frontend dependencies not installed in node_modules
+
+**Missing Packages** (70+ packages including):
+- vite (build tool)
+- react, react-dom (UI framework)
+- @vitejs/plugin-react (Vite React plugin)
+- tailwindcss (styling)
+- @radix-ui/* (40+ UI components)
+- @tanstack/react-query (data fetching)
+- All other devDependencies from frontend/package.json
+
 **Solution**:
 ```bash
 cd frontend
-pnpm run dev
+rm -rf node_modules
+pnpm install
+# Verify vite is installed
+ls -la node_modules/.bin/vite
 ```
 
 Check for compilation errors in the terminal.

@@ -6,8 +6,8 @@
  * This script tests your IBM watsonx.ai API credentials and helps you find the correct Project ID.
  */
 
-const API_KEY = 'qxFMb_fdEdicTLZb3ijoiW8LvO4uWaXRZtTVufcvjrzU';
-const PROJECT_ID = '116d17e5-b160-4a25-b8fe-34d489cfa12a';
+const API_KEY = 'your_api_key_here';
+const PROJECT_ID = 'your_project_id_here';
 
 console.log('🔍 Testing IBM watsonx.ai Credentials...\n');
 
