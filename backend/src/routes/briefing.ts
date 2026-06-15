@@ -548,6 +548,7 @@ router.get("/logo", async (req, res) => {
 
   req.log.info({ company, domain, source: "favicon" }, "Using favicon fallback");
   res.json({ url: `https://www.google.com/s2/favicons?domain=${domain}&sz=128` });
+});
 
 router.get("/proxy-image", async (req, res) => {
   const url = String(req.query["url"] || "");
@@ -602,7 +603,6 @@ router.get("/proxy-image", async (req, res) => {
     req.log.error({ err, url }, "Image proxy failed");
     res.status(500).json({ error: "Failed to proxy image" });
   }
-});
 });
 
 router.get("/industry", (req, res) => {

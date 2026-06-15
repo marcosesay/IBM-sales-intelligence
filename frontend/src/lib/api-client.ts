@@ -24,7 +24,7 @@ type IndustryResponse = {
   industry?: string | null;
 };
 
-let baseUrl = "http://localhost:3000";
+let baseUrl = "";
 
 export function setBaseUrl(url: string) {
   baseUrl = url.replace(/\/$/, "");

@@ -17,7 +17,9 @@ function App() {
   const path = window.location.pathname;
 
   useEffect(() => {
-    setBaseUrl("http://localhost:3003");
+    // Use relative URLs in production (nginx proxies /api to backend).
+    // In local dev, Vite's proxy handles /api forwarding — no base URL needed.
+    setBaseUrl("");
 
     // Check if user has completed setup
     const userName = localStorage.getItem("userName");
