@@ -26,7 +26,11 @@ RUN pnpm install --prod --frozen-lockfile
 COPY --from=builder /app/dist ./dist
 
 ENV NODE_ENV=production
+# PORT must be provided at runtime (IBM Code Engine sets this to 8080 by default)
+# All other secrets (WatsonX keys, etc.) must be set as Code Engine environment variables
 
-EXPOSE 3003
+EXPOSE 8080
+
+USER node
 
 CMD ["node", "--enable-source-maps", "./dist/index.mjs"]

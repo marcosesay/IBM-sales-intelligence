@@ -5,16 +5,18 @@ services:
     env_file:
       - ./backend/.env
     environment:
-      PORT: "3003"
+      PORT: "8080"
     ports:
-      - "3003:3003"
+      - "8080:8080"
     restart: unless-stopped
 
   frontend:
     build:
       context: ./frontend
+    environment:
+      BACKEND_URL: "http://backend:8080"
     ports:
-      - "80:80"
+      - "3000:8080"
     depends_on:
       - backend
     restart: unless-stopped
