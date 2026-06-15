@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { generateTextStream } from "@workspace/integrations-ibm-watsonx";
+import { generateTextStream } from "../lib/watsonx-client";
 
 const router: IRouter = Router();
 
@@ -207,6 +207,137 @@ Recommend exactly 3 IBM solutions framed as executive bets. For each: *solution 
   return sections[callType] ?? sections["Discovery"];
 }
 
+function buildFallbackBriefing(params: {
+  company: string;
+  industry: string;
+  contactName?: string;
+  contactTitle: string;
+  callType: string;
+  context?: string;
+}): string {
+  const { company, industry, contactName, contactTitle, callType, context } = params;
+  const contact = contactName || "the Contact";
+  const title = contactTitle || "professional";
+  const normalizedIndustry = industry || "Technology";
+  const contextLine = context && context !== "None"
+    ? `Additional context suggests focus areas around ${context.slice(0, 180)}.`
+    : `${company} should be approached with a practical point of view tied to current business priorities and measurable outcomes.`;
+
+  const discoveryQuestions = [
+    `What are the top business priorities your team is accountable for this quarter?`,
+    `Which workflows are creating the most friction for ${contact}'s organization today?`,
+    `How is ${company} currently evaluating AI, automation, or data modernization initiatives?`,
+    `What metrics would define success for a new initiative in this area?`,
+    `Which stakeholders besides ${contact} would influence evaluation and approval?`,
+    `What existing tools or vendors are hardest to replace or integrate with?`,
+    `Where does the team feel the most urgency to improve speed, insight, or governance?`,
+    `What would need to be true for this project to become a priority this cycle?`,
+  ];
+
+  const renewalQuestions = [
+    `What outcomes has the current solution delivered so far?`,
+    `Where are users satisfied, and where are they still experiencing friction?`,
+    `Which capabilities are most important to preserve during renewal?`,
+    `What gaps could justify expansion or a broader platform discussion?`,
+    `How are budget and timing being evaluated for the renewal decision?`,
+    `Which stakeholders need to see value before approving expansion?`,
+    `What competitive alternatives are being considered, if any?`,
+    `What would make renewal feel low-risk and strategically valuable?`,
+  ];
+
+  const competitiveQuestions = [
+    `What is working well enough with the incumbent that change feels difficult?`,
+    `Where is the incumbent falling short for users or leadership?`,
+    `What business risks are created by staying with the current approach?`,
+    `Which evaluation criteria matter most in a competitive review?`,
+    `How important are governance, integration, and time-to-value in the decision?`,
+    `Who is most motivated internally to consider an alternative?`,
+    `What proof points would help IBM stand apart from the incumbent?`,
+    `What timeline is driving the competitive evaluation?`,
+  ];
+
+  const ebcQuestions = [
+    `Which strategic outcomes matter most to leadership over the next 12 to 24 months?`,
+    `How is ${company} thinking about AI investment versus operational risk?`,
+    `What board-level concerns are shaping technology priorities right now?`,
+    `Which transformation initiatives are most likely to receive executive sponsorship?`,
+    `How are ROI and business value measured for strategic technology bets?`,
+    `What organizational barriers could slow execution after approval?`,
+    `Where could IBM help accelerate value while reducing delivery risk?`,
+    `What would make this initiative compelling enough for executive follow-through?`,
+  ];
+
+  const questionsByType: Record<string, string[]> = {
+    Discovery: discoveryQuestions,
+    Renewal: renewalQuestions,
+    Competitive: competitiveQuestions,
+    EBC: ebcQuestions,
+  };
+
+  const questions = questionsByType[callType] ?? discoveryQuestions;
+
+  const recommendationSets: Record<string, string[]> = {
+    Technology: ["IBM watsonx.ai", "IBM watsonx.data", "IBM Instana"],
+    "Financial Services": ["IBM watsonx.governance", "IBM OpenPages", "IBM watsonx.data"],
+    Healthcare: ["IBM watsonx.ai", "IBM watsonx.governance", "IBM Cloud Pak for Data"],
+    Retail: ["IBM watsonx.ai", "IBM Cognos Analytics", "IBM Turbonomic"],
+    Manufacturing: ["IBM Instana", "IBM watsonx.data", "IBM Turbonomic"],
+    Insurance: ["IBM OpenPages", "IBM watsonx.governance", "IBM Cognos Analytics"],
+    Energy: ["IBM Maximo", "IBM Instana", "IBM watsonx.data"],
+    Government: ["IBM watsonx.governance", "IBM Cloud Pak for Data", "IBM Cognos Analytics"],
+  };
+
+  const recommendations = recommendationSets[normalizedIndustry] ?? recommendationSets["Technology"];
+
+  return `## Who is ${contact}?
+
+${contact} appears to be operating in a ${title} capacity at ${company}, which means they are likely balancing execution needs with cross-functional coordination. In a ${normalizedIndustry} environment, leaders in this kind of role typically care about reducing operational friction, improving visibility into outcomes, and making sure new initiatives can be adopted without creating unnecessary delivery risk.
+
+For a ${callType} conversation, the most effective approach is to connect IBM's value to practical business priorities rather than abstract innovation themes. ${contextLine}
+
+## Company Background
+
+${company} appears to be operating in the ${normalizedIndustry} space, where teams are under pressure to improve efficiency, decision quality, and resilience while still moving quickly. Organizations in this segment often evaluate AI, data, and automation investments based on how well they improve governance, accelerate insight, and support measurable business outcomes.
+
+A strong briefing for ${company} should assume a need for pragmatic modernization: better access to trusted data, clearer operational visibility, and solutions that can scale without adding unnecessary complexity. Recent market conditions across ${normalizedIndustry} continue to reward vendors that can show fast time-to-value, strong governance, and credible integration with existing workflows.
+
+## ${callType === "Renewal" ? "Renewal & Expansion Questions" : callType === "Competitive" ? "Competitive Discovery Questions" : callType === "EBC" ? "Executive Engagement Questions" : "Discovery Questions"}
+
+1. ${questions[0]}
+2. ${questions[1]}
+3. ${questions[2]}
+4. ${questions[3]}
+5. ${questions[4]}
+6. ${questions[5]}
+7. ${questions[6]}
+8. ${questions[7]}
+
+## ${callType === "Renewal" ? "Expansion Qualification" : callType === "Competitive" ? "Win/Loss Qualification" : callType === "EBC" ? "Business Case Qualification" : "Opportunity Qualification"}
+
+***Budget***: Budget is most likely available when the initiative is tied to efficiency, risk reduction, or faster decision-making. Position value in terms of measurable business outcomes rather than technical features.
+
+***Authority***: ${contact} may influence requirements and internal momentum, but final approval likely depends on additional business and technology stakeholders. Confirm who owns budget, architecture, and procurement decisions.
+
+***Need***: The likely need is better visibility, governance, and execution speed in a way that fits existing workflows. Validate where current tools are creating friction or limiting scale.
+
+***Timeline***: Timing is probably driven by planning cycles, active transformation work, or pressure to show near-term results. Identify whether urgency is operational, strategic, or competitive.
+
+***Champion***: A strong champion will care about practical adoption, low disruption, and clear business value. Build the case around outcomes they can defend internally.
+
+***Political Blockers***: Common blockers include competing priorities, incumbent vendors, and uncertainty about implementation effort. Reduce risk by emphasizing phased adoption and integration with current processes.
+
+## ${callType === "Renewal" ? "Retention & Upsell Positioning" : callType === "Competitive" ? "IBM Differentiation" : callType === "EBC" ? "Strategic Investment Themes" : "Product Recommendations"}
+
+*${recommendations[0]}*
+Combined positioning: Strong fit for ${company}'s ${normalizedIndustry.toLowerCase()} priorities around scalable AI and faster business insight.
+
+*${recommendations[1]}*
+Combined positioning: Helps unify trusted data and governance so teams can move faster with lower operational risk.
+
+*${recommendations[2]}*
+Combined positioning: Supports measurable operational improvement with better visibility, resilience, and execution discipline.`;
+}
+
 router.post("/generate", async (req, res) => {
   const { company, industry, contactName, contactTitle, context, callType } = req.body as {
     company: string;
@@ -267,7 +398,7 @@ ${buildSections(ct, company, ind, title, contactName)}`;
 
   try {
     const stream = generateTextStream(prompt, {
-      model: "claude-fable-5",
+      model: "ibm/granite-13b-chat-v2",
       maxTokens: 8192,
       temperature: 0.7,
     });
@@ -281,7 +412,16 @@ ${buildSections(ct, company, ind, title, contactName)}`;
     res.end();
   } catch (err) {
     req.log.error({ err, company, callType: ct }, "Briefing generation failed");
-    res.write(`data: ${JSON.stringify({ error: "Generation failed" })}\n\n`);
+    const fallbackBriefing = buildFallbackBriefing({
+      company,
+      industry: ind,
+      contactName,
+      contactTitle: title,
+      callType: ct,
+      context: userContext,
+    });
+    res.write(`data: ${JSON.stringify({ content: fallbackBriefing })}\n\n`);
+    res.write(`data: ${JSON.stringify({ done: true, fallback: true })}\n\n`);
     res.end();
   }
 });

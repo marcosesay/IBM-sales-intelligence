@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useGetBriefingNews, useGetBriefingLogo, useGetBriefingIndustry } from "@workspace/api-client-react";
+import { useGetBriefingNews, useGetBriefingLogo, useGetBriefingIndustry } from "@/lib/api-client";
 
 /* ─── User Info Hook ─── */
 function useUserInfo() {

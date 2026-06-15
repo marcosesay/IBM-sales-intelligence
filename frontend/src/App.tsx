@@ -1,13 +1,11 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { setBaseUrl } from "@workspace/api-client-react";
+import { setBaseUrl } from "@/lib/api-client";
 import { useEffect, useState } from "react";
 import BriefingPage from "@/pages/BriefingPage";
 import ArchitecturePage from "@/pages/ArchitecturePage";
 import SetupPage from "@/pages/SetupPage";
 
 // Configure API client to point to local API server
-setBaseUrl("http://localhost:3000");
-
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { retry: 1, staleTime: 1000 * 60 * 5 },
@@ -19,6 +17,8 @@ function App() {
   const path = window.location.pathname;
 
   useEffect(() => {
+    setBaseUrl("http://localhost:3003");
+
     // Check if user has completed setup
     const userName = localStorage.getItem("userName");
     const userRole = localStorage.getItem("userRole");

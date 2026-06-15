@@ -50,29 +50,56 @@ Transform hours of manual research into seconds with AI-generated, comprehensive
 
 ## 📋 Prerequisites
 
-**ONLY your IBM watsonx.ai API key is required** - everything else is installed automatically!
+### ❌ Must Be Manually Installed (One-Time Setup)
 
-Get your API key from [IBM Cloud](https://cloud.ibm.com/iam/apikeys)
+Before running the automated setup scripts, you need:
 
-## 🚀 Ultimate Quick Start (One Command!)
+1. **Node.js 18+** (Required)
+   - **Mac**: `brew install node` (requires Homebrew)
+   - **Windows**: Download from [nodejs.org](https://nodejs.org)
+   - **Linux**:
+     ```bash
+     curl -fsSL https://deb.nodesource.com/setup_18.x | sudo -E bash -
+     sudo apt-get install -y nodejs
+     ```
 
-### Mac/Linux - Just run this:
+2. **Homebrew** (Mac only, optional)
+   - Only needed if you want to use `brew install node`
+   - Install: `/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"`
+   - Alternative: Download Node.js directly from [nodejs.org](https://nodejs.org)
 
+### ✅ Automatically Installed by Setup Scripts
+
+Once Node.js is installed, the setup scripts automatically install:
+- **pnpm** package manager
+- **React 18** and all frontend dependencies (70+ packages)
+- **Tailwind CSS** and styling tools
+- **IBM WatsonX AI SDK** and all backend dependencies (24 packages)
+- **All other project dependencies**
+
+### 🔑 API Key Required
+
+Get your IBM watsonx.ai API key from [IBM Cloud](https://cloud.ibm.com/iam/apikeys)
+
+## 🚀 Quick Start
+
+### Step 1: Download the Package
+
+Download the `sales-intelligence-tool.tar.gz` file from:
+**https://ibm.box.com/s/mhpbcc0kek3ox0i82zziy1b577js03o5**
+
+### Step 2: Extract and Run
+
+**Mac/Linux:**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/marcosesay/sales-intelligence-briefing/main/quick-start.sh | bash
-```
-
-Or clone first:
-```bash
-git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+tar -xzf sales-intelligence-tool.tar.gz
 cd sales-intelligence-briefing
 ./quick-start.sh
 ```
 
-### Windows - Just run this:
-
+**Windows:**
 ```batch
-git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+# Extract the .tar.gz file using 7-Zip or WinRAR
 cd sales-intelligence-briefing
 quick-start.bat
 ```
@@ -98,11 +125,12 @@ The application will be available at:
 
 ## 🔧 Alternative Setup Methods
 
-### Method 1: Two-Step Setup (Recommended if one-liner doesn't work)
+### Method 1: Two-Step Setup (Recommended)
+
+After downloading and extracting from Box:
 
 **Mac/Linux:**
 ```bash
-git clone https://github.com/marcosesay/sales-intelligence-briefing.git
 cd sales-intelligence-briefing
 ./setup.sh    # Installs everything
 ./start.sh    # Starts the app
@@ -110,7 +138,6 @@ cd sales-intelligence-briefing
 
 **Windows:**
 ```batch
-git clone https://github.com/marcosesay/sales-intelligence-briefing.git
 cd sales-intelligence-briefing
 setup.bat     REM Installs everything
 start.bat     REM Starts the app
@@ -127,19 +154,21 @@ If you prefer manual setup or the automated script doesn't work:
 - **Node.js 18+**: Download from [nodejs.org](https://nodejs.org)
 - **pnpm**: Install with `npm install -g pnpm`
 
-### 2. Clone and Install
+### 2. Extract and Install
+
+After downloading from Box:
 
 ```bash
-git clone https://github.com/marcosesay/sales-intelligence-briefing.git
+tar -xzf sales-intelligence-tool.tar.gz
 cd sales-intelligence-briefing
 
 # Install backend dependencies
 cd backend
-pnpm install
+npm install
 
 # Install frontend dependencies
 cd ../frontend
-pnpm install
+npm install
 ```
 
 ### 3. Configure Environment
