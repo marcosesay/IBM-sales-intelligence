@@ -17,18 +17,23 @@ RUN pnpm run build
 
 FROM nginx:alpine AS runtime
 
-# Allow nginx to run as non-root (required by IBM Code Engine)
+# Make nginx work as non-root (for IBM Code Engine)
 RUN sed -i 's|user  nginx;||g' /etc/nginx/nginx.conf && \
     sed -i 's|/var/run/nginx.pid|/tmp/nginx.pid|g' /etc/nginx/nginx.conf && \
-    chown -R nginx:nginx /var/cache/nginx /var/log/nginx /etc/nginx/conf.d && \
-    chmod -R 755 /var/cache/nginx /var/log/nginx
+    sed -i 's|/var/cache/nginx|/tmp/nginx-cache|g' /etc/nginx/nginx.conf && \
+    mkdir -p /tmp/nginx-cache /tmp/nginx.pid && \
+    chown -R nginx:nginx \
+        /var/cache/nginx \
+        /var/log/nginx \
+        /etc/nginx/conf.d \
+        /usr/share/nginx/html \
+        /tmp/nginx-cache
 
 COPY --from=builder /app/dist/public /usr/share/nginx/html
-RUN chown -R nginx:nginx /usr/share/nginx/html
 
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy template — entrypoint will render it to default.conf at runtime
+COPY nginx.conf /etc/nginx/conf.d/nginx.conf.template
 
-# Entrypoint substitutes BACKEND_URL env var into nginx config at runtime
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 
