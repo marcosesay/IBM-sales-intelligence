@@ -5,7 +5,8 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 COPY package.json ./
-RUN pnpm install --no-frozen-lockfile
+RUN echo 'approve-builds[]=esbuild' > .npmrc && \
+    pnpm install --no-frozen-lockfile
 
 COPY tsconfig.json build.mjs ./
 COPY src ./src
@@ -21,7 +22,8 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 COPY package.json ./
-RUN pnpm install --prod --no-frozen-lockfile
+RUN echo 'approve-builds[]=esbuild' > .npmrc && \
+    pnpm install --prod --no-frozen-lockfile
 
 COPY --from=builder /app/dist ./dist
 

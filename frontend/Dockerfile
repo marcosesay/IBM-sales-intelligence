@@ -5,7 +5,8 @@ WORKDIR /app
 RUN npm install -g pnpm
 
 COPY package.json ./
-RUN pnpm install --no-frozen-lockfile
+RUN echo 'approve-builds[]=esbuild' > .npmrc && \
+    pnpm install --no-frozen-lockfile
 
 COPY index.html tsconfig.json vite.config.ts components.json ./
 COPY public ./public
