@@ -1,5 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useGetBriefingNews, useGetBriefingLogo, useGetBriefingIndustry } from "@/lib/api-client";
+const BACKEND_URL = typeof window !== "undefined" && window.location.hostname !== "localhost"
+  ? "https://ibm-sales-intelligence.23ij0n2ztu5p.ca-tor.codeengine.appdomain.cloud"
+  : "http://localhost:3001";
 
 /* ─── User Info Hook ─── */
 function useUserInfo() {
@@ -179,7 +182,7 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
   // Helper function to load image via proxy
   const loadImageViaProxy = async (url: string): Promise<string | null> => {
     try {
-      const proxyUrl = `http://localhost:3000/api/briefing/proxy-image?url=${encodeURIComponent(url)}`;
+     const proxyUrl = `${BACKEND_URL}/api/briefing/proxy-image?url=${encodeURIComponent(url)}`;
       const response = await fetch(proxyUrl);
       if (!response.ok) return null;
       
@@ -875,7 +878,7 @@ export default function BriefingPage() {
       setContactLoading(true);
       
       // Add cache-busting parameter to force fresh data
-      fetch(`/api/briefing/parse-contact?contact=${encodeURIComponent(debouncedContact)}&_t=${Date.now()}`)
+        fetch(`${BACKEND_URL}/api/briefing/parse-contact?contact=${encodeURIComponent(debouncedContact)}&_t=${Date.now()}`)
         .then(res => res.json())
         .then(async (data) => {
           console.log('Parse contact API response:', data);
@@ -916,7 +919,7 @@ export default function BriefingPage() {
           if (!resolvedCompany && data.name) {
             try {
               const researchRes = await fetch(
-                `/api/briefing/company-research?company=${encodeURIComponent(data.name)}&contactTitle=${encodeURIComponent(data.title || "")}`
+                `${BACKEND_URL}/api/briefing/company-research?company=${encodeURIComponent(data.name)}&contactTitle=${encodeURIComponent(data.title || "")}`
               );
               const researchData = await researchRes.json();
               // Try to extract a company name from the research snippet
@@ -945,7 +948,7 @@ export default function BriefingPage() {
           // Re-run industry detection once company is known
           if (resolvedCompany && !industry.trim()) {
             try {
-              const indRes = await fetch(`/api/briefing/industry?company=${encodeURIComponent(resolvedCompany)}`);
+              const indRes = await fetch(`${BACKEND_URL}/api/briefing/industry?company=${encodeURIComponent(resolvedCompany)}`);
               const indData = await indRes.json();
               if (indData.industry) setIndustry(indData.industry);
             } catch { /* silent */ }
@@ -1028,13 +1031,13 @@ export default function BriefingPage() {
     let companyContext = "";
     try {
       const [wikiRes, newsRes] = await Promise.allSettled([
-        // Wikipedia summary (public REST API, no auth needed)
-        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(effectiveCompany)}`)
-          .then(r => r.ok ? r.json() : null),
-        // Existing news endpoint — reuse what the sidebar already fetches
-        fetch(`/api/briefing/news?company=${encodeURIComponent(effectiveCompany)}`)
-          .then(r => r.ok ? r.json() : []),
-      ]);
+  // Wikipedia summary (public REST API, no auth needed)
+  fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(effectiveCompany)}`)
+    .then(r => r.ok ? r.json() : null),
+  // Existing news endpoint
+  fetch(`${BACKEND_URL}/api/briefing/news?company=${encodeURIComponent(effectiveCompany)}`)
+    .then(r => r.ok ? r.json() : []),
+]);
 
       const parts: string[] = [];
 
@@ -1056,7 +1059,7 @@ export default function BriefingPage() {
     }
 
     try {
-      const res = await fetch("/api/briefing/generate", {
+      const res = await fetch(`${BACKEND_URL}/api/briefing/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
