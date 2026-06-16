@@ -603,7 +603,6 @@ router.get("/proxy-image", async (req, res) => {
     res.status(500).json({ error: "Failed to proxy image" });
   }
 });
-});
 
 router.get("/industry", (req, res) => {
   const company = String(req.query["company"] || "").toLowerCase().trim();
