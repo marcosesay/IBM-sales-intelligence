@@ -1,9 +1,7 @@
 import { useQuery, type UseQueryOptions } from "@tanstack/react-query";
-
 type QueryOptions<TData> = {
   query?: Omit<UseQueryOptions<TData, Error, TData, readonly unknown[]>, "queryKey" | "queryFn">;
 };
-
 type NewsItem = {
   title: string;
   url: string;
@@ -12,36 +10,27 @@ type NewsItem = {
   date?: string;
   snippet?: string;
 };
-
 type NewsResponse = NewsItem[];
-
 type LogoResponse = {
   url?: string | null;
   logoUrl?: string | null;
 };
-
 type IndustryResponse = {
   industry?: string | null;
 };
-
 let baseUrl = typeof window !== "undefined" && window.location.hostname !== "localhost"
-  ? ""  // use relative URLs in production (same origin)
+  ? "https://ibm-sales-intelligence.23ij0n2ztu5p.ca-tor.codeengine.appdomain.cloud"
   : "http://localhost:3001";
-
 export function setBaseUrl(url: string) {
   baseUrl = url.replace(/\/$/, "");
 }
-
 async function fetchJson<T>(path: string): Promise<T> {
   const response = await fetch(`${baseUrl}${path}`);
-
   if (!response.ok) {
     throw new Error(`Request failed: ${response.status}`);
   }
-
   return response.json() as Promise<T>;
 }
-
 export function useGetBriefingNews(
   params: { company: string },
   options?: QueryOptions<NewsResponse>,
@@ -55,7 +44,6 @@ export function useGetBriefingNews(
     ...options?.query,
   });
 }
-
 export function useGetBriefingLogo(
   params: { company: string },
   options?: QueryOptions<LogoResponse>,
@@ -71,7 +59,6 @@ export function useGetBriefingLogo(
     ...options?.query,
   });
 }
-
 export function useGetBriefingIndustry(
   params: { company: string },
   options?: QueryOptions<IndustryResponse>,
@@ -83,5 +70,4 @@ export function useGetBriefingIndustry(
     ...options?.query,
   });
 }
-
 // Made with Bob
