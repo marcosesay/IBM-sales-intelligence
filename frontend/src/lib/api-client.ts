@@ -24,7 +24,9 @@ type IndustryResponse = {
   industry?: string | null;
 };
 
-let baseUrl = "http://localhost:3000";
+let baseUrl = typeof window !== "undefined" && window.location.hostname !== "localhost"
+  ? ""  // use relative URLs in production (same origin)
+  : "http://localhost:3001";
 
 export function setBaseUrl(url: string) {
   baseUrl = url.replace(/\/$/, "");
