@@ -2,17 +2,14 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-RUN npm install -g pnpm
-
 COPY package.json ./
-RUN echo 'approve-builds[]=esbuild' > .npmrc && \
-    pnpm install --no-frozen-lockfile
+RUN npm install --legacy-peer-deps
 
 COPY index.html tsconfig.json vite.config.ts components.json ./
 COPY public ./public
 COPY src ./src
 
-RUN pnpm run build
+RUN npm run build
 
 # ---
 
@@ -32,7 +29,6 @@ RUN sed -i 's|user  nginx;||g' /etc/nginx/nginx.conf && \
 
 COPY --from=builder /app/dist/public /usr/share/nginx/html
 
-# Copy template — entrypoint will render it to default.conf at runtime
 COPY nginx.conf /etc/nginx/conf.d/nginx.conf.template
 
 COPY docker-entrypoint.sh /docker-entrypoint.sh
