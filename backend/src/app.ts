@@ -3,12 +3,6 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import path from "path";
-import { fileURLToPath } from "url";
-import { existsSync } from "fs";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app: Express = express();
 app.use(
@@ -34,18 +28,5 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api", router);
-
-// Serve frontend static files
-const frontendDist = path.join(__dirname, "../frontend/dist");
-if (existsSync(frontendDist)) {
-  app.use(express.static(frontendDist));
-  app.get("*", (_req, res) => {
-    res.sendFile(path.join(frontendDist, "index.html"));
-  });
-} else {
-  app.get("/", (_req, res) => {
-    res.json({ status: "ok", message: "Frontend not found" });
-  });
-}
 
 export default app;
