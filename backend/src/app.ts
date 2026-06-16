@@ -5,6 +5,7 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 import path from "path";
 import { fileURLToPath } from "url";
+import { existsSync } from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,9 +37,15 @@ app.use("/api", router);
 
 // Serve frontend static files
 const frontendDist = path.join(__dirname, "../frontend/dist");
-app.use(express.static(frontendDist));
-app.get("*", (_req, res) => {
-  res.sendFile(path.join(frontendDist, "index.html"));
-});
+if (existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  });
+} else {
+  app.get("/", (_req, res) => {
+    res.json({ status: "ok", message: "Frontend not found" });
+  });
+}
 
 export default app;
