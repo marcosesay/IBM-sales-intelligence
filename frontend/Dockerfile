@@ -15,20 +15,27 @@ RUN npm run build
 
 FROM nginx:alpine AS runtime
 
-# Make nginx work as non-root (for IBM Code Engine)
-RUN sed -i 's|user  nginx;||g' /etc/nginx/nginx.conf && \
-    sed -i 's|/var/run/nginx.pid|/tmp/nginx.pid|g' /etc/nginx/nginx.conf && \
-    sed -i 's|/run/nginx.pid|/tmp/nginx.pid|g' /etc/nginx/nginx.conf && \
-    sed -i 's|/var/cache/nginx|/tmp/nginx-cache|g' /etc/nginx/nginx.conf && \
-    mkdir -p /tmp/nginx-cache && \
+# Replace main nginx config with one that uses /tmp for all writable paths
+COPY nginx-main.conf /etc/nginx/nginx.conf
+
+RUN mkdir -p \
+    /tmp/nginx-client-body \
+    /tmp/nginx-proxy \
+    /tmp/nginx-fastcgi \
+    /tmp/nginx-uwsgi \
+    /tmp/nginx-scgi && \
     chown -R nginx:nginx \
-        /var/cache/nginx \
         /var/log/nginx \
         /etc/nginx/conf.d \
         /usr/share/nginx/html \
-        /tmp/nginx-cache
+        /tmp/nginx-client-body \
+        /tmp/nginx-proxy \
+        /tmp/nginx-fastcgi \
+        /tmp/nginx-uwsgi \
+        /tmp/nginx-scgi
 
 COPY --from=builder /app/dist/public /usr/share/nginx/html
+RUN chown -R nginx:nginx /usr/share/nginx/html
 
 COPY nginx.conf /etc/nginx/conf.d/nginx.conf.template
 
