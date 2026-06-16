@@ -18,8 +18,9 @@ FROM nginx:alpine AS runtime
 # Make nginx work as non-root (for IBM Code Engine)
 RUN sed -i 's|user  nginx;||g' /etc/nginx/nginx.conf && \
     sed -i 's|/var/run/nginx.pid|/tmp/nginx.pid|g' /etc/nginx/nginx.conf && \
+    sed -i 's|/run/nginx.pid|/tmp/nginx.pid|g' /etc/nginx/nginx.conf && \
     sed -i 's|/var/cache/nginx|/tmp/nginx-cache|g' /etc/nginx/nginx.conf && \
-    mkdir -p /tmp/nginx-cache /tmp/nginx.pid && \
+    mkdir -p /tmp/nginx-cache && \
     chown -R nginx:nginx \
         /var/cache/nginx \
         /var/log/nginx \
