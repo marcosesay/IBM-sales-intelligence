@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useGetBriefingNews, useGetBriefingLogo, useGetBriefingIndustry, useGetPulseNews } from "@/lib/api-client";
+import { useGetBriefingNews, useGetBriefingLogo, useGetBriefingIndustry, useGetPulseNews, getBaseUrl } from "@/lib/api-client";
 
 /* ─── User Info Hook ─── */
 function useUserInfo() {
@@ -874,7 +874,7 @@ export default function BriefingPage() {
       setContactLoading(true);
       
       // Add cache-busting parameter to force fresh data
-      fetch(`/api/briefing/parse-contact?contact=${encodeURIComponent(debouncedContact)}&_t=${Date.now()}`)
+      fetch(`${getBaseUrl()}/api/briefing/parse-contact?contact=${encodeURIComponent(debouncedContact)}&_t=${Date.now()}`)
         .then(res => res.json())
         .then(async (data) => {
           console.log('Parse contact API response:', data);
@@ -944,7 +944,7 @@ export default function BriefingPage() {
           // Re-run industry detection once company is known
           if (resolvedCompany && !industry.trim()) {
             try {
-              const indRes = await fetch(`/api/briefing/industry?company=${encodeURIComponent(resolvedCompany)}`);
+              const indRes = await fetch(`${getBaseUrl()}/api/briefing/industry?company=${encodeURIComponent(resolvedCompany)}`);
               const indData = await indRes.json();
               if (indData.industry) setIndustry(indData.industry);
             } catch { /* silent */ }
@@ -1031,7 +1031,7 @@ export default function BriefingPage() {
         fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(effectiveCompany)}`)
           .then(r => r.ok ? r.json() : null),
         // Existing news endpoint — reuse what the sidebar already fetches
-        fetch(`/api/briefing/news?company=${encodeURIComponent(effectiveCompany)}`)
+        fetch(`${getBaseUrl()}/api/briefing/news?company=${encodeURIComponent(effectiveCompany)}`)
           .then(r => r.ok ? r.json() : []),
       ]);
 
@@ -1055,7 +1055,7 @@ export default function BriefingPage() {
     }
 
     try {
-      const res = await fetch("/api/briefing/generate", {
+      const res = await fetch(`${getBaseUrl()}/api/briefing/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
