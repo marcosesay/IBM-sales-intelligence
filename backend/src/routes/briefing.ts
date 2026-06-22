@@ -517,11 +517,27 @@ router.get("/pulse", async (req, res) => {
     const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
     const prompt = `You are a sales intelligence assistant. Generate 5 realistic, plausible enterprise AI and technology news headlines for ${today}. These should reflect stories from Bloomberg, WSJ, or TechCrunch covering AI adoption in enterprise, IBM watsonx or competing AI platforms, data infrastructure, cloud, or digital transformation. Respond ONLY with a JSON array, no explanation, no markdown, no backticks. Format: [{"title": "Headline here", "source": "Bloomberg", "date": "${today}", "url": null}]`;
 
-    const stream = generateTextStream(prompt, { maxTokens: 600, temperature: 0.7, model: "ibm/granite-3-2b-instruct" });
-    let raw = "";
-    for await (const chunk of stream) { raw += chunk; }
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    if (!anthropicKey) { res.json([]); return; }
 
-    const match = raw.match(/\[(\s|\S)*?\]/);
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": anthropicKey,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: "claude-haiku-4-5-20251001",
+        max_tokens: 600,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+
+    const data = await response.json() as any;
+    const raw = data?.content?.[0]?.text || "";
+
+    const match = raw.match(/\[([\s\S]*?)\]/);
     if (!match) { res.json([]); return; }
 
     let items = [];
