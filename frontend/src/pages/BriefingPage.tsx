@@ -863,6 +863,7 @@ export default function BriefingPage() {
   const [company, setCompany]   = useState("");
   const [industry, setIndustry] = useState("");
   const [contact, setContact]   = useState("");
+  const [contactName2, setContactName2] = useState("");
   const [title, setTitle]       = useState("");
   const [context, setContext]   = useState("");
   const [meetingType, setMeetingType] = useState<MeetingType>("Discovery");
@@ -912,6 +913,7 @@ export default function BriefingPage() {
   useEffect(() => {
     if (!debouncedContact.trim()) {
       setParsedContactName("");
+      setContactName2("");
       setContactPhotoUrl("");
       setParsedCompanyName("");
       setParsedTitle("");
@@ -1056,6 +1058,7 @@ export default function BriefingPage() {
   }, [debouncedContact]);
   
   const contactName = (() => {
+    if (contactName2.trim()) return contactName2.trim();
     if (parsedContactName) return parsedContactName;
     if (contact.toLowerCase().includes("linkedin.com/in/")) {
       const slugMatch = contact.match(/linkedin\.com\/in\/([^/?]+)/i);
@@ -1382,7 +1385,10 @@ export default function BriefingPage() {
 
             {/* Inputs */}
             <div>
-              <GlassInput t={t} label="Contact" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="Name or linkedin.com/in/…"/>
+              <GlassInput t={t} label="LinkedIn URL" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username"/>
+              {contact.toLowerCase().includes("linkedin.com/in/") && (
+                <GlassInput t={t} label="Name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last"/>
+              )}
               <p style={{fontSize:10,color:t.textDim,margin:"-12px 0 12px 0",fontStyle:"italic"}}>Paste LinkedIn URL to auto-fill details</p>
             </div>
             
