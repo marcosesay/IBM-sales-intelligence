@@ -1076,7 +1076,16 @@ router.get("/parse-contact", async (req, res) => {
           'kevin', 'keith', 'kenneth', 'kyle', 'karl', 'brandon', 'brian', 'brett', 'bradley', 'blake',
           'anthony', 'andrew', 'aaron', 'adam', 'alan', 'albert', 'alfred', 'allen', 'amanda', 'amber',
           'peter', 'paul', 'patrick', 'phillip', 'raymond', 'ryan', 'ronald', 'russell', 'scott', 'sean',
-          'steven', 'stephen', 'timothy', 'travis', 'trevor', 'tyler', 'victor', 'vincent', 'walter', 'wayne'];
+          'steven', 'stephen', 'timothy', 'travis', 'trevor', 'tyler', 'victor', 'vincent', 'walter', 'wayne',
+          'justin', 'julian', 'julius', 'jake', 'jacob', 'jarrod', 'jarrett', 'jared', 'jason', 'jeffrey',
+          'jeremy', 'jerome', 'jerry', 'jesse', 'jimmy', 'joel', 'joey', 'jonathan', 'jonah', 'jordan',
+          'jorge', 'jose', 'joshua', 'juan', 'julian', 'lance', 'larry', 'lawrence', 'leon', 'leonard',
+          'leroy', 'lewis', 'liam', 'logan', 'louis', 'lucas', 'luke', 'mark', 'mason', 'matthew',
+          'max', 'miles', 'mitchell', 'nathan', 'neil', 'nelson', 'nicholas', 'noah', 'omar', 'oscar',
+          'owen', 'parker', 'perry', 'pierce', 'preston', 'quentin', 'randy', 'reed', 'reginald', 'rex',
+          'rick', 'riley', 'robin', 'rodney', 'roger', 'roland', 'ross', 'roy', 'ruben', 'seth',
+          'shane', 'shawn', 'simon', 'spencer', 'stanley', 'tanner', 'ted', 'terry', 'theo', 'trent',
+          'troy', 'tucker', 'warren', 'wesley', 'weston', 'zach', 'zachary'];
         
         for (const firstName of commonFirstNames) {
           if (parsedName.toLowerCase().startsWith(firstName)) {
