@@ -526,8 +526,15 @@ router.get("/pulse", async (req, res) => {
 
     let items: any[] = [];
     try { items = JSON.parse(match[0]); } catch { res.json([]); return; }
+
+    // Add Google News search URL for each headline
+    const itemsWithUrls = items.slice(0, 5).map((item: any) => ({
+      ...item,
+      url: `https://news.google.com/search?q=${encodeURIComponent(item.title)}&hl=en-US&gl=US&ceid=US:en`,
+    }));
+
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.json(Array.isArray(items) ? items.slice(0, 5) : []);
+    res.json(itemsWithUrls);
   } catch (err) {
     req.log.error({ err }, "Pulse news generation failed");
     res.json([]);
