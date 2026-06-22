@@ -1576,7 +1576,9 @@ export default function BriefingPage() {
               <div style={{maxWidth:760,marginBottom:40}}>
                 <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
                   <p className="animate-heartbeat" style={{fontSize:13,fontWeight:600,letterSpacing:"0.5px",textTransform:"uppercase",color:"#ef4444",margin:0}}>Intelligence Pulse</p>
-                  <div style={{height:1,flex:1,background:t.divider,opacity:0.5}}/>
+                  <svg height="16" style={{flex:1,opacity:0.6}} viewBox="0 0 200 16" preserveAspectRatio="none">
+                    <polyline points="0,8 30,8 40,2 50,14 60,2 70,14 80,8 200,8" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
                 </div>
                 {generalNewsData.map((item,i)=>(
                   <div key={i} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 0",borderBottom:`1px solid ${t.divider}`}}>
