@@ -1467,6 +1467,9 @@ export default function BriefingPage() {
                 <span style={{fontWeight:500}}>Powered by</span> IBM Bob & watson<span style={{color:"#0f62fe"}}>x</span><br/>
                 <span style={{opacity:0.7}}>Built by Marco Sesay</span>
               </p>
+              <div style={{marginTop:14}}>
+                <img src="/ibm-logo.png" alt="IBM" style={{width:"72px",height:"auto",opacity:theme==="dark"?0.6:0.4,filter:theme==="dark"?"brightness(0) invert(1)":"brightness(0)"}}/>
+              </div>
             </div>
           </div>
         )}
