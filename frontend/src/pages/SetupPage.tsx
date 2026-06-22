@@ -99,6 +99,8 @@ export default function SetupPage() {
   };
 
   const handleSkip = () => {
+    localStorage.setItem("userName", "Guest");
+    localStorage.setItem("userRole", "Sales Engineer");
     window.location.href = "/";
   };
 
