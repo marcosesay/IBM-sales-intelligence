@@ -1096,14 +1096,24 @@ export default function BriefingPage() {
   const streamingSections = useMemo(() => {
     if (!briefingText) return [];
     const parts = briefingText.split("##").slice(1);
-    return parts.map((sec, i) => {
-      const lines = sec.trim().split("\n");
-      return {
-        title: lines[0].trim() || "…",
-        content: lines.slice(1).join("\n").trim(),
-        isStreaming: generating && i === parts.length - 1,
-      };
-    });
+    const seen = new Set<string>();
+    return parts
+      .map((sec, i) => {
+        const lines = sec.trim().split("\n");
+        const title = lines[0].trim() || "…";
+        return {
+          title,
+          content: lines.slice(1).join("\n").trim(),
+          isStreaming: generating && i === parts.length - 1,
+        };
+      })
+      .filter(sec => {
+        const key = sec.title.toLowerCase().replace(/[^a-z]/g, "");
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      })
+      .slice(0, 4); // max 4 sections
   }, [briefingText, generating]);
 
   const generate = useCallback(async () => {
