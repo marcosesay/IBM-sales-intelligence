@@ -394,7 +394,16 @@ IMPORTANT INSTRUCTIONS:
 - Focus on practical, actionable insights rather than assumptions about the contact's influence or authority
 - Be accurate and conservative in your assessments
 
-CRITICAL: Write a pre-call briefing with EXACTLY FOUR sections using ## headers. Each section should appear ONLY ONCE. Do not repeat any section headers. Follow the formatting instructions in each section exactly.
+CRITICAL: Write a pre-call briefing with EXACTLY FOUR sections using ## headers in THIS EXACT ORDER:
+1. ## Who is [Contact Name]?
+2. ## Company Background
+3. ## Discovery Questions
+4. ## Opportunity Qualification
+
+Each section appears ONLY ONCE. Do not repeat any section headers. Do not add extra sections.
+Do NOT include any meta-commentary, chain of thought, self-correction, or notes about your instructions.
+Do NOT write things like "Since the response needs to..." or "I'll rewrite according to..." or "adhering to providing..."
+Just write the briefing content directly. No preamble, no postscript.
 
 For product names: Use *italic* format (single asterisks), NOT bold (**).
 Keep everything clean and professional — no extra markdown symbols like ---, or ### in the output.
