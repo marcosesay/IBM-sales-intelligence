@@ -915,6 +915,7 @@ export default function BriefingPage() {
       setContactPhotoUrl("");
       setParsedCompanyName("");
       setParsedTitle("");
+      setTitle("");
       setContactLoading(false);
       return;
     }
@@ -977,7 +978,7 @@ export default function BriefingPage() {
           if (!resolvedCompany && data.name) {
             try {
               const researchRes = await fetch(
-                `/api/briefing/company-research?company=${encodeURIComponent(data.name)}&contactTitle=${encodeURIComponent(data.title || "")}`
+                `${getBaseUrl()}/api/briefing/company-research?company=${encodeURIComponent(data.name)}&contactTitle=${encodeURIComponent(data.title || "")}`
               );
               const researchData = await researchRes.json();
               // Try to extract a company name from the research snippet
@@ -1014,7 +1015,7 @@ export default function BriefingPage() {
 
           if (data.title) {
             setParsedTitle(data.title);
-            if (!title.trim()) setTitle(data.title);
+            if (!title.trim() && data.title && !data.title.toLowerCase().includes("linkedin")) setTitle(data.title);
           }
         })
         .catch(() => {
@@ -1705,16 +1706,7 @@ export default function BriefingPage() {
               {/* Contact photo on the LEFT - only show if there's a contact name */}
               {displayBriefing?.ct && (
                 <div style={{flexShrink:0,width:58,height:58,borderRadius:"50%",background:t.card,border:`1.5px solid ${t.cardBorder}`,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",marginTop:2}}>
-                  {logoData?.url ? (
-                    <img
-                      src={logoData.url}
-                      alt={displayBriefing?.co || ""}
-                      style={{width:"100%",height:"100%",objectFit:"contain",padding:6}}
-                      onError={e=>{
-                        (e.target as HTMLImageElement).style.display = "none";
-                      }}
-                    />
-                  ) : (contactPhotoUrl || displayBriefing?.contactPhotoUrl) ? (
+                  {(contactPhotoUrl || displayBriefing?.contactPhotoUrl) ? (
                     <img
                       src={contactPhotoUrl || displayBriefing?.contactPhotoUrl || ""}
                       alt={displayBriefing?.ct || ""}

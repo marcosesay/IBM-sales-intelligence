@@ -1068,26 +1068,28 @@ router.get("/parse-contact", async (req, res) => {
       
       // If no spaces found (all lowercase like "jamiedimon"), try common name patterns
       if (!parsedName.includes(" ") && parsedName.length > 4) {
-        // Common first names to detect boundaries
-        const commonFirstNames = ['james', 'john', 'robert', 'michael', 'william', 'david', 'richard', 'joseph', 'thomas', 'charles',
-          'mary', 'patricia', 'jennifer', 'linda', 'barbara', 'elizabeth', 'susan', 'jessica', 'sarah', 'karen',
-          'jamie', 'chris', 'alex', 'sam', 'pat', 'taylor', 'jordan', 'morgan', 'casey', 'drew',
-          'dexter', 'marcus', 'derek', 'darius', 'dante', 'dominic', 'daniel', 'dennis', 'donald', 'douglas',
-          'kevin', 'keith', 'kenneth', 'kyle', 'karl', 'brandon', 'brian', 'brett', 'bradley', 'blake',
-          'anthony', 'andrew', 'aaron', 'adam', 'alan', 'albert', 'alfred', 'allen', 'amanda', 'amber',
-          'peter', 'paul', 'patrick', 'phillip', 'raymond', 'ryan', 'ronald', 'russell', 'scott', 'sean',
-          'steven', 'stephen', 'timothy', 'travis', 'trevor', 'tyler', 'victor', 'vincent', 'walter', 'wayne',
-          'justin', 'julian', 'julius', 'jake', 'jacob', 'jarrod', 'jarrett', 'jared', 'jason', 'jeffrey',
-          'jeremy', 'jerome', 'jerry', 'jesse', 'jimmy', 'joel', 'joey', 'jonathan', 'jonah', 'jordan',
-          'jorge', 'jose', 'joshua', 'juan', 'julian', 'lance', 'larry', 'lawrence', 'leon', 'leonard',
-          'leroy', 'lewis', 'liam', 'logan', 'louis', 'lucas', 'luke', 'mark', 'mason', 'matthew',
-          'max', 'miles', 'mitchell', 'nathan', 'neil', 'nelson', 'nicholas', 'noah', 'omar', 'oscar',
-          'owen', 'parker', 'perry', 'pierce', 'preston', 'quentin', 'randy', 'reed', 'reginald', 'rex',
-          'rick', 'riley', 'robin', 'rodney', 'roger', 'roland', 'ross', 'roy', 'ruben', 'seth',
-          'shane', 'shawn', 'simon', 'spencer', 'stanley', 'tanner', 'ted', 'terry', 'theo', 'trent',
-          'troy', 'tucker', 'warren', 'wesley', 'weston', 'zach', 'zachary'];
+        const commonFirstNames = ['aaron','adam','alan','albert','alex','alfred','allen','amanda','amber','andrew',
+          'anthony','ashley','barbara','blake','bradley','brandon','brett','brian','brittany','carlos',
+          'casey','charles','chelsea','chris','christopher','daniel','dante','darius','david','dennis',
+          'derek','dexter','dominic','donald','douglas','drew','elizabeth','emily','hannah','heather',
+          'jacob','jake','james','jared','jarrett','jarrod','jason','jeffrey','jennifer','jeremy',
+          'jerome','jerry','jesse','jimmy','joel','joey','john','jonathan','jonah','jordan','jorge',
+          'jose','joseph','joshua','juan','julian','julius','justin','karen','karl','katherine',
+          'keith','kenneth','kevin','kyle','lance','larry','lauren','lawrence','leon','leonard',
+          'leroy','lewis','liam','linda','logan','louis','lucas','luke','marcus','mark','mary',
+          'mason','matthew','max','megan','melissa','michael','miles','mitchell','morgan','nathan',
+          'neil','nelson','nicholas','nicole','noah','omar','oscar','owen','parker','patricia',
+          'patrick','paul','perry','peter','phillip','pierce','preston','quentin','rachel','randy',
+          'raymond','reed','reginald','rex','richard','rick','riley','robert','robin','rodney',
+          'roger','roland','ronald','ross','roy','ruben','russell','ryan','sam','sarah','scott',
+          'sean','seth','shane','shawn','simon','spencer','stanley','stephanie','steven','stephen',
+          'susan','tanner','taylor','ted','terry','theo','thomas','timothy','travis','trevor',
+          'troy','tucker','tyler','victor','vincent','walter','warren','wayne','wesley','weston',
+          'william','zach','zachary'];
         
-        for (const firstName of commonFirstNames) {
+        // Try longest matching first name first to avoid "al" matching "alex"
+        const sorted = [...commonFirstNames].sort((a, b) => b.length - a.length);
+        for (const firstName of sorted) {
           if (parsedName.toLowerCase().startsWith(firstName)) {
             parsedName = firstName + ' ' + parsedName.slice(firstName.length);
             break;
