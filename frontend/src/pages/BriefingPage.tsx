@@ -1397,7 +1397,7 @@ export default function BriefingPage() {
             </div>
             
             <div>
-              <GlassInput t={t} label="Company (Optional)" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder={contactLoading ? "Looking up…" : "e.g. JPMorgan Chase"}/>
+              <GlassInput t={t} label="Company" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder={contactLoading ? "Looking up…" : "e.g. JPMorgan Chase"}/>
               {contactLoading && (
                 <p style={{fontSize:10,color:t.accent,margin:"-12px 0 12px 0",fontStyle:"italic",display:"flex",alignItems:"center",gap:5}}>
                   <span className="animate-pulse-dot" style={{display:"inline-block",width:5,height:5,borderRadius:"50%",background:t.accent}}/>
@@ -1406,8 +1406,8 @@ export default function BriefingPage() {
               )}
             </div>
             
-            <GlassInput t={t} label="Title" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics"/>
-            <GlassInput t={t} label="Industry" value={industry} onChange={e=>setIndustry((e.target as HTMLInputElement).value)} placeholder="Auto-detected — or type your own"/>
+            <GlassInput t={t} label="Title (Optional)" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics"/>
+            <GlassInput t={t} label="Industry (Optional)" value={industry} onChange={e=>setIndustry((e.target as HTMLInputElement).value)} placeholder="Auto-detected — or type your own"/>
             <GlassInput t={t} label="Context (Optional)" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Anything you already know…"/>
 
             <button
