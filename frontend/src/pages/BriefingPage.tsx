@@ -1462,12 +1462,12 @@ export default function BriefingPage() {
 
             {error && <p style={{fontSize:12,color:"rgba(255,100,100,0.9)",marginTop:8}}>{error}</p>}
 
-            <div style={{marginTop:24,paddingTop:16,borderTop:`1px solid ${t.divider}`}}>
+            <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${t.divider}`}}>
               <p style={{fontSize:12,color:t.textDim,lineHeight:1.7,margin:0}}>
                 <span style={{fontWeight:500}}>Powered by</span> IBM Bob & watson<span style={{color:"#0f62fe"}}>x</span><br/>
                 <span style={{opacity:0.7}}>Built by Marco Sesay</span>
               </p>
-              <div style={{marginTop:14}}>
+              <div style={{marginTop:6}}>
                 <img src="/ibm-logo.png" alt="IBM" style={{width:"72px",height:"auto",opacity:theme==="dark"?0.6:0.4,filter:theme==="dark"?"brightness(0) invert(1)":"brightness(0)"}}/>
               </div>
             </div>
