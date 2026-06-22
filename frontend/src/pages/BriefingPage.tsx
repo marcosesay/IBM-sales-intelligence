@@ -990,12 +990,24 @@ export default function BriefingPage() {
     if (contact.toLowerCase().includes("linkedin.com/in/")) {
       const slugMatch = contact.match(/linkedin\.com\/in\/([^/?]+)/i);
       if (slugMatch?.[1]) {
-        return slugMatch[1]
-          .replace(/[-_]/g, " ")
-          .replace(/\d+/g, "")
-          .trim()
-          .split(" ")
-          .filter(w => w.length > 1)
+        let slug = slugMatch[1].replace(/[-_]/g, " ").replace(/\d+/g, "").trim();
+        // If no spaces, try to split on known first names
+        if (!slug.includes(" ") && slug.length > 4) {
+          const firstNames = ["james","john","robert","michael","william","david","richard","joseph","thomas","charles",
+            "mary","patricia","jennifer","linda","barbara","elizabeth","susan","jessica","sarah","karen",
+            "jamie","chris","alex","sam","taylor","jordan","morgan","casey","drew","justin","jason","jeffrey",
+            "brandon","brian","kevin","keith","daniel","dennis","donald","douglas","derek","dexter","marcus",
+            "anthony","andrew","aaron","adam","peter","paul","patrick","ryan","scott","sean","steven","timothy",
+            "travis","tyler","victor","walter","wayne","ashley","amanda","amber","brittany","chelsea","emily",
+            "hannah","heather","jessica","katherine","lauren","megan","melissa","nicole","rachel","stephanie"];
+          for (const fn of firstNames) {
+            if (slug.toLowerCase().startsWith(fn)) {
+              slug = fn + " " + slug.slice(fn.length);
+              break;
+            }
+          }
+        }
+        return slug.split(" ").filter(w => w.length > 1)
           .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
           .join(" ") || contact;
       }
