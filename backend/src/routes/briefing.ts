@@ -99,6 +99,12 @@ Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, n
 
 ## Discovery Questions
 List exactly 8 discovery questions as a simple numbered list. Each question on its own line. No sub-headers. No explanations after each question. Just the questions.
+Questions must be specifically tailored to:
+- The contact's title and likely priorities as a ${title} at ${company}
+- The ${industry} industry context and its specific challenges
+- The ${callType} call type (e.g. for Discovery focus on uncovering pain; for Competitive focus on displacement; for Renewal focus on expansion)
+- Any additional context provided about this opportunity
+Do NOT use generic questions. Every question should feel like it was written specifically for this person at this company.
 
 ## Opportunity Qualification
 CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE asterisks on each side (***Budget***, ***Authority***, ***Need***, ***Timeline***, ***Champion***, ***Political Blockers***), each followed by 1-2 sentences. Example format:
@@ -398,7 +404,7 @@ ${buildSections(ct, company, ind, title, contactName)}`;
 
   try {
     const stream = generateTextStream(prompt, {
-      model: "ibm/granite-13b-chat-v2",
+      model: "meta-llama/llama-3-3-70b-instruct",
       maxTokens: 8192,
       temperature: 0.7,
     });
