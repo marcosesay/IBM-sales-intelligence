@@ -1061,7 +1061,8 @@ router.get("/parse-contact", async (req, res) => {
       let parsedName = slug
         .replace(/[-_]/g, " ")
         .replace(/\d+/g, "")
-        .replace(/([a-z])([A-Z])/g, '$1 $2') // Add space before capitals: jamieDimon -> jamie Dimon
+        .replace(/\b(iii|ii|iv|vi|vii|viii|jr|sr)\b/gi, match => match.toUpperCase())
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
         .replace(/\s+/g, " ")
         .trim();
       
@@ -1070,7 +1071,12 @@ router.get("/parse-contact", async (req, res) => {
         // Common first names to detect boundaries
         const commonFirstNames = ['james', 'john', 'robert', 'michael', 'william', 'david', 'richard', 'joseph', 'thomas', 'charles',
           'mary', 'patricia', 'jennifer', 'linda', 'barbara', 'elizabeth', 'susan', 'jessica', 'sarah', 'karen',
-          'jamie', 'chris', 'alex', 'sam', 'pat', 'taylor', 'jordan', 'morgan', 'casey', 'drew'];
+          'jamie', 'chris', 'alex', 'sam', 'pat', 'taylor', 'jordan', 'morgan', 'casey', 'drew',
+          'dexter', 'marcus', 'derek', 'darius', 'dante', 'dominic', 'daniel', 'dennis', 'donald', 'douglas',
+          'kevin', 'keith', 'kenneth', 'kyle', 'karl', 'brandon', 'brian', 'brett', 'bradley', 'blake',
+          'anthony', 'andrew', 'aaron', 'adam', 'alan', 'albert', 'alfred', 'allen', 'amanda', 'amber',
+          'peter', 'paul', 'patrick', 'phillip', 'raymond', 'ryan', 'ronald', 'russell', 'scott', 'sean',
+          'steven', 'stephen', 'timothy', 'travis', 'trevor', 'tyler', 'victor', 'vincent', 'walter', 'wayne'];
         
         for (const firstName of commonFirstNames) {
           if (parsedName.toLowerCase().startsWith(firstName)) {
