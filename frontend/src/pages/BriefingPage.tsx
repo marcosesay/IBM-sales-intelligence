@@ -956,7 +956,14 @@ export default function BriefingPage() {
                   return !isTiny && !isMixedAlphaNum;
                 })
                 .join(" ");
-            setParsedContactName(sanitizeName(data.name));
+            const sanitized = sanitizeName(data.name);
+            // Only use name if it has at least 2 words (first + last)
+            // Single word names are likely just the slug, not a real name
+            if (sanitized.includes(" ")) {
+              setParsedContactName(sanitized);
+            } else {
+              setParsedContactName("");
+            }
           }
           if (data.photoUrl) {
             setContactPhotoUrl(data.photoUrl);
