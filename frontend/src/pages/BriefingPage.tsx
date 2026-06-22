@@ -1299,10 +1299,6 @@ export default function BriefingPage() {
       }}>
         {sidebarOpen && (
           <div style={{padding:"22px 18px 28px",paddingTop:56}}>
-            {/* IBM Logo */}
-            <div style={{display:"flex",justifyContent:"flex-start",marginBottom:18,marginTop:-10}}>
-              <img src="/ibm-logo.png" alt="IBM" style={{height:22,width:"auto",opacity:theme==="dark"?0.85:1,filter:theme==="dark"?"brightness(0) invert(1)":"brightness(0)"}}/>
-            </div>
             {/* Profile row */}
             <div style={{display:"flex",alignItems:"center",gap:10,paddingBottom:18,marginBottom:16,borderBottom:`1px solid ${t.divider}`}}>
               <>
@@ -1579,9 +1575,7 @@ export default function BriefingPage() {
               <div style={{maxWidth:760,marginBottom:40}}>
                 <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
                   <p className="animate-heartbeat" style={{fontSize:13,fontWeight:600,letterSpacing:"0.5px",textTransform:"uppercase",color:"#ef4444",margin:0}}>Intelligence Pulse</p>
-                  <svg height="16" style={{flex:1,opacity:0.6}} viewBox="0 0 200 16" preserveAspectRatio="none">
-                    <polyline points="0,8 30,8 40,2 50,14 60,2 70,14 80,8 200,8" fill="none" stroke="#ef4444" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+<div style={{height:1,flex:1,background:"#ef4444",opacity:0.3,marginLeft:8}}/>
                 </div>
                 {generalNewsData.map((item,i)=>(
                   <div key={i} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 0",borderBottom:`1px solid ${t.divider}`}}>
