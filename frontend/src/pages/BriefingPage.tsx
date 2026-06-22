@@ -1289,6 +1289,10 @@ export default function BriefingPage() {
       }}>
         {sidebarOpen && (
           <div style={{padding:"22px 18px 28px",paddingTop:56}}>
+            {/* IBM Logo */}
+            <div style={{display:"flex",justifyContent:"flex-start",marginBottom:18,marginTop:-10}}>
+              <img src="/ibm-logo.png" alt="IBM" style={{height:22,width:"auto",opacity:theme==="dark"?0.85:1,filter:theme==="dark"?"brightness(0) invert(1)":"brightness(0)"}}/>
+            </div>
             {/* Profile row */}
             <div style={{display:"flex",alignItems:"center",gap:10,paddingBottom:18,marginBottom:16,borderBottom:`1px solid ${t.divider}`}}>
               <>
