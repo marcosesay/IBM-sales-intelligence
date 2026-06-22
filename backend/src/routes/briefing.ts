@@ -512,8 +512,18 @@ router.get("/news", async (req, res) => {
   }
 });
 
+// Server-side pulse cache (30 min TTL)
+let pulseCache: { items: any[]; expiresAt: number } | null = null;
+
 router.get("/pulse", async (req, res) => {
   try {
+    // Serve from cache if still valid
+    if (pulseCache && Date.now() < pulseCache.expiresAt) {
+      res.setHeader("Cache-Control", "public, max-age=1800");
+      res.json(pulseCache.items);
+      return;
+    }
+
     const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
     const prompt = `You are a sales intelligence assistant. Generate 5 realistic enterprise AI and technology news headlines for ${today} from Bloomberg, WSJ, or TechCrunch. Respond ONLY with a JSON array. Example: [{"title": "IBM Expands watsonx Platform", "source": "Bloomberg", "date": "${today}", "url": null}]`;
 
@@ -527,13 +537,15 @@ router.get("/pulse", async (req, res) => {
     let items: any[] = [];
     try { items = JSON.parse(match[0]); } catch { res.json([]); return; }
 
-    // Add Google News search URL for each headline
     const itemsWithUrls = items.slice(0, 5).map((item: any) => ({
       ...item,
       url: `https://news.google.com/search?q=${encodeURIComponent(item.title)}&hl=en-US&gl=US&ceid=US:en`,
     }));
 
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    // Store in cache for 30 minutes
+    pulseCache = { items: itemsWithUrls, expiresAt: Date.now() + 30 * 60 * 1000 };
+
+    res.setHeader("Cache-Control", "public, max-age=1800");
     res.json(itemsWithUrls);
   } catch (err) {
     req.log.error({ err }, "Pulse news generation failed");
