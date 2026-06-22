@@ -990,7 +990,11 @@ export default function BriefingPage() {
     if (contact.toLowerCase().includes("linkedin.com/in/")) {
       const slugMatch = contact.match(/linkedin\.com\/in\/([^/?]+)/i);
       if (slugMatch?.[1]) {
-        let slug = slugMatch[1].replace(/[-_]/g, " ").replace(/\d+/g, "").trim();
+        let slug = slugMatch[1]
+          .replace(/\d+$/, "") // remove trailing numbers first (e.g. ebell1906 -> ebell)
+          .replace(/[-_]/g, " ")
+          .replace(/\d+/g, "")
+          .trim();
         // If no spaces, try to split on known first names
         if (!slug.includes(" ") && slug.length > 4) {
           const firstNames = ["james","john","robert","michael","william","david","richard","joseph","thomas","charles",
@@ -1677,13 +1681,7 @@ export default function BriefingPage() {
                 <p style={{fontSize:12,color:t.textMuted,margin:"0 0 2px"}}>{[displayBriefing?.co,displayBriefing?.ti,displayBriefing?.ind].filter(Boolean).join("  ·  ")}</p>
                 <p style={{fontSize:11,color:t.dateText,margin:0}}>Generated {displayBriefing?.date}</p>
               </div>
-              {/* Company logo on the RIGHT */}
-              <div style={{flexShrink:0,width:48,height:48,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",marginTop:4}}>
-                {logoUrl
-                  ? <img src={logoUrl} alt={`${displayBriefing?.co} logo`} style={{width:"100%",height:"100%",objectFit:"contain"}} onError={e=>{(e.target as HTMLImageElement).style.display="none"}}/>
-                  : <span style={{fontSize:18,fontWeight:500,color:t.textMuted}}>{(displayBriefing?.co||"?")[0].toUpperCase()}</span>
-                }
-              </div>
+
             </div>
 
             {/* Streaming sections - first two full width, last two side-by-side */}
