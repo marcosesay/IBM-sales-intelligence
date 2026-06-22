@@ -92,7 +92,9 @@ export function useGetPulseNews(
       fetchJson("/api/briefing/pulse").then((data) =>
         Array.isArray(data) ? data : [],
       ),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: true,
     ...options?.query,
   });
 }
