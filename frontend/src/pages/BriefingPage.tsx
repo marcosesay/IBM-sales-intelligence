@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useGetBriefingNews, useGetBriefingLogo, useGetBriefingIndustry } from "@/lib/api-client";
+import { useGetBriefingNews, useGetBriefingLogo, useGetBriefingIndustry, useGetPulseNews } from "@/lib/api-client";
 
 /* ─── User Info Hook ─── */
 function useUserInfo() {
@@ -825,8 +825,7 @@ export default function BriefingPage() {
 
   // Fetch general tech news for home page (only when on home page)
   const shouldFetchGeneralNews = !briefingReady && !generating && !company;
-  const { data: generalNewsData } = useGetBriefingNews(
-    { company: "AI technology" },
+  const { data: generalNewsData } = useGetPulseNews(
     { query: { enabled: shouldFetchGeneralNews } as any }
   );
   

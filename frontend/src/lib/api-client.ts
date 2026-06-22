@@ -82,4 +82,19 @@ export function useGetBriefingIndustry(
   });
 }
 
+
+export function useGetPulseNews(
+  options,
+) {
+  return useQuery({
+    queryKey: ["pulse-news"],
+    queryFn: () =>
+      fetchJson("/api/briefing/pulse").then((data) =>
+        Array.isArray(data) ? data : [],
+      ),
+    staleTime: 5 * 60 * 1000,
+    ...options?.query,
+  });
+}
+
 // Made with Bob

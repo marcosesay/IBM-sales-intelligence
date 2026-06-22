@@ -512,6 +512,28 @@ router.get("/news", async (req, res) => {
   }
 });
 
+router.get("/pulse", async (req, res) => {
+  try {
+    const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+    const prompt = `You are a sales intelligence assistant. Generate 5 realistic, plausible enterprise AI and technology news headlines for ${today}. These should reflect stories from Bloomberg, WSJ, or TechCrunch covering AI adoption in enterprise, IBM watsonx or competing AI platforms, data infrastructure, cloud, or digital transformation. Respond ONLY with a JSON array, no explanation, no markdown, no backticks. Format: [{"title": "Headline here", "source": "Bloomberg", "date": "${today}", "url": null}]`;
+
+    const stream = generateTextStream({ prompt, maxTokens: 600, temperature: 0.7 });
+    let raw = "";
+    for await (const chunk of stream) { raw += chunk; }
+
+    const match = raw.match(/\[(\s|\S)*?\]/);
+    if (!match) { res.json([]); return; }
+
+    let items = [];
+    try { items = JSON.parse(match[0]); } catch { res.json([]); return; }
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.json(Array.isArray(items) ? items.slice(0, 5) : []);
+  } catch (err) {
+    req.log.error({ err }, "Pulse news generation failed");
+    res.json([]);
+  }
+});
+
 router.get("/logo", async (req, res) => {
   const company = String(req.query["company"] || "");
   if (!company) {
