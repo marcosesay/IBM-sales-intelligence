@@ -8,6 +8,8 @@ COPY package.json ./
 RUN pnpm install
 
 COPY . .
+ARG VITE_BACKEND_URL
+ENV VITE_BACKEND_URL=$VITE_BACKEND_URL
 RUN pnpm run build
 
 FROM nginx:alpine
@@ -16,4 +18,3 @@ COPY nginx.conf /etc/nginx/nginx.conf
 
 EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]
-# Mon Jun 22 10:12:49 EDT 2026
