@@ -413,6 +413,68 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
     }
   };
   
+  // Render qualification box with bold labels (Budget:, Authority:, etc.)
+  const renderQualBox = (x: number, yPos: number, width: number, height: number, title: string, items: string[]): void => {
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(229, 231, 235);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, yPos, width, height, 1.5, 1.5, "FD");
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(DARK_GRAY[0], DARK_GRAY[1], DARK_GRAY[2]);
+    doc.text(title, x + 3, yPos + 6);
+
+    doc.setDrawColor(IBM_BLUE[0], IBM_BLUE[1], IBM_BLUE[2]);
+    doc.setLineWidth(0.5);
+    doc.line(x + 3, yPos + 9, x + width - 3, yPos + 9);
+
+    const fontSize = 7;
+    const lineHeight = fontSize * 0.42;
+    const spacing = fontSize * 0.13;
+    let itemY = yPos + 14;
+
+    for (const item of items) {
+      if (itemY > yPos + height - 3) break;
+      // Split on first colon to bold the label
+      const colonIdx = item.indexOf(":");
+      if (colonIdx > 0) {
+        const label = item.slice(0, colonIdx + 1);
+        const rest = item.slice(colonIdx + 1);
+        const fullLine = `${label}${rest}`;
+        const wrapped = doc.splitTextToSize(fullLine, width - 8);
+        // First line: bold label + normal rest
+        doc.setFontSize(fontSize);
+        const labelWidth = doc.getTextWidth(label);
+        doc.setFont("helvetica", "bold");
+        doc.text(label, x + 4, itemY);
+        doc.setFont("helvetica", "normal");
+        // remaining text on first line after label
+        const firstLineText = doc.splitTextToSize(rest.trim(), width - 8 - labelWidth)[0] || "";
+        if (firstLineText) doc.text(firstLineText, x + 4 + labelWidth + 0.5, itemY);
+        // remaining wrapped lines (if any)
+        if (wrapped.length > 1) {
+          const remainingText = rest.trim().slice(firstLineText.length).trim();
+          if (remainingText) {
+            const moreLines = doc.splitTextToSize(remainingText, width - 8);
+            for (const line of moreLines) {
+              itemY += lineHeight;
+              if (itemY > yPos + height - 3) break;
+              doc.text(line, x + 4, itemY);
+            }
+          }
+        }
+      } else {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(fontSize);
+        const wrapped = doc.splitTextToSize(`• ${item}`, width - 8);
+        doc.text(wrapped[0], x + 4, itemY);
+      }
+      doc.setTextColor(DARK_GRAY[0], DARK_GRAY[1], DARK_GRAY[2]);
+      itemY += lineHeight + spacing;
+    }
+  };
+
   // Use the EXACT same companyInfo that HTML uses - just format as paragraph instead of bullets
   const companyBackgroundParagraph = companyInfo.length > 0
     ? companyInfo.join(" ")
@@ -467,7 +529,7 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
   // Row 3 - Discovery Questions (left) + Opportunity Qualification (right), same height
   y += contactH + gap;
   renderBox(m, y, colW, row3H, "Discovery Questions", discoveryQs, false);
-  renderBox(m + colW + 3, y, colW, row3H, contentSets[2].title, qualInfo, true);
+  renderQualBox(m + colW + 3, y, colW, row3H, contentSets[2].title, qualInfo);
   
   // Row 4 - IBM Product Recommendations (full width, fills remaining space)
   y += row3H + gap;
