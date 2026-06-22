@@ -17,7 +17,7 @@ function App() {
   const path = window.location.pathname;
 
   useEffect(() => {
-    setBaseUrl("http://localhost:3003");
+    setBaseUrl(import.meta.env.VITE_BACKEND_URL || "http://localhost:3003");
 
     // Check if user has completed setup
     const userName = localStorage.getItem("userName");
