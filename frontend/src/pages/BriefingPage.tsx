@@ -1464,7 +1464,7 @@ export default function BriefingPage() {
 
             <div style={{marginTop:24,paddingTop:16,borderTop:`1px solid ${t.divider}`}}>
               <p style={{fontSize:12,color:t.textDim,lineHeight:1.7,margin:0}}>
-                <span style={{fontWeight:500}}>Powered by</span> IBM Bob & watsonx<br/>
+                <span style={{fontWeight:500}}>Powered by</span> IBM Bob & watson<span style={{color:"#0f62fe"}}>x</span><br/>
                 <span style={{opacity:0.7}}>Built by Marco Sesay</span>
               </p>
             </div>
