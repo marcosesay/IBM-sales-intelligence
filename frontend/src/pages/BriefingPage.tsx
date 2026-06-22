@@ -985,7 +985,23 @@ export default function BriefingPage() {
     }
   }, [debouncedContact]);
   
-  const contactName = parsedContactName || contact;
+  const contactName = (() => {
+    if (parsedContactName) return parsedContactName;
+    if (contact.toLowerCase().includes("linkedin.com/in/")) {
+      const slugMatch = contact.match(/linkedin\.com\/in\/([^/?]+)/i);
+      if (slugMatch?.[1]) {
+        return slugMatch[1]
+          .replace(/[-_]/g, " ")
+          .replace(/\d+/g, "")
+          .trim()
+          .split(" ")
+          .filter(w => w.length > 1)
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(" ") || contact;
+      }
+    }
+    return contact;
+  })();
 
   /* ─── Stream sections parser ─── */
   const streamingSections = useMemo(() => {
