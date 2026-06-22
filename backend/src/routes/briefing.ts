@@ -95,7 +95,10 @@ Provide a comprehensive company overview covering:
 3) The company's likely AI/technology maturity level and digital transformation stage
 4) Recent news or developments that might create urgency
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
+Then on a new line write exactly: ***Likely Tech Stack & Competitive Landscape:***
+Follow with 2-3 sentences covering: what data, AI, or analytics vendors ${company} likely uses based on their industry and size, which of those vendors IBM directly competes with or displaces, and the single strongest IBM displacement angle for this account.
+
+Write the overview in clear prose paragraphs. Keep the entire section to 3 paragraphs maximum.
 
 ## Discovery Questions
 List exactly 8 discovery questions as a simple numbered list. Each question on its own line. No sub-headers. No explanations after each question. Just the questions.
