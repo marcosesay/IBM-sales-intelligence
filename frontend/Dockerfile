@@ -8,7 +8,7 @@ COPY package.json ./
 RUN pnpm install
 
 COPY . .
-ENV VITE_BACKEND_URL=https://ibm-sales-intelligence.23ij0n2ztu5p.ca-tor.codeengine.appdomain.cloud
+RUN echo 'VITE_BACKEND_URL=https://ibm-sales-intelligence.23ij0n2ztu5p.ca-tor.codeengine.appdomain.cloud' > .env.production
 RUN pnpm run build
 
 FROM nginx:alpine
