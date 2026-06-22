@@ -120,7 +120,7 @@ List exactly 3 IBM product names only, one per line, using *italic* format. Noth
 Example:
 *IBM watsonx.ai*
 *IBM watsonx.data*
-*IBM watsonx.governance*\`,
+*IBM watsonx.governance*`,
 
     "Renewal": `## Who is ${contactName || "the Contact"}?
 
@@ -155,7 +155,7 @@ List exactly 3 IBM product names only, one per line, using *italic* format. No d
 Example:
 *IBM watsonx.ai*
 *IBM watsonx.data*
-*IBM watsonx.governance*\`,
+*IBM watsonx.governance*`,
 
     "Competitive": `## Who is ${contactName || "the Contact"}?
 
