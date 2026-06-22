@@ -1639,25 +1639,22 @@ export default function BriefingPage() {
               {/* Contact photo on the LEFT - only show if there's a contact name */}
               {displayBriefing?.ct && (
                 <div style={{flexShrink:0,width:58,height:58,borderRadius:"50%",background:t.card,border:`1.5px solid ${t.cardBorder}`,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",marginTop:2}}>
-                  {(contactPhotoUrl || displayBriefing?.contactPhotoUrl) ? (
+                  {logoData?.url ? (
+                    <img
+                      src={logoData.url}
+                      alt={displayBriefing?.co || ""}
+                      style={{width:"100%",height:"100%",objectFit:"contain",padding:6}}
+                      onError={e=>{
+                        (e.target as HTMLImageElement).style.display = "none";
+                      }}
+                    />
+                  ) : (contactPhotoUrl || displayBriefing?.contactPhotoUrl) ? (
                     <img
                       src={contactPhotoUrl || displayBriefing?.contactPhotoUrl || ""}
                       alt={displayBriefing?.ct || ""}
                       style={{width:"100%",height:"100%",objectFit:"cover"}}
                       onError={e=>{
-                        console.log('Contact photo failed to load, using fallback');
-                        // Hide the failed image and show initials instead
                         (e.target as HTMLImageElement).style.display = "none";
-                        const parent = (e.target as HTMLImageElement).parentElement;
-                        if (parent && !parent.querySelector('span')) {
-                          const initials = (displayBriefing?.ct||"?").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
-                          const span = document.createElement('span');
-                          span.style.fontSize = "17px";
-                          span.style.fontWeight = "500";
-                          span.style.color = t.textMuted;
-                          span.textContent = initials;
-                          parent.appendChild(span);
-                        }
                       }}
                     />
                   ) : (
