@@ -116,9 +116,11 @@ CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE 
 Keep it tight.
 
 ## Product Recommendations
-Recommend exactly 3 IBM products. For each use this format:
-*Product name* on its own line (italic, not bold).
-Combined positioning (EXACTLY 1 sentence, maximum 20 words): Briefly state why it fits ${company}. Be extremely concise.`,
+List exactly 3 IBM product names only, one per line, using *italic* format. Nothing else - no descriptions, no bullet points, no "Combined positioning". Just 3 product names.
+Example:
+*IBM watsonx.ai*
+*IBM watsonx.data*
+*IBM watsonx.governance*\`,
 
     "Renewal": `## Who is ${contactName || "the Contact"}?
 
@@ -149,9 +151,11 @@ List exactly 8 questions as a simple numbered list. No sub-headers. No explanati
 CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE asterisks on each side (***Budget***, ***Authority***, ***Need***, ***Timeline***, ***Champion***, ***Political Blockers***). 1-2 sentences each.
 
 ## Retention & Upsell Positioning
-Recommend exactly 3 IBM products for expansion. For each use this format:
-*Product name* on its own line (italic, not bold).
-Combined positioning (2-3 sentences): Explain why it fits now and how to position it in a single cohesive paragraph.`,
+List exactly 3 IBM product names only, one per line, using *italic* format. No descriptions, no bullet points. Just 3 names.
+Example:
+*IBM watsonx.ai*
+*IBM watsonx.data*
+*IBM watsonx.governance*\`,
 
     "Competitive": `## Who is ${contactName || "the Contact"}?
 
@@ -181,7 +185,11 @@ List exactly 8 questions as a simple numbered list. No sub-headers. No explanati
 CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE asterisks on each side (***Budget***, ***Authority***, ***Need***, ***Timeline***, ***Champion***, ***Political Blockers***). 1-2 sentences each.
 
 ## IBM Differentiation
-Recommend exactly 3 IBM products to displace or surround the incumbent. For each: *product name* (italic, not bold), key differentiator vs rival (one sentence), top objection + reframe (one sentence).`,
+List exactly 3 IBM product names only, one per line, using *italic* format. No descriptions, no bullet points. Just 3 names.
+Example:
+*IBM watsonx.ai*
+*IBM watsonx.data*
+*IBM watsonx.governance*`,
 
     "EBC": `## Who is ${contactName || "the Contact"}?
 
@@ -211,7 +219,11 @@ List exactly 8 strategic C-suite questions as a simple numbered list. No sub-hea
 CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE asterisks on each side (***Budget***, ***Authority***, ***Need***, ***Timeline***, ***Champion***, ***Political Blockers***). 1-2 sentences each.
 
 ## Strategic Investment Themes
-Recommend exactly 3 IBM solutions framed as executive bets. For each: *solution name* (italic, not bold), business outcome it drives (one sentence), industry proof point (one sentence).`,
+List exactly 3 IBM product names only, one per line, using *italic* format. No descriptions, no bullet points. Just 3 names.
+Example:
+*IBM watsonx.ai*
+*IBM watsonx.data*
+*IBM watsonx.governance*`,
   };
   return sections[callType] ?? sections["Discovery"];
 }
