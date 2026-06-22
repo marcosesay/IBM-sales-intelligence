@@ -1485,7 +1485,7 @@ export default function BriefingPage() {
               }}>
                 <div className="animate-pulse-dot" style={{width:7,height:7,borderRadius:"50%",background:t.accent,flexShrink:0,boxShadow:`0 0 8px ${t.accentGlow}`}} />
                 <span style={{fontSize:13,color:t.textSub,fontWeight:400}}>
-                  {greeting}, {userName ? <span style={{fontWeight:500}}>{userName.split(' ')[0]}</span> : "there"} — Your pre-call assistant is ready
+                  {greeting}, {userName && userName !== "Guest" ? <span style={{fontWeight:500}}>{userName.split(' ')[0]}</span> : <span style={{fontWeight:500}}>IBMer</span>} — Your pre-call assistant is ready
                 </span>
               </div>
               <button
