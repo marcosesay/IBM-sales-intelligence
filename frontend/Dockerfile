@@ -1,19 +1,50 @@
-FROM node:20-alpine AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-RUN npm install -g pnpm
-
 COPY package.json ./
-RUN pnpm install
+RUN npm install --legacy-peer-deps
 
-COPY . .
-RUN echo 'VITE_BACKEND_URL=https://ibm-sales-intelligence.23ij0n2ztu5p.ca-tor.codeengine.appdomain.cloud' > .env.production
-RUN pnpm run build
+COPY index.html tsconfig.json vite.config.ts components.json ./
+COPY public ./public
+COPY src ./src
 
-FROM nginx:alpine
+RUN npm run build
+
+# ---
+
+FROM nginx:alpine AS runtime
+
+# Replace main nginx config with one that uses /tmp for all writable paths
+COPY nginx-main.conf /etc/nginx/nginx.conf
+
+RUN mkdir -p \
+    /tmp/nginx-client-body \
+    /tmp/nginx-proxy \
+    /tmp/nginx-fastcgi \
+    /tmp/nginx-uwsgi \
+    /tmp/nginx-scgi && \
+    chown -R nginx:nginx \
+        /var/log/nginx \
+        /etc/nginx/conf.d \
+        /usr/share/nginx/html \
+        /tmp/nginx-client-body \
+        /tmp/nginx-proxy \
+        /tmp/nginx-fastcgi \
+        /tmp/nginx-uwsgi \
+        /tmp/nginx-scgi
+
 COPY --from=builder /app/dist/public /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/nginx.conf
+RUN chown -R nginx:nginx /usr/share/nginx/html
+
+COPY nginx.conf /etc/nginx/conf.d/nginx.conf.template
+
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+USER nginx
 
 EXPOSE 8080
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
