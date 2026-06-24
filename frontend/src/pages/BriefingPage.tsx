@@ -725,27 +725,31 @@ function ProductRecsCard({ content, industry, t, accent, bg }: {
   const products = parseProductRecs(content, industry);
 
   return (
-    <div style={{display:"flex",flexDirection:"column",gap:10}}>
-      {products.map((p, i) => (
-        <div key={i} style={{
-          background: bg,
-          border:`1px solid ${accent.replace(/[\d.]+\)$/, "0.22)")}`,
-          borderRadius:10,
-          padding:"13px 16px",
-          display:"flex",flexDirection:"column",gap:5,
-        }}>
-          <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-            <span style={{fontSize:13,fontWeight:600,color:t.text,letterSpacing:"-0.2px"}}>{p.name}</span>
-            <span style={{
-              fontSize:9.5,fontWeight:500,letterSpacing:"0.5px",textTransform:"uppercase",
-              color:accent,background:`${accent.replace(/[\d.]+\)$/, "0.12)")}`,
-              border:`1px solid ${accent.replace(/[\d.]+\)$/, "0.25)")}`,
-              borderRadius:4,padding:"2px 7px",
-            }}>{p.tag}</span>
+    <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+      {products.map((p, i) => {
+        // Truncate description to first sentence only
+        const shortDesc = p.desc.includes(". ") ? p.desc.split(". ")[0] + "." : p.desc.slice(0, 100) + (p.desc.length > 100 ? "…" : "");
+        return (
+          <div key={i} style={{
+            background: bg,
+            border:`1px solid ${accent.replace(/[\d.]+\)$/, "0.22)")}`,
+            borderRadius:10,
+            padding:"11px 13px",
+            display:"flex",flexDirection:"column",gap:6,
+          }}>
+            <div style={{display:"flex",alignItems:"flex-start",gap:7,flexDirection:"column"}}>
+              <span style={{fontSize:12,fontWeight:600,color:t.text,letterSpacing:"-0.2px",lineHeight:1.3}}>{p.name}</span>
+              <span style={{
+                fontSize:8.5,fontWeight:500,letterSpacing:"0.5px",textTransform:"uppercase",
+                color:accent,background:`${accent.replace(/[\d.]+\)$/, "0.12)")}`,
+                border:`1px solid ${accent.replace(/[\d.]+\)$/, "0.25)")}`,
+                borderRadius:4,padding:"2px 6px",flexShrink:0,
+              }}>{p.tag}</span>
+            </div>
+            <p style={{margin:0,fontSize:10.5,color:t.sectionText,lineHeight:1.55}}>{shortDesc}</p>
           </div>
-          <p style={{margin:0,fontSize:12,color:t.sectionText,lineHeight:1.6}}>{p.desc}</p>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
