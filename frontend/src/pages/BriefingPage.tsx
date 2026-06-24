@@ -746,7 +746,7 @@ function SectionCard({ title, content, industry, t, streaming }: {
   const map = isDark ? SECTION_ACCENTS_DARK : SECTION_ACCENTS_LIGHT;
   const { accent, bg } = map[title] ?? { accent: isDark ? "rgba(200,200,210,0.55)" : "#666", bg: isDark ? "rgba(200,200,210,0.06)" : "#f5f5f7" };
 
-  const isProductRecs = title === "Product Recommendations";
+  const isProductRecs = ["Product Recommendations","Retention & Upsell Positioning","IBM Differentiation","Strategic Investment Themes"].includes(title);
 
   const rows: React.ReactNode[] = [];
   if (!isProductRecs) {
@@ -755,7 +755,7 @@ function SectionCard({ title, content, industry, t, streaming }: {
     // Count real content lines to adjust font sizing
     const contentLines = lines.filter(l => l.trim().length > 0).length;
     // Use slightly larger text if fewer lines (less content = more space to fill)
-    const bodyFontSize = contentLines <= 4 ? 14 : contentLines <= 7 ? 13 : 12.5;
+    const bodyFontSize = contentLines <= 4 ? 14 : contentLines <= 7 ? 13.5 : 13;
 
     lines.forEach((line, i) => {
       const l = line.trim();
@@ -771,9 +771,9 @@ function SectionCard({ title, content, industry, t, streaming }: {
         );
       } else if (l.match(/^\d[.)]/)) {
         rows.push(
-          <div key={i} style={{display:"flex",gap:10,marginBottom:7,alignItems:"flex-start"}}>
+          <div key={i} style={{display:"flex",gap:10,marginBottom:9,alignItems:"flex-start"}}>
             <span style={{color:accent,fontSize:11,fontWeight:600,flexShrink:0,minWidth:16,paddingTop:2}}>{l[0]}.</span>
-            <span style={{color:t.sectionBullet,fontSize:bodyFontSize,lineHeight:1.65}}>{l.slice(2).trim()}</span>
+            <span style={{color:t.sectionBullet,fontSize:bodyFontSize,lineHeight:1.7}}>{l.slice(2).trim()}</span>
           </div>
         );
       } else {
@@ -807,7 +807,7 @@ function SectionCard({ title, content, industry, t, streaming }: {
         <span style={{fontSize:11.5,fontWeight:500,color:t.textSub}}>{title || "…"}</span>
         {streaming && <span style={{marginLeft:"auto",width:6,height:6,borderRadius:"50%",background:accent,opacity:0.7}} className="animate-pulse-dot" />}
       </div>
-      <div style={{padding:"14px 20px 18px"}}>
+      <div style={{padding:"16px 20px 20px"}}>
         {isProductRecs
           ? <ProductRecsCard content={content} industry={industry||""} t={t} accent={accent} bg={bg}/>
           : rows
@@ -1113,7 +1113,7 @@ export default function BriefingPage() {
         seen.add(key);
         return true;
       })
-      .slice(0, 4); // max 4 sections
+      .slice(0, 5); // max 5 sections (4 main + Product Recommendations)
   }, [briefingText, generating]);
 
   const generate = useCallback(async () => {
@@ -1778,8 +1778,8 @@ export default function BriefingPage() {
               </div>
             )}
             
-            {/* Any additional sections beyond 4 (shouldn't happen but handle gracefully) */}
-            {streamingSections.slice(4).map(sec=>(
+            {/* 5th section — Product Recommendations (full width) */}
+            {streamingSections.length > 4 && streamingSections.slice(4).map(sec=>(
               <SectionCard key={sec.title} title={sec.title} content={sec.content} industry={displayBriefing?.ind} t={t} streaming={sec.isStreaming}/>
             ))}
 
