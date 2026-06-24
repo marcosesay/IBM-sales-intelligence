@@ -1015,6 +1015,8 @@ export default function BriefingPage() {
           const bantSeen = new Set<string>();
           const cleaned: string[] = [];
           let cutOff = false;
+          let afterPoliticalBlockers = false;
+          let politicalBlockersLineCount = 0;
 
           for (const line of contentLines) {
             if (cutOff) break;
@@ -1027,11 +1029,21 @@ export default function BriefingPage() {
               continue;
             }
 
-            // Detect repeated BANT labels — cut off there
+            // Detect BANT labels
             const bantMatch = BANT_LABELS.find(b => trimmed.startsWith(`***${b}`) || trimmed.startsWith(`**${b}`) || trimmed.startsWith(`${b}:`));
             if (bantMatch) {
               if (bantSeen.has(bantMatch)) { cutOff = true; break; }
               bantSeen.add(bantMatch);
+              if (bantMatch === "Political Blockers") {
+                afterPoliticalBlockers = true;
+                politicalBlockersLineCount = 0;
+              }
+            }
+
+            // After Political Blockers, allow only 3 lines of content then cut
+            if (afterPoliticalBlockers && !bantMatch) {
+              politicalBlockersLineCount++;
+              if (politicalBlockersLineCount > 3) { cutOff = true; break; }
             }
 
             if (STRIP_RE.test(trimmed)) { cutOff = true; break; }

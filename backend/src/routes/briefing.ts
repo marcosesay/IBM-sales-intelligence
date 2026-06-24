@@ -406,23 +406,13 @@ IMPORTANT INSTRUCTIONS:
 - Focus on practical, actionable insights rather than assumptions about the contact's influence or authority
 - Be accurate and conservative in your assessments
 
-CRITICAL: Write a pre-call briefing with EXACTLY FIVE sections using ## headers in THIS EXACT ORDER:
-1. ## Who is [Contact Name]?
-2. ## Company Background
-3. ## Discovery Questions
-4. ## Opportunity Qualification
-5. ## Product Recommendations
+Write the following pre-call sales briefing. Use exactly these five ## section headers in this order, and write only the content for each — no commentary, no notes, no preamble:
 
-STRICT RULES:
-- Each section appears ONLY ONCE. Never repeat a section.
-- Section 4 ends immediately after ***Political Blockers***. Do not add anything after it.
-- Section 5 contains ONLY 3 product names in italic format, nothing else.
-- Do NOT include meta-commentary, self-correction, filler, or notes of any kind.
-- Do NOT repeat Budget/Authority/Need/Timeline/Champion/Political Blockers twice.
-- Stop writing immediately after completing Section 5. No postscript.
-
-For product names: Use *italic* format (single asterisks), NOT bold (**).
-Keep everything clean and professional — no extra markdown symbols like ---, or ### in the output.
+## Who is ${contactName || "the Contact"}?
+## Company Background
+## Discovery Questions
+## Opportunity Qualification
+## Product Recommendations
 
 ${buildSections(ct, company, ind, title, contactName)}`;
 
