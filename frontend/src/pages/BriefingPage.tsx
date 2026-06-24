@@ -914,7 +914,6 @@ export default function BriefingPage() {
   // State for parsed contact name and photo only
   const [parsedContactName, setParsedContactName] = useState("");
   const [contactPhotoUrl, setContactPhotoUrl] = useState("");
-  const [parsedCompanyName, setParsedCompanyName] = useState("");
   
   // Debounce contact input
   const debouncedContact = useDebounce(contact, 600);
@@ -925,7 +924,7 @@ export default function BriefingPage() {
       setParsedContactName("");
       setContactName2("");
       setContactPhotoUrl("");
-      setParsedCompanyName("");
+      
       return;
     }
     
@@ -950,7 +949,6 @@ export default function BriefingPage() {
       // Plain name entered directly
       setParsedContactName(debouncedContact);
       setContactPhotoUrl("");
-      setParsedCompanyName("");
     }
   }, [debouncedContact]);
   
@@ -1035,8 +1033,7 @@ export default function BriefingPage() {
   }, [briefingText, generating]);
 
   const generate = useCallback(async () => {
-    // Use parsedCompanyName as fallback if company field is empty
-    const effectiveCompany = company.trim() || parsedCompanyName.trim();
+    const effectiveCompany = company.trim();
     
     if (!effectiveCompany) {
       setError("Please enter a company name in the Company field.");
@@ -1141,7 +1138,7 @@ export default function BriefingPage() {
     } finally {
       setGenerating(false);
     }
-  }, [company, industry, contactName, title, context, meetingType, logoData, parsedCompanyName, contactPhotoUrl]);
+  }, [company, industry, contactName, title, context, meetingType, logoData, contactPhotoUrl]);
 
   const saveBriefing = () => {
     if (!currentBriefing) return;
@@ -1276,7 +1273,7 @@ export default function BriefingPage() {
                       setMeetingType("Discovery");
                       setParsedContactName("");
                       setContactPhotoUrl("");
-                      setParsedCompanyName("");
+                      
                       setSaved(loadSaved());
                     }}
                     title="Clear form and refresh"
