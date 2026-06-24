@@ -406,11 +406,12 @@ IMPORTANT INSTRUCTIONS:
 - Focus on practical, actionable insights rather than assumptions about the contact's influence or authority
 - Be accurate and conservative in your assessments
 
-CRITICAL: Write a pre-call briefing with EXACTLY FOUR sections using ## headers in THIS EXACT ORDER:
+CRITICAL: Write a pre-call briefing with EXACTLY FIVE sections using ## headers in THIS EXACT ORDER:
 1. ## Who is [Contact Name]?
 2. ## Company Background
 3. ## Discovery Questions
 4. ## Opportunity Qualification
+5. ## Product Recommendations
 
 Each section appears ONLY ONCE. Do not repeat any section headers. Do not add extra sections.
 Do NOT include any meta-commentary, chain of thought, self-correction, or notes about your instructions.
