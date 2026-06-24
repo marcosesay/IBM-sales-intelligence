@@ -78,15 +78,7 @@ function buildSections(callType: string, company: string, industry: string, titl
   const sections: Record<string, string> = {
     "Discovery": `## Who is ${contactName || "the Contact"}?
 
-CRITICAL: The section header above must stand alone on its own line. Do NOT add any text after the question mark on the header line.
-
-Provide a focused profile of the contact covering:
-1) What a ${t} typically cares about (their priorities, pain points, and success metrics)
-2) How someone in this role influences technology decisions
-3) Key challenges they likely face in their position
-4) What would make them a champion for new solutions
-
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. CRITICAL: Begin the first paragraph with the contact's name (e.g. "[Name] is a..." or "[Name] leads..."). Do NOT start with "As a professional", "In their role", or any generic phrase — open with the person's name directly.
+Write 2-3 sharp prose paragraphs that give an IBM seller a clear mental picture of this person. Vary your angle — you might open with what drives them professionally, what they're under pressure to solve, how they think about technology decisions, or what a win looks like for them. Do not use a formulaic structure. Make each paragraph add something new: their mindset, their influence, their likely skepticism or enthusiasm. Start the first paragraph with ${contactName ? `"${contactName}"` : "the contact's name"} — not "As a professional", not "In their role". Write like a sharp analyst who has studied this person, not like a template being filled in.
 
 ## Company Background
 Provide a comprehensive company overview covering:
@@ -124,15 +116,7 @@ Example:
 
     "Renewal": `## Who is ${contactName || "the Contact"}?
 
-CRITICAL: The section header above must stand alone on its own line. Do NOT add any text after the question mark on the header line.
-
-Provide a focused profile of the contact covering:
-1) What a ${t} typically cares about in renewal discussions
-2) Their satisfaction indicators and pain points with current solutions
-3) How they influence renewal and expansion decisions
-4) What would motivate them to expand the relationship
-
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. CRITICAL: Begin the first paragraph with the contact's name (e.g. "[Name] is a..." or "[Name] leads..."). Do NOT start with "As a professional", "In their role", or any generic phrase — open with the person's name directly.
+Write 2-3 sharp prose paragraphs that give an IBM seller a clear mental picture of this person in the context of a renewal. Vary your angle — their relationship with the current solution, what success or frustration looks like for them, how they'll evaluate whether to expand or cut. Do not use a formulaic structure. Start the first paragraph with ${contactName ? `"${contactName}"` : "the contact's name"} — not "As a professional". Write like a sharp analyst, not a template.
 
 ## Account Health & Risk
 Provide a comprehensive account assessment covering:
@@ -159,15 +143,7 @@ Example:
 
     "Competitive": `## Who is ${contactName || "the Contact"}?
 
-CRITICAL: The section header above must stand alone on its own line. Do NOT add any text after the question mark on the header line.
-
-Provide a focused profile of the contact covering:
-1) What a ${t} values when evaluating competitive alternatives
-2) Their likely relationship with incumbent vendors
-3) How they influence vendor selection decisions
-4) What would make them advocate for a change
-
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. CRITICAL: Begin the first paragraph with the contact's name (e.g. "[Name] is a..." or "[Name] leads..."). Do NOT start with "As a professional", "In their role", or any generic phrase — open with the person's name directly.
+Write 2-3 sharp prose paragraphs that give an IBM seller a clear mental picture of this person in a competitive situation. Vary your angle — their relationship with the incumbent, what would make them consider a switch, how they evaluate vendors, what risk or politics they're navigating. Do not use a formulaic structure. Start the first paragraph with ${contactName ? `"${contactName}"` : "the contact's name"} — not "As a professional". Write like a sharp analyst, not a template.
 
 ## Competitive Landscape
 Provide a comprehensive competitive analysis covering:
@@ -193,15 +169,7 @@ Example:
 
     "EBC": `## Who is ${contactName || "the Contact"}?
 
-CRITICAL: The section header above must stand alone on its own line. Do NOT add any text after the question mark on the header line.
-
-Provide a focused executive profile covering:
-1) Strategic priorities for a ${t} at ${company} over the next 3 years
-2) What drives their decision-making at the board level
-3) How they measure success and define ROI
-4) What would make them champion a strategic technology investment
-
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. CRITICAL: Begin the first paragraph with the contact's name (e.g. "[Name] is a..." or "[Name] leads..."). Do NOT start with "As a professional", "In their role", or any generic phrase — open with the person's name directly.
+Write 2-3 sharp prose paragraphs that give an IBM seller a clear mental picture of this executive. Vary your angle — their strategic agenda, how they define success at the board level, what pressure they're under, what a transformative investment would need to deliver for them to champion it. Do not use a formulaic structure. Start the first paragraph with ${contactName ? `"${contactName}"` : "the contact's name"} — not "As a professional". Write like a sharp analyst, not a template.
 
 ## Company Strategic Agenda
 Provide a comprehensive strategic overview covering:
