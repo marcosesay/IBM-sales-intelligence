@@ -1007,7 +1007,7 @@ export default function BriefingPage() {
         let content = lines.slice(1).join("\n").trim();
 
         // Strip hallucinated meta-commentary
-        const STRIP_RE = /^(I am |Note:|adhering|since the response|the above|here is the revised|without the label|as it seems|extraneous|removed last|starting fresh|as per your request|word limit|however i had|nothing is mentioned|so i am|i had to keep|i will|let me|i need to|i'm going to|here is the rewritten|the rewritten response|based on the feedback)/i;
+        const STRIP_RE = /^(I am |Note[:\s]|adhering|since the response|the above|here is the revised|without the label|as it seems|extraneous|removed last|starting fresh|as per your request|word limit|however i had|nothing is mentioned|so i am|i had to keep|i will|let me|i need to|i'm going to|here is the rewritten|the rewritten response|based on the feedback|note i removed|i removed|please note)/i;
 
         // For qualification sections: strip product names, cut at repeated BANT labels, strip commentary
         if (QUAL_TITLES.some(q => title.includes(q))) {
