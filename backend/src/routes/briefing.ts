@@ -102,13 +102,16 @@ Questions must be specifically tailored to:
 Do NOT use generic questions. Every question should feel like it was written specifically for this person at this company.
 
 ## Opportunity Qualification
-CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE asterisks on each side (***Budget***, ***Authority***, ***Need***, ***Timeline***, ***Champion***, ***Political Blockers***), each followed by 1-2 sentences. Example format:
-***Budget***: [1-2 sentences about budget]
+Write exactly these 6 items in this exact format, no additional content before or after:
+***Budget***: [1-2 sentences about budget likelihood]
 ***Authority***: [1-2 sentences about authority]
-Keep it tight.
+***Need***: [1-2 sentences about need]
+***Timeline***: [1-2 sentences about timeline]
+***Champion***: [1-2 sentences about champion potential]
+***Political Blockers***: [1-2 sentences about blockers]
 
 ## Product Recommendations
-List exactly 3 IBM product names only, one per line, using *italic* format. Nothing else - no descriptions, no bullet points, no "Combined positioning". Just 3 product names.
+List exactly 3 IBM product names only, one per line, using *italic* format. Nothing else - no descriptions, no bullet points. Just 3 product names.
 Example:
 *IBM watsonx.ai*
 *IBM watsonx.data*
@@ -132,7 +135,13 @@ Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, n
 List exactly 8 questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
 
 ## Expansion Qualification
-CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE asterisks on each side (***Budget***, ***Authority***, ***Need***, ***Timeline***, ***Champion***, ***Political Blockers***). 1-2 sentences each.
+Write exactly these 6 items in this exact format, no additional content before or after:
+***Budget***: [1-2 sentences]
+***Authority***: [1-2 sentences]
+***Need***: [1-2 sentences]
+***Timeline***: [1-2 sentences]
+***Champion***: [1-2 sentences]
+***Political Blockers***: [1-2 sentences]
 
 ## Retention & Upsell Positioning
 List exactly 3 IBM product names only, one per line, using *italic* format. No descriptions, no bullet points. Just 3 names.
@@ -158,7 +167,13 @@ Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, n
 List exactly 8 questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
 
 ## Win/Loss Qualification
-CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE asterisks on each side (***Budget***, ***Authority***, ***Need***, ***Timeline***, ***Champion***, ***Political Blockers***). 1-2 sentences each.
+Write exactly these 6 items in this exact format, no additional content before or after:
+***Budget***: [1-2 sentences]
+***Authority***: [1-2 sentences]
+***Need***: [1-2 sentences]
+***Timeline***: [1-2 sentences]
+***Champion***: [1-2 sentences]
+***Political Blockers***: [1-2 sentences]
 
 ## IBM Differentiation
 List exactly 3 IBM product names only, one per line, using *italic* format. No descriptions, no bullet points. Just 3 names.
@@ -184,7 +199,13 @@ Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, n
 List exactly 8 strategic C-suite questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
 
 ## Business Case Qualification
-CRITICAL: Use exactly these 6 labels as bold AND italic sub-headers using THREE asterisks on each side (***Budget***, ***Authority***, ***Need***, ***Timeline***, ***Champion***, ***Political Blockers***). 1-2 sentences each.
+Write exactly these 6 items in this exact format, no additional content before or after:
+***Budget***: [1-2 sentences]
+***Authority***: [1-2 sentences]
+***Need***: [1-2 sentences]
+***Timeline***: [1-2 sentences]
+***Champion***: [1-2 sentences]
+***Political Blockers***: [1-2 sentences]
 
 ## Strategic Investment Themes
 List exactly 3 IBM product names only, one per line, using *italic* format. No descriptions, no bullet points. Just 3 names.
