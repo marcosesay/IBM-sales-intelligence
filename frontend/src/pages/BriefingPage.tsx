@@ -1724,10 +1724,17 @@ export default function BriefingPage() {
               </div>
             )}
             
-            {/* 5th section — Product Recommendations (full width, always shown) */}
-            {streamingSections.length >= 5 && streamingSections.slice(4).map(sec=>(
-              <SectionCard key={sec.title} title={sec.title} content={sec.content} industry={displayBriefing?.ind} t={t} streaming={sec.isStreaming}/>
-            ))}
+            {/* 5th section — Product Recommendations, always rendered independently when brief is ready */}
+            {(briefingReady || generating) && (
+              <SectionCard
+                key="Product Recommendations"
+                title="Product Recommendations"
+                content={briefingText || "use-catalogue-fallback"}
+                industry={displayBriefing?.ind || ""}
+                t={t}
+                streaming={false}
+              />
+            )}
 
             {/* Waiting for first chunk */}
             {generating && streamingSections.length===0 && (
