@@ -912,157 +912,46 @@ export default function BriefingPage() {
   useEffect(() => { if (industryData?.industry && !industry) setIndustry(industryData.industry); }, [industryData]);
   useEffect(() => { if (company !== debouncedCompany) return; if (!company) setIndustry(""); }, [company]);
 
-  // State for parsed contact name, photo, company, and title
+  // State for parsed contact name and photo only
   const [parsedContactName, setParsedContactName] = useState("");
   const [contactPhotoUrl, setContactPhotoUrl] = useState("");
   const [parsedCompanyName, setParsedCompanyName] = useState("");
-  const [, setParsedTitle] = useState("");
-  const [contactLoading, setContactLoading] = useState(false);
   
-  // Debounce contact input for API call
+  // Debounce contact input
   const debouncedContact = useDebounce(contact, 600);
   
-  // Fetch parsed contact name, photo, and company from API when contact changes
+  // Extract name from LinkedIn URL slug only — no API calls, no auto-fill
   useEffect(() => {
     if (!debouncedContact.trim()) {
       setParsedContactName("");
       setContactName2("");
       setContactPhotoUrl("");
       setParsedCompanyName("");
-      setParsedTitle("");
-      setTitle("");
-      setContactLoading(false);
       return;
     }
     
-    // Check if it's a LinkedIn URL
     if (debouncedContact.toLowerCase().includes("linkedin.com/in/")) {
-      // DEMO MODE: Auto-populate for Jamie Dimon
-      if (debouncedContact.toLowerCase().includes("jamiedimon")) {
-        console.log('Demo mode: Jamie Dimon detected');
-        setParsedContactName("Jamie Dimon");
-        setParsedCompanyName("JP Morgan Chase");
-        setIndustry("Finance");
-        setParsedTitle("Chairman & CEO");
-        return;
+      const match = debouncedContact.match(/linkedin\.com\/in\/([^/?]+)/i);
+      if (match?.[1]) {
+        const slug = match[1];
+        const cleanSlug = slug.replace(/-[a-z0-9]*\d[a-z0-9]*$/i, "");
+        const name = cleanSlug
+          .replace(/[-_]/g, " ")
+          .replace(/\d+/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .split(" ")
+          .filter(w => w.length > 1)
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(" ");
+        if (name.includes(" ")) setParsedContactName(name);
+        setContactPhotoUrl(`https://unavatar.io/linkedin/${slug}`);
       }
-
-      setContactLoading(true);
-      
-      // Add cache-busting parameter to force fresh data
-      fetch(`${getBaseUrl()}/api/briefing/parse-contact?contact=${encodeURIComponent(debouncedContact)}&_t=${Date.now()}`)
-        .then(res => res.json())
-        .then(async (data) => {
-          console.log('Parse contact API response:', data);
-          if (data.name) {
-            // Sanitize: strip trailing tokens that look like LinkedIn ID fragments
-            // e.g. "Sean Krepp Ab" (from slug "sean-krepp-29ab52395") → "Sean Krepp"
-            const sanitizeName = (raw: string) =>
-              raw.trim()
-                .split(/\s+/)
-                .filter((word, idx, arr) => {
-                  if (idx === 0) return true;
-                  const isLastWord = idx === arr.length - 1;
-                  if (!isLastWord) return true;
-                  const isTiny = word.length <= 3;
-                  const isMixedAlphaNum = /[a-zA-Z]/.test(word) && /\d/.test(word);
-                  return !isTiny && !isMixedAlphaNum;
-                })
-                .join(" ");
-            const sanitized = sanitizeName(data.name);
-            // Only use name if it has at least 2 words (first + last)
-            // Single word names are likely just the slug, not a real name
-            if (sanitized.includes(" ")) {
-              setParsedContactName(sanitized);
-            } else {
-              setParsedContactName("");
-            }
-          }
-          if (data.photoUrl) {
-            setContactPhotoUrl(data.photoUrl);
-          }
-
-          // Track company internally for generation but do NOT fill the input box
-          let resolvedCompany = data.company || "";
-          if (resolvedCompany) {
-            setParsedCompanyName(resolvedCompany);
-          }
-
-          // Populate industry — use API result first
-          if (data.industry && !industry.trim()) {
-            setIndustry(data.industry);
-          }
-
-          // If company still unknown, fire company-research as a second pass
-          if (!resolvedCompany && data.name) {
-            try {
-              const researchRes = await fetch(
-                `${getBaseUrl()}/api/briefing/company-research?company=${encodeURIComponent(data.name)}&contactTitle=${encodeURIComponent(data.title || "")}`
-              );
-              const researchData = await researchRes.json();
-              // Try to extract a company name from the research snippet
-              if (researchData.summary) {
-                // Look for "works at X", "at X", or "Name - Title - X" patterns
-                const nameFirst = (data.name || "").split(" ")[0];
-                const patterns = [
-                  researchData.summary.match(/(?:works|working|employed)\s+at\s+([A-Z][A-Za-z0-9 &'.,]{2,60})/i),
-                  researchData.summary.match(new RegExp(`${nameFirst}[^\\n]{0,60}?\\bat\\s+([A-Z][A-Za-z0-9 &'.,]{2,60})`, 'i')),
-                ];
-                for (const m of patterns) {
-                  if (m?.[1]) {
-                    const candidate = m[1].trim().replace(/\s*[-–|].*$/, '').trim();
-                    if (candidate.length > 2 && candidate.length < 80) {
-                      setParsedCompanyName(candidate);
-                      resolvedCompany = candidate;
-                      break;
-                    }
-                  }
-                }
-              }
-            } catch { /* silent — best effort */ }
-          }
-
-          // Re-run industry detection once company is known
-          if (resolvedCompany && !industry.trim()) {
-            try {
-              const indRes = await fetch(`${getBaseUrl()}/api/briefing/industry?company=${encodeURIComponent(resolvedCompany)}`);
-              const indData = await indRes.json();
-              if (indData.industry) setIndustry(indData.industry);
-            } catch { /* silent */ }
-          }
-
-          if (data.title) {
-            setParsedTitle(data.title);
-            if (!title.trim() && data.title && !data.title.toLowerCase().includes("linkedin")) setTitle(data.title);
-          }
-        })
-        .catch(() => {
-          // Fallback to basic parsing if API fails
-          const match = debouncedContact.match(/linkedin\.com\/in\/([^/?]+)/i);
-          if (match && match[1]) {
-            const slug = match[1];
-            const cleanSlug = slug.replace(/-[a-z0-9]*\d[a-z0-9]*$/i, "");
-            const name = cleanSlug
-              .replace(/[-_]/g, " ")
-              .replace(/\s+/g, " ")
-              .trim()
-              .split(" ")
-              .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-              .join(" ");
-            setParsedContactName(name || debouncedContact);
-            setContactPhotoUrl(`https://unavatar.io/linkedin/${slug}`);
-            setParsedCompanyName("");
-            setParsedTitle("");
-          }
-        })
-        .finally(() => setContactLoading(false));
     } else {
-      // Not a LinkedIn URL, use as-is
+      // Plain name entered directly
       setParsedContactName(debouncedContact);
       setContactPhotoUrl("");
       setParsedCompanyName("");
-      setParsedTitle("");
-      setContactLoading(false);
     }
   }, [debouncedContact]);
   
