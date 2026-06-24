@@ -993,9 +993,13 @@ export default function BriefingPage() {
 
     const PRODUCT_TITLES = ["Product Recommendations","Retention & Upsell Positioning","IBM Differentiation","Strategic Investment Themes"];
     const IBM_PRODUCT_NAMES = ["watsonx.ai","watsonx.data","watsonx.governance","IBM OpenPages","IBM DataStage","IBM Knowledge Catalog"];
+    const QUAL_TITLES = ["Opportunity Qualification","Expansion Qualification","Win/Loss Qualification","Business Case Qualification"];
+    const BANT_LABELS = ["Budget","Authority","Need","Timeline","Champion","Political Blockers"];
 
     const parts = briefingText.split("##").slice(1);
     const seen = new Set<string>();
+    const extractedProducts: string[] = [];
+
     const sections = parts
       .map((sec, i) => {
         const lines = sec.trim().split("\n");
@@ -1003,11 +1007,44 @@ export default function BriefingPage() {
         let content = lines.slice(1).join("\n").trim();
 
         // Strip hallucinated meta-commentary
-        const STRIP_RE = /^(I am |Note:|adhering|since the response|the above|here is the revised|without the label|as it seems|extraneous|removed last|starting fresh|as per your request|word limit|however i had|nothing is mentioned|so i am|i had to keep|i will|let me|i need to|i'm going to)/i;
-        content = content.split("\n").reduce((acc: string, line: string) => {
-          if (STRIP_RE.test(line.trim())) return acc;
-          return acc + "\n" + line;
-        }, "").trim();
+        const STRIP_RE = /^(I am |Note:|adhering|since the response|the above|here is the revised|without the label|as it seems|extraneous|removed last|starting fresh|as per your request|word limit|however i had|nothing is mentioned|so i am|i had to keep|i will|let me|i need to|i'm going to|here is the rewritten|the rewritten response|based on the feedback)/i;
+
+        // For qualification sections: strip product names, cut at repeated BANT labels, strip commentary
+        if (QUAL_TITLES.some(q => title.includes(q))) {
+          const contentLines = content.split("\n");
+          const bantSeen = new Set<string>();
+          const cleaned: string[] = [];
+          let cutOff = false;
+
+          for (const line of contentLines) {
+            if (cutOff) break;
+            const trimmed = line.trim();
+
+            // Extract and remove IBM product lines
+            if (IBM_PRODUCT_NAMES.some(p => trimmed.toLowerCase().includes(p.toLowerCase()))) {
+              const matched = IBM_PRODUCT_NAMES.find(p => trimmed.toLowerCase().includes(p.toLowerCase()));
+              if (matched && !extractedProducts.includes(matched)) extractedProducts.push(matched);
+              continue;
+            }
+
+            // Detect repeated BANT labels — cut off there
+            const bantMatch = BANT_LABELS.find(b => trimmed.startsWith(`***${b}`) || trimmed.startsWith(`**${b}`) || trimmed.startsWith(`${b}:`));
+            if (bantMatch) {
+              if (bantSeen.has(bantMatch)) { cutOff = true; break; }
+              bantSeen.add(bantMatch);
+            }
+
+            if (STRIP_RE.test(trimmed)) { cutOff = true; break; }
+            cleaned.push(line);
+          }
+          content = cleaned.join("\n").trim();
+        } else {
+          // For all other sections: just strip commentary lines
+          content = content.split("\n").reduce((acc: string, line: string) => {
+            if (STRIP_RE.test(line.trim())) return acc;
+            return acc + "\n" + line;
+          }, "").trim();
+        }
 
         return {
           title,
@@ -1026,7 +1063,11 @@ export default function BriefingPage() {
     // Always ensure a Product Recommendations section exists
     const hasProductSec = sections.some(s => PRODUCT_TITLES.includes(s.title));
     if (!hasProductSec) {
-      sections.push({ title: "Product Recommendations", content: "use-catalogue-fallback", isStreaming: false });
+      // Use products extracted from other sections if available, else catalogue fallback
+      const content = extractedProducts.length > 0
+        ? extractedProducts.slice(0, 3).map(p => `- ${p}`).join("\n")
+        : "use-catalogue-fallback";
+      sections.push({ title: "Product Recommendations", content, isStreaming: false });
     }
 
     return sections;
