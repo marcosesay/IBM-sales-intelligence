@@ -1404,17 +1404,8 @@ export default function BriefingPage() {
               {contact.toLowerCase().includes("linkedin.com/in/") && (
                 <GlassInput t={t} label="Name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last"/>
               )}
-              <p style={{fontSize:10,color:t.textDim,margin:"-12px 0 12px 0",fontStyle:"italic"}}>Paste LinkedIn URL to auto-fill details</p>
-            </div>
-            
             <div>
-              <GlassInput t={t} label="Company" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder={contactLoading ? "Looking up…" : "e.g. JPMorgan Chase"}/>
-              {contactLoading && (
-                <p style={{fontSize:10,color:t.accent,margin:"-12px 0 12px 0",fontStyle:"italic",display:"flex",alignItems:"center",gap:5}}>
-                  <span className="animate-pulse-dot" style={{display:"inline-block",width:5,height:5,borderRadius:"50%",background:t.accent}}/>
-                  Auto-filling from LinkedIn…
-                </p>
-              )}
+              <GlassInput t={t} label="Company" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="e.g. JPMorgan Chase"/>
             </div>
             
             <GlassInput t={t} label="Title (Optional)" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics"/>
