@@ -1138,32 +1138,37 @@ export default function BriefingPage() {
       date: fmtDate(), ts: Date.now(),
     });
 
-    // ── Fetch live company research in parallel before generating ──
+    // ── Fetch live company research with a hard timeout — don't block generation ──
     let companyContext = "";
     try {
-      const [wikiRes, newsRes] = await Promise.allSettled([
-        // Wikipedia summary (public REST API, no auth needed)
-        fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(effectiveCompany)}`)
-          .then(r => r.ok ? r.json() : null),
-        // Existing news endpoint — reuse what the sidebar already fetches
-        fetch(`${getBaseUrl()}/api/briefing/news?company=${encodeURIComponent(effectiveCompany)}`)
-          .then(r => r.ok ? r.json() : []),
+      const RESEARCH_TIMEOUT = 1500; // max 1.5s wait before we just start generating
+      const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T | null> =>
+        Promise.race([p, new Promise<null>(res => setTimeout(() => res(null), ms))]);
+
+      const [wikiRes, newsRes] = await Promise.all([
+        withTimeout(
+          fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(effectiveCompany)}`)
+            .then(r => r.ok ? r.json() : null).catch(() => null),
+          RESEARCH_TIMEOUT
+        ),
+        withTimeout(
+          fetch(`${getBaseUrl()}/api/briefing/news?company=${encodeURIComponent(effectiveCompany)}`)
+            .then(r => r.ok ? r.json() : []).catch(() => []),
+          RESEARCH_TIMEOUT
+        ),
       ]);
 
       const parts: string[] = [];
-
-      if (wikiRes.status === "fulfilled" && wikiRes.value?.extract) {
-        parts.push(`Wikipedia: ${wikiRes.value.extract}`);
+      if (wikiRes && (wikiRes as any)?.extract) {
+        parts.push(`Wikipedia: ${(wikiRes as any).extract}`);
       }
-
-      if (newsRes.status === "fulfilled" && Array.isArray(newsRes.value) && newsRes.value.length > 0) {
-        const headlines = (newsRes.value as { title: string; source?: string; date?: string }[])
+      if (Array.isArray(newsRes) && newsRes.length > 0) {
+        const headlines = (newsRes as { title: string; source?: string; date?: string }[])
           .slice(0, 5)
           .map(n => `- ${n.title}${n.source ? ` (${n.source})` : ""}${n.date ? `, ${n.date}` : ""}`)
           .join("\n");
         parts.push(`Recent news:\n${headlines}`);
       }
-
       companyContext = parts.join("\n\n");
     } catch {
       // Non-fatal — generation continues without enrichment
