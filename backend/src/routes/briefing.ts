@@ -429,7 +429,7 @@ ${buildSections(ct, company, ind, title, contactName)}`;
 
   try {
     const stream = generateTextStream(prompt, {
-      model: "meta-llama/llama-3-1-8b-instruct",
+      model: "meta-llama/llama-3-3-70b-instruct",
       maxTokens: 2000,
       temperature: 0.6,
     });
