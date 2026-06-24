@@ -86,7 +86,7 @@ Provide a focused profile of the contact covering:
 3) Key challenges they likely face in their position
 4) What would make them a champion for new solutions
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Start your content on a new line after the header.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. CRITICAL: Begin the first paragraph with the contact's name (e.g. "[Name] is a..." or "[Name] leads..."). Do NOT start with "As a professional", "In their role", or any generic phrase — open with the person's name directly.
 
 ## Company Background
 Provide a comprehensive company overview covering:
@@ -132,7 +132,7 @@ Provide a focused profile of the contact covering:
 3) How they influence renewal and expansion decisions
 4) What would motivate them to expand the relationship
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Start your content on a new line after the header.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. CRITICAL: Begin the first paragraph with the contact's name (e.g. "[Name] is a..." or "[Name] leads..."). Do NOT start with "As a professional", "In their role", or any generic phrase — open with the person's name directly.
 
 ## Account Health & Risk
 Provide a comprehensive account assessment covering:
@@ -167,7 +167,7 @@ Provide a focused profile of the contact covering:
 3) How they influence vendor selection decisions
 4) What would make them advocate for a change
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Start your content on a new line after the header.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. CRITICAL: Begin the first paragraph with the contact's name (e.g. "[Name] is a..." or "[Name] leads..."). Do NOT start with "As a professional", "In their role", or any generic phrase — open with the person's name directly.
 
 ## Competitive Landscape
 Provide a comprehensive competitive analysis covering:
@@ -201,7 +201,7 @@ Provide a focused executive profile covering:
 3) How they measure success and define ROI
 4) What would make them champion a strategic technology investment
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Start your content on a new line after the header.
+Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. CRITICAL: Begin the first paragraph with the contact's name (e.g. "[Name] is a..." or "[Name] leads..."). Do NOT start with "As a professional", "In their role", or any generic phrase — open with the person's name directly.
 
 ## Company Strategic Agenda
 Provide a comprehensive strategic overview covering:
