@@ -598,7 +598,7 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
 
     // Description — binary-search for largest font that fits remaining card height
     const descY = textY + 5;
-    const descMaxH = cardY + cardH - descY - 1.5; // available vertical space
+    const descMaxH = cardY + cardH - descY - 2; // available vertical space, 2mm bottom margin
     let dLo = 5, dHi = 7.5, dBest = 5.5;
     while (dHi - dLo > 0.1) {
       const mid = (dLo + dHi) / 2;
@@ -610,7 +610,11 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
     doc.setFont("helvetica", "normal");
     doc.setFontSize(dBest);
     doc.setTextColor(75, 85, 99);
-    const descLines = doc.splitTextToSize(p.desc, cardW - 8);
+    const allDescLines = doc.splitTextToSize(p.desc, cardW - 8);
+    // Hard-clamp: only render lines that actually fit within the card
+    const lineH = dBest * 0.42;
+    const maxLines = Math.floor(descMaxH / lineH);
+    const descLines = allDescLines.slice(0, maxLines);
     doc.text(descLines, textX, descY);
   });
   
@@ -928,10 +932,8 @@ export default function BriefingPage() {
       if (debouncedContact.toLowerCase().includes("jamiedimon")) {
         console.log('Demo mode: Jamie Dimon detected');
         setParsedContactName("Jamie Dimon");
-        setCompany("JP Morgan Chase");
-        setIndustry("Finance");
         setParsedCompanyName("JP Morgan Chase");
-        setTitle("Chairman & CEO");
+        setIndustry("Finance");
         setParsedTitle("Chairman & CEO");
         return;
       }
@@ -971,10 +973,9 @@ export default function BriefingPage() {
             setContactPhotoUrl(data.photoUrl);
           }
 
-          // Populate company — use API result first, then fall back to web research
+          // Track company internally for generation but do NOT fill the input box
           let resolvedCompany = data.company || "";
-          if (resolvedCompany && !company.trim()) {
-            setCompany(resolvedCompany);
+          if (resolvedCompany) {
             setParsedCompanyName(resolvedCompany);
           }
 
@@ -1001,8 +1002,7 @@ export default function BriefingPage() {
                 for (const m of patterns) {
                   if (m?.[1]) {
                     const candidate = m[1].trim().replace(/\s*[-–|].*$/, '').trim();
-                    if (candidate.length > 2 && candidate.length < 80 && !company.trim()) {
-                      setCompany(candidate);
+                    if (candidate.length > 2 && candidate.length < 80) {
                       setParsedCompanyName(candidate);
                       resolvedCompany = candidate;
                       break;
