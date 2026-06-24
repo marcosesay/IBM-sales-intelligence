@@ -1005,10 +1005,10 @@ export default function BriefingPage() {
         const title = lines[0].trim() || "…";
         let content = lines.slice(1).join("\n").trim();
 
-        // Strip hallucinated meta-commentary that the 8B model sometimes appends
-        // Cuts off at any line that starts with "I am rephrasing", "Note:", "adhering", etc.
-        content = content.split("\n").reduce((acc, line) => {
-          if (/^(I am |Note:|adhering|since the response|the above|here is the revised|without the label|as it seems|extraneous)/i.test(line.trim())) return acc;
+        // Strip hallucinated meta-commentary
+        const STRIP_RE = /^(I am |Note:|adhering|since the response|the above|here is the revised|without the label|as it seems|extraneous|removed last|starting fresh|as per your request|word limit|however i had|nothing is mentioned|so i am|i had to keep|i will|let me|i need to|i'm going to)/i;
+        content = content.split("\n").reduce((acc: string, line: string) => {
+          if (STRIP_RE.test(line.trim())) return acc;
           return acc + "\n" + line;
         }, "").trim();
 
@@ -1028,9 +1028,7 @@ export default function BriefingPage() {
 
     // Always ensure a Product Recommendations section exists
     const hasProductSec = sections.some(s => PRODUCT_TITLES.includes(s.title));
-    if (!hasProductSec && !generating) {
-      // Pass industry via a sentinel so parseProductRecs catalogue fallback kicks in
-      // The content just needs to be non-empty; the ProductRecsCard will use catalogue fallback
+    if (!hasProductSec) {
       sections.push({ title: "Product Recommendations", content: "use-catalogue-fallback", isStreaming: false });
     }
 

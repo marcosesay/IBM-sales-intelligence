@@ -414,9 +414,10 @@ CRITICAL: Write a pre-call briefing with EXACTLY FIVE sections using ## headers 
 5. ## Product Recommendations
 
 Each section appears ONLY ONCE. Do not repeat any section headers. Do not add extra sections.
-Do NOT include any meta-commentary, chain of thought, self-correction, or notes about your instructions.
-Do NOT write things like "Since the response needs to..." or "I'll rewrite according to..." or "adhering to providing..."
-Just write the briefing content directly. No preamble, no postscript.
+Do NOT include any meta-commentary, chain of thought, self-correction, filler text, or notes about your instructions.
+Do NOT write things like "Since the response needs to..." or "I'll rewrite according to..." or "adhering to providing..." or "removed last section" or "starting fresh" or "as per your request" or "word limit".
+Do NOT pad responses with extra text to fill space. Stop writing immediately after completing section 5.
+Just write the briefing content directly. No preamble, no postscript, no filler.
 
 For product names: Use *italic* format (single asterisks), NOT bold (**).
 Keep everything clean and professional — no extra markdown symbols like ---, or ### in the output.
@@ -430,7 +431,7 @@ ${buildSections(ct, company, ind, title, contactName)}`;
   try {
     const stream = generateTextStream(prompt, {
       model: "meta-llama/llama-3-3-70b-instruct",
-      maxTokens: 2000,
+      maxTokens: 2800,
       temperature: 0.6,
     });
 
