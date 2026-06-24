@@ -909,7 +909,6 @@ export default function BriefingPage() {
   const { data: logoData }     = useGetBriefingLogo({ company: debouncedCompany }, { query: { enabled: debouncedCompany.length > 1 } as any });
   const { data: industryData } = useGetBriefingIndustry({ company: debouncedCompany }, { query: { enabled: debouncedCompany.length > 1 } as any });
 
-  useEffect(() => { if (industryData?.industry && !industry) setIndustry(industryData.industry); }, [industryData]);
   useEffect(() => { if (company !== debouncedCompany) return; if (!company) setIndustry(""); }, [company]);
 
   // State for parsed contact name and photo only
@@ -1321,7 +1320,7 @@ export default function BriefingPage() {
                   <GlassInput t={t} label="Company" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="e.g. JPMorgan Chase"/>
                 </div>
                 <GlassInput t={t} label="Title (Optional)" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics"/>
-                <GlassInput t={t} label="Industry (Optional)" value={industry} onChange={e=>setIndustry((e.target as HTMLInputElement).value)} placeholder="Auto-detected — or type your own"/>
+                <GlassInput t={t} label="Industry (Optional)" value={industry} onChange={e=>setIndustry((e.target as HTMLInputElement).value)} placeholder="e.g. Financial Services"/>
                 <GlassInput t={t} label="Context (Optional)" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Anything you already know…"/>
 
                 <button
