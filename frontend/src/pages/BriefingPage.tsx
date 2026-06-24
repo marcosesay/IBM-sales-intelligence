@@ -827,14 +827,14 @@ function GlassInput({ label, textarea, t, ...props }: {
 } & React.InputHTMLAttributes<HTMLInputElement> & React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   const base: React.CSSProperties = {
     width:"100%", background:t.input, border:`1px solid ${t.inputBorder}`,
-    borderRadius:9, fontSize:15, color:t.text, fontFamily:"var(--app-font-sans)",
-    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.06)", outline:"none", padding:"14px 16px",
+    borderRadius:9, fontSize:13, color:t.text, fontFamily:"var(--app-font-sans)",
+    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.06)", outline:"none", padding:"10px 12px",
   };
   return (
-    <div style={{marginBottom:18}}>
-      <label style={{display:"block",fontSize:12,fontWeight:500,color:t.textDim,letterSpacing:"0.7px",textTransform:"uppercase",marginBottom:8}}>{label}</label>
+    <div style={{marginBottom:12}}>
+      <label style={{display:"block",fontSize:11,fontWeight:500,color:t.textDim,letterSpacing:"0.7px",textTransform:"uppercase",marginBottom:6}}>{label}</label>
       {textarea
-        ? <textarea {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)} rows={4} style={{...base,resize:"none"}} />
+        ? <textarea {...(props as React.TextareaHTMLAttributes<HTMLTextAreaElement>)} rows={2} style={{...base,resize:"none"}} />
         : <input {...(props as React.InputHTMLAttributes<HTMLInputElement>)} style={base} />
       }
     </div>
@@ -1296,172 +1296,166 @@ export default function BriefingPage() {
       {/* ─── Sidebar ─── */}
       <aside style={{
         flexShrink:0, width:sidebarOpen?280:0, minWidth:sidebarOpen?280:0,
-        overflowY:sidebarOpen?"auto":"hidden", overflowX:"hidden",
+        overflowY:"hidden", overflowX:"hidden",
         transition:"width 0.2s,min-width 0.2s",
         background:t.sidebar, backdropFilter:"blur(40px) saturate(160%)",
         WebkitBackdropFilter:"blur(40px) saturate(160%)",
         borderRight:`1px solid ${t.sidebarBorder}`,
+        display:"flex", flexDirection:"column", height:"100vh",
       }}>
         {sidebarOpen && (
-          <div style={{padding:"22px 18px 28px",paddingTop:56}}>
+          <div style={{display:"flex",flexDirection:"column",height:"100%",paddingTop:56}}>
             {/* Profile row */}
-            <div style={{display:"flex",alignItems:"center",gap:10,paddingBottom:18,marginBottom:16,borderBottom:`1px solid ${t.divider}`}}>
-              <>
-                {userProfilePicture && (
-                  <div style={{width:38,height:38,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:`1.5px solid ${t.toggleBorder}`}}>
-                    <img src={userProfilePicture} alt={userName} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+            <div style={{padding:"0 18px",paddingBottom:14,marginBottom:12,borderBottom:`1px solid ${t.divider}`,flexShrink:0}}>
+              <div style={{display:"flex",alignItems:"center",gap:10}}>
+                <>
+                  {userProfilePicture && (
+                    <div style={{width:34,height:34,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:`1.5px solid ${t.toggleBorder}`}}>
+                      <img src={userProfilePicture} alt={userName} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
+                    </div>
+                  )}
+                  <div style={{flex:1,minWidth:0}}>
+                    <p style={{fontSize:12,fontWeight:500,color:t.text,margin:"0 0 1px"}}>
+                      {userName || "User"}
+                    </p>
+                    <p style={{fontSize:10,color:t.textMuted,margin:0,fontWeight:300}}>
+                      {userRole || "Sales Professional"}
+                    </p>
+                  </div>
+                </>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <div className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:t.accent,boxShadow:`0 0 7px ${t.accentGlow}`}} />
+                  <button onClick={toggleTheme} title={`Switch to ${theme==="dark"?"light":"dark"} mode`} style={{
+                    background:t.toggleBg, border:`1px solid ${t.toggleBorder}`, borderRadius:6,
+                    width:26,height:26,display:"flex",alignItems:"center",justifyContent:"center",
+                    cursor:"pointer",color:t.toggleIcon,flexShrink:0,
+                  }}>
+                    <ThemeIcon theme={theme}/>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Scrollable content area */}
+            <div style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:"0 18px"}}>
+              {/* History */}
+              <div style={{marginBottom:12}}>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+                  <button onClick={() => saved.length>0 && setShowHistory(!showHistory)} disabled={saved.length===0} style={{
+                    flex:1,textAlign:"left",background:"none",border:"none",
+                    color:t.textMuted,fontSize:12,cursor:saved.length>0?"pointer":"default",
+                    padding:"4px 0",fontFamily:"var(--app-font-sans)",
+                  }}>
+                    Reports ({saved.length}) {saved.length>0?(showHistory?"▾":"▸"):""}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setContact("");
+                      setCompany("");
+                      setIndustry("");
+                      setTitle("");
+                      setContext("");
+                      setMeetingType("Discovery");
+                      setParsedContactName("");
+                      setContactPhotoUrl("");
+                      setParsedCompanyName("");
+                      setSaved(loadSaved());
+                    }}
+                    title="Clear form and refresh"
+                    style={{
+                      background:t.toggleBg, border:`1px solid ${t.toggleBorder}`, borderRadius:6,
+                      width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",
+                      cursor:"pointer",color:t.toggleIcon,flexShrink:0,
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    </svg>
+                  </button>
+                </div>
+                {showHistory && saved.length>0 && (
+                  <div style={{marginTop:6}}>
+                    {saved.map(b=>(
+                      <div key={b.ts} style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
+                        <button onClick={()=>loadBriefing(b)} style={{
+                          flex:1,textAlign:"left",background:t.btnSm,border:`1px solid ${t.btnSmBorder}`,
+                          borderRadius:8,color:t.btnSmText,fontSize:12,fontWeight:400,
+                          padding:"8px 10px",lineHeight:1.4,cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                        }}>
+                          <span style={{display:"block",fontWeight:500}}>{b.co}</span>
+                          <span style={{display:"block",fontSize:11,color:t.textDim}}>{[b.ct,b.callType,b.date].filter(Boolean).join("  ·  ")}</span>
+                        </button>
+                        <button onClick={()=>deleteSaved(b.ts)} style={{background:"none",border:"none",color:t.textDim,fontSize:13,padding:"4px 6px",cursor:"pointer",fontFamily:"var(--app-font-sans)"}}>×</button>
+                      </div>
+                    ))}
                   </div>
                 )}
-                <div style={{flex:1,minWidth:0}}>
-                  <p style={{fontSize:13,fontWeight:500,color:t.text,margin:"0 0 2px"}}>
-                    {userName || "User"}
-                  </p>
-                  <p style={{fontSize:11,color:t.textMuted,margin:0,fontWeight:300}}>
-                    {userRole || "Sales Professional"}
-                  </p>
-                </div>
-              </>
-              <div style={{display:"flex",alignItems:"center",gap:6}}>
-                <div className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:t.accent,boxShadow:`0 0 7px ${t.accentGlow}`}} />
-                {/* Theme toggle */}
-                <button onClick={toggleTheme} title={`Switch to ${theme==="dark"?"light":"dark"} mode`} style={{
-                  background:t.toggleBg, border:`1px solid ${t.toggleBorder}`, borderRadius:6,
-                  width:26,height:26,display:"flex",alignItems:"center",justifyContent:"center",
-                  cursor:"pointer",color:t.toggleIcon,flexShrink:0,
-                }}>
-                  <ThemeIcon theme={theme}/>
-                </button>
               </div>
-            </div>
 
-            {/* History */}
-            <div style={{marginBottom:16}}>
-              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-                <button onClick={() => saved.length>0 && setShowHistory(!showHistory)} disabled={saved.length===0} style={{
-                  flex:1,textAlign:"left",background:"none",border:"none",
-                  color:t.textMuted,fontSize:12,cursor:saved.length>0?"pointer":"default",
-                  padding:"6px 0",fontFamily:"var(--app-font-sans)",
-                }}>
-                  Reports ({saved.length}) {saved.length>0?(showHistory?"▾":"▸"):""}
-                </button>
+              {/* Inputs */}
+              <div>
+                <GlassInput t={t} label="LinkedIn URL" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username"/>
+                {contact.toLowerCase().includes("linkedin.com/in/") && (
+                  <GlassInput t={t} label="Name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last"/>
+                )}
+                <div>
+                  <GlassInput t={t} label="Company" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="e.g. JPMorgan Chase"/>
+                </div>
+                <GlassInput t={t} label="Title (Optional)" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics"/>
+                <GlassInput t={t} label="Industry (Optional)" value={industry} onChange={e=>setIndustry((e.target as HTMLInputElement).value)} placeholder="Auto-detected — or type your own"/>
+                <GlassInput t={t} label="Context (Optional)" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Anything you already know…"/>
+
                 <button
-                  onClick={() => {
-                    // Clear all input fields
-                    setContact("");
-                    setCompany("");
-                    setIndustry("");
-                    setTitle("");
-                    setContext("");
-                    setMeetingType("Discovery");
-                    setParsedContactName("");
-                    setContactPhotoUrl("");
-                    setParsedCompanyName("");
-                    // Also refresh the saved list
-                    setSaved(loadSaved());
-                  }}
-                  title="Clear form and refresh"
+                  onClick={generate}
+                  disabled={generating}
                   style={{
-                    background:t.toggleBg,
-                    border:`1px solid ${t.toggleBorder}`,
-                    borderRadius:6,
-                    width:24,
-                    height:24,
-                    display:"flex",
-                    alignItems:"center",
-                    justifyContent:"center",
-                    cursor:"pointer",
-                    color:t.toggleIcon,
-                    flexShrink:0,
+                    ...glassBtn,
+                    opacity:generating?0.6:1,
+                    marginTop:8,
+                    position:"relative",
+                    overflow:"hidden",
+                    transform:"scale(1)",
+                    transition:"all 0.2s ease",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!generating) {
+                      e.currentTarget.style.transform = "scale(1.01)";
+                      e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.15),0 4px 16px rgba(0,0,0,0.15)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "scale(1)";
+                    e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.10),0 2px 10px rgba(0,0,0,0.1)";
                   }}
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                  </svg>
+                  {generating ? (
+                    <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
+                      <span className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:"currentColor"}}/>
+                      Generating…
+                    </span>
+                  ) : (
+                    "Generate Briefing"
+                  )}
                 </button>
+
+                {briefingReady && (
+                  <button onClick={exportPDF} style={{
+                    width:"100%",background:t.btnSm,color:t.btnSmText,border:`1px solid ${t.btnSmBorder}`,
+                    borderRadius:10,padding:"9px 14px",fontSize:12,fontWeight:400,cursor:"pointer",marginTop:4,fontFamily:"var(--app-font-sans)",
+                  }}>↓ Export PDF</button>
+                )}
+
+                {error && <p style={{fontSize:12,color:"rgba(255,100,100,0.9)",marginTop:8}}>{error}</p>}
               </div>
-              {showHistory && saved.length>0 && (
-                <div style={{marginTop:6}}>
-                  {saved.map(b=>(
-                    <div key={b.ts} style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
-                      <button onClick={()=>loadBriefing(b)} style={{
-                        flex:1,textAlign:"left",background:t.btnSm,border:`1px solid ${t.btnSmBorder}`,
-                        borderRadius:8,color:t.btnSmText,fontSize:12,fontWeight:400,
-                        padding:"9px 11px",lineHeight:1.4,cursor:"pointer",fontFamily:"var(--app-font-sans)",
-                      }}>
-                        <span style={{display:"block",fontWeight:500}}>{b.co}</span>
-                        <span style={{display:"block",fontSize:11,color:t.textDim}}>{[b.ct,b.callType,b.date].filter(Boolean).join("  ·  ")}</span>
-                      </button>
-                      <button onClick={()=>deleteSaved(b.ts)} style={{background:"none",border:"none",color:t.textDim,fontSize:13,padding:"4px 6px",cursor:"pointer",fontFamily:"var(--app-font-sans)"}}>×</button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
 
-            {/* Inputs */}
-            <div>
-              <GlassInput t={t} label="LinkedIn URL" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username"/>
-              {contact.toLowerCase().includes("linkedin.com/in/") && (
-                <GlassInput t={t} label="Name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last"/>
-              )}
-            <div>
-              <GlassInput t={t} label="Company" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="e.g. JPMorgan Chase"/>
-            </div>
-            
-            <GlassInput t={t} label="Title (Optional)" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics"/>
-            <GlassInput t={t} label="Industry (Optional)" value={industry} onChange={e=>setIndustry((e.target as HTMLInputElement).value)} placeholder="Auto-detected — or type your own"/>
-            <GlassInput t={t} label="Context (Optional)" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Anything you already know…"/>
-
-            <button
-              onClick={generate}
-              disabled={generating}
-              style={{
-                ...glassBtn,
-                opacity:generating?0.6:1,
-                marginTop:8,
-                position:"relative",
-                overflow:"hidden",
-                transform:"scale(1)",
-                transition:"all 0.2s ease",
-              }}
-              onMouseEnter={(e) => {
-                if (!generating) {
-                  e.currentTarget.style.transform = "scale(1.01)";
-                  e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.15),0 4px 16px rgba(0,0,0,0.15)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.10),0 2px 10px rgba(0,0,0,0.1)";
-              }}
-            >
-              {generating ? (
-                <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                  <span className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:"currentColor"}}/>
-                  Generating…
-                </span>
-              ) : (
-                "Generate Briefing"
-              )}
-            </button>
-
-            {briefingReady && (
-              <button onClick={exportPDF} style={{
-                width:"100%",background:t.btnSm,color:t.btnSmText,border:`1px solid ${t.btnSmBorder}`,
-                borderRadius:10,padding:"9px 14px",fontSize:12,fontWeight:400,cursor:"pointer",marginTop:4,fontFamily:"var(--app-font-sans)",
-              }}>↓ Export PDF</button>
-            )}
-
-            {error && <p style={{fontSize:12,color:"rgba(255,100,100,0.9)",marginTop:8}}>{error}</p>}
-
-            <div style={{marginTop:12,paddingTop:12,borderTop:`1px solid ${t.divider}`}}>
-              <p style={{fontSize:12,color:t.textDim,lineHeight:1.7,margin:0}}>
+            {/* Pinned footer */}
+            <div style={{flexShrink:0,padding:"12px 18px",borderTop:`1px solid ${t.divider}`}}>
+              <p style={{fontSize:11,color:t.textDim,lineHeight:1.6,margin:"0 0 6px"}}>
                 <span style={{fontWeight:500}}>Powered by</span> IBM Bob & watson<span style={{color:"#0f62fe"}}>x</span><br/>
                 <span style={{opacity:0.7}}>Built by Marco Sesay</span>
               </p>
-              <div style={{marginTop:6}}>
-                <img src="/ibm-logo.png" alt="IBM" style={{width:"72px",height:"auto",opacity:theme==="dark"?0.6:0.4,filter:theme==="dark"?"brightness(0) invert(1)":"brightness(0)"}}/>
-              </div>
+              <img src="/ibm-logo.png" alt="IBM" style={{width:"60px",height:"auto",opacity:theme==="dark"?0.6:0.4,filter:theme==="dark"?"brightness(0) invert(1)":"brightness(0)"}}/>
             </div>
           </div>
         )}
