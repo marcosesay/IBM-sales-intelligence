@@ -1095,15 +1095,28 @@ export default function BriefingPage() {
   /* ─── Stream sections parser ─── */
   const streamingSections = useMemo(() => {
     if (!briefingText) return [];
+
+    const PRODUCT_TITLES = ["Product Recommendations","Retention & Upsell Positioning","IBM Differentiation","Strategic Investment Themes"];
+    const IBM_PRODUCT_NAMES = ["watsonx.ai","watsonx.data","watsonx.governance","IBM OpenPages","IBM DataStage","IBM Knowledge Catalog"];
+
     const parts = briefingText.split("##").slice(1);
     const seen = new Set<string>();
-    return parts
+    const sections = parts
       .map((sec, i) => {
         const lines = sec.trim().split("\n");
         const title = lines[0].trim() || "…";
+        let content = lines.slice(1).join("\n").trim();
+
+        // Strip hallucinated meta-commentary that the 8B model sometimes appends
+        // Cuts off at any line that starts with "I am rephrasing", "Note:", "adhering", etc.
+        content = content.split("\n").reduce((acc, line) => {
+          if (/^(I am |Note:|adhering|since the response|the above|here is the revised|without the label|as it seems|extraneous)/i.test(line.trim())) return acc;
+          return acc + "\n" + line;
+        }, "").trim();
+
         return {
           title,
-          content: lines.slice(1).join("\n").trim(),
+          content,
           isStreaming: generating && i === parts.length - 1,
         };
       })
@@ -1113,7 +1126,22 @@ export default function BriefingPage() {
         seen.add(key);
         return true;
       })
-      .slice(0, 5); // max 5 sections (4 main + Product Recommendations)
+      .slice(0, 5);
+
+    // If no explicit product recs section was generated, synthesize one from the full text
+    const hasProductSec = sections.some(s => PRODUCT_TITLES.includes(s.title));
+    if (!hasProductSec && !generating) {
+      // Find IBM product names mentioned anywhere in the full text
+      const found = IBM_PRODUCT_NAMES.filter(name =>
+        briefingText.toLowerCase().includes(name.toLowerCase())
+      );
+      const productContent = found.length > 0
+        ? found.slice(0, 3).map(n => `- ${n}`).join("\n")
+        : "- watsonx.ai\n- watsonx.data\n- watsonx.governance";
+      sections.push({ title: "Product Recommendations", content: productContent, isStreaming: false });
+    }
+
+    return sections;
   }, [briefingText, generating]);
 
   const generate = useCallback(async () => {
