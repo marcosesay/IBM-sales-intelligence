@@ -1061,7 +1061,7 @@ export default function BriefingPage() {
     let companyContext = "";
     try {
       const RESEARCH_TIMEOUT = 1500; // max 1.5s wait before we just start generating
-      const withTimeout = <T>(p: Promise<T>, ms: number): Promise<T | null> =>
+      const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T | null> =>
         Promise.race([p, new Promise<null>(res => setTimeout(() => res(null), ms))]);
 
       const [wikiRes, newsRes] = await Promise.all([
