@@ -531,17 +531,29 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
   renderBox(m, y, colW, row3H, "Discovery Questions", discoveryQs, false);
   renderQualBox(m + colW + 3, y, colW, row3H, contentSets[2].title, qualInfo);
   
-  // Row 4 - IBM Product Recommendations (full width, fills remaining space)
+  // Row 4 - IBM Product Recommendations
   y += row3H + gap;
 
-  const maxBottomY = H - 10;
-  const availableBottomHeight = Math.min(productsH, maxBottomY - y);
+  // Each product card needs at least 22mm to look good
+  const MIN_CARD_H = 22;
+  const cardGap = 2.5;
+  const neededProductsH = 13 + products.length * MIN_CARD_H + (products.length - 1) * cardGap + 3;
+
+  // If not enough room on this page, add a new page
+  if (y + neededProductsH > H - 8) {
+    doc.addPage();
+    y = 10;
+  }
+
+  const availableBottomHeight = Math.min(Math.max(H - 8 - y, neededProductsH), H - 8 - y + 1);
+  const cardH = Math.max((availableBottomHeight - 13 - (products.length - 1) * cardGap - 3) / products.length, MIN_CARD_H);
+  const totalProductBoxH = 13 + products.length * cardH + (products.length - 1) * cardGap + 3;
 
   // Draw outer container
   doc.setFillColor(255, 255, 255);
   doc.setDrawColor(229, 231, 235);
   doc.setLineWidth(0.3);
-  doc.roundedRect(m, y, fullW, availableBottomHeight, 1.5, 1.5, "FD");
+  doc.roundedRect(m, y, fullW, totalProductBoxH, 1.5, 1.5, "FD");
 
   // Section title
   doc.setFont("helvetica", "bold");
@@ -553,10 +565,7 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
   doc.line(m + 3, y + 9, m + fullW - 3, y + 9);
 
   // Render each product as a mini card
-  const cardGap = 2;
   const cardStartY = y + 13;
-  const totalCardGaps = (products.length - 1) * cardGap;
-  const cardH = (availableBottomHeight - 13 - totalCardGaps - 3) / products.length;
 
   products.forEach((p, idx) => {
     const cardY = cardStartY + idx * (cardH + cardGap);
