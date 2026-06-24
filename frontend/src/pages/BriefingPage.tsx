@@ -1128,17 +1128,12 @@ export default function BriefingPage() {
       })
       .slice(0, 5);
 
-    // If no explicit product recs section was generated, synthesize one from the full text
+    // Always ensure a Product Recommendations section exists
     const hasProductSec = sections.some(s => PRODUCT_TITLES.includes(s.title));
     if (!hasProductSec && !generating) {
-      // Find IBM product names mentioned anywhere in the full text
-      const found = IBM_PRODUCT_NAMES.filter(name =>
-        briefingText.toLowerCase().includes(name.toLowerCase())
-      );
-      const productContent = found.length > 0
-        ? found.slice(0, 3).map(n => `- ${n}`).join("\n")
-        : "- watsonx.ai\n- watsonx.data\n- watsonx.governance";
-      sections.push({ title: "Product Recommendations", content: productContent, isStreaming: false });
+      // Pass industry via a sentinel so parseProductRecs catalogue fallback kicks in
+      // The content just needs to be non-empty; the ProductRecsCard will use catalogue fallback
+      sections.push({ title: "Product Recommendations", content: "use-catalogue-fallback", isStreaming: false });
     }
 
     return sections;
@@ -1796,8 +1791,8 @@ export default function BriefingPage() {
               </div>
             )}
             
-            {/* 5th section — Product Recommendations (full width) */}
-            {streamingSections.length > 4 && streamingSections.slice(4).map(sec=>(
+            {/* 5th section — Product Recommendations (full width, always shown) */}
+            {streamingSections.length >= 5 && streamingSections.slice(4).map(sec=>(
               <SectionCard key={sec.title} title={sec.title} content={sec.content} industry={displayBriefing?.ind} t={t} streaming={sec.isStreaming}/>
             ))}
 
