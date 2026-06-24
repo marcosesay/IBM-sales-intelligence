@@ -429,9 +429,9 @@ ${buildSections(ct, company, ind, title, contactName)}`;
 
   try {
     const stream = generateTextStream(prompt, {
-      model: "meta-llama/llama-3-3-70b-instruct",
+      model: "meta-llama/llama-3-1-8b-instruct",
       maxTokens: 2000,
-      temperature: 0.7,
+      temperature: 0.6,
     });
 
     for await (const chunk of stream) {
@@ -558,7 +558,7 @@ router.get("/pulse", async (req, res) => {
     const today = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
     const prompt = `You are a sales intelligence assistant. Generate 5 realistic enterprise AI and technology news headlines for ${today} from Bloomberg, WSJ, or TechCrunch. Respond ONLY with a JSON array. Example: [{"title": "IBM Expands watsonx Platform", "source": "Bloomberg", "date": "${today}", "url": null}]`;
 
-    const stream = generateTextStream(prompt, { maxTokens: 800, temperature: 0.7, model: "meta-llama/llama-3-3-70b-instruct" });
+    const stream = generateTextStream(prompt, { maxTokens: 800, temperature: 0.7, model: "meta-llama/llama-3-1-8b-instruct" });
     let raw = "";
     for await (const chunk of stream) { raw += chunk; }
 
