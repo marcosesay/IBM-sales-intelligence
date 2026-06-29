@@ -1665,23 +1665,46 @@ export default function BriefingPage() {
               ))}
             </div>
 
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:12,marginBottom:40}}>
+            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:40}}>
               {[
-                {title:"Company Background",sub:"Strategic context and AI maturity assessment"},
-                {title:"Discovery Questions",sub:"8 strategic, targeted questions"},
-                {title:"Opportunity Qualification",sub:"BANT + MEDDIC framework analysis"},
-                {title:"Product Fit",sub:"Recommended solutions & value proposition"},
+                {
+                  icon:"🏢",
+                  title:"Company Intelligence",
+                  sub:"Business model, AI maturity & competitive landscape",
+                  accent:"rgba(100,160,230,0.7)",
+                },
+                {
+                  icon:"🔍",
+                  title:"Discovery Questions",
+                  sub:"8 targeted questions built for your call type",
+                  accent:"rgba(110,231,183,0.7)",
+                },
+                {
+                  icon:"📊",
+                  title:"Opportunity Qualification",
+                  sub:"BANT + MEDDIC scoring with deal risk flags",
+                  accent:"rgba(200,170,120,0.7)",
+                },
+                {
+                  icon:"💡",
+                  title:"IBM Product Fit",
+                  sub:"Ranked recommendations with positioning rationale",
+                  accent:"rgba(180,140,220,0.7)",
+                },
               ].map(f=>(
                 <div key={f.title} style={{
-                  borderRadius:10,padding:"10px 12px",
+                  borderRadius:12,padding:"14px 14px 12px",
                   background:t.card,backdropFilter:"blur(28px) saturate(160%)",
                   WebkitBackdropFilter:"blur(28px) saturate(160%)",
-                  border:`1px solid ${t.cardBorder}`,boxShadow:t.cardShadow,minHeight:65,
-                  transition:"transform 0.2s, box-shadow 0.2s",
-                  cursor:"default",
+                  border:`1px solid ${t.cardBorder}`,boxShadow:t.cardShadow,
+                  display:"flex",flexDirection:"column",gap:6,
                 }}>
-                  <p style={{fontSize:10.5,fontWeight:600,color:t.text,margin:"0 0 3px",letterSpacing:"-0.2px"}}>{f.title}</p>
-                  <p style={{fontSize:9,color:t.textMuted,margin:0,lineHeight:1.35}}>{f.sub}</p>
+                  <div style={{display:"flex",alignItems:"center",gap:7}}>
+                    <span style={{fontSize:14,lineHeight:1}}>{f.icon}</span>
+                    <div style={{width:3,height:14,borderRadius:2,background:f.accent,flexShrink:0}}/>
+                    <p style={{fontSize:11,fontWeight:600,color:t.text,margin:0,letterSpacing:"-0.2px",lineHeight:1.3}}>{f.title}</p>
+                  </div>
+                  <p style={{fontSize:10,color:t.textMuted,margin:0,lineHeight:1.5,paddingLeft:2}}>{f.sub}</p>
                 </div>
               ))}
             </div>
