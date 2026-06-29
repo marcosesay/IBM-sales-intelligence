@@ -1560,7 +1560,7 @@ export default function BriefingPage() {
                 <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${t.divider}`}}>
                   {prospectError && <p style={{fontSize:11,color:"rgba(255,100,100,0.9)",marginTop:-6,marginBottom:8}}>{prospectError}</p>}
                   <button
-                    onClick={generateProspect}
+                    onClick={(e) => { e.preventDefault(); generateProspect(); }}
                     disabled={prospectGenerating}
                     style={{
                       width:"100%",background:t.btn,color:t.btnText,border:`1px solid ${t.btnBorder}`,
