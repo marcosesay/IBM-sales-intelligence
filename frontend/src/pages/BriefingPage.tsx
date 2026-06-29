@@ -1299,7 +1299,9 @@ export default function BriefingPage() {
   };
 
   const generateProspect = async () => {
+    console.log("generateProspect called", { company, prospectUrl });
     if (!company.trim() || !prospectUrl.trim()) {
+      console.log("validation failed", { company: company.trim(), prospectUrl: prospectUrl.trim() });
       setProspectError("Please enter a company name and website URL.");
       return;
     }
@@ -1311,6 +1313,7 @@ export default function BriefingPage() {
     setBriefingReady(false);
     setBriefingText("");
     setCurrentBriefing(null);
+    console.log("fetching /api/prospect/generate");
     try {
       const res = await fetch(`/api/prospect/generate`, {
         method: "POST",
