@@ -918,6 +918,14 @@ export default function BriefingPage() {
   // State for parsed contact name and photo only
   const [parsedContactName, setParsedContactName] = useState("");
   const [contactPhotoUrl, setContactPhotoUrl] = useState("");
+
+  // Prospect state
+  const [prospectCompany, setProspectCompany] = useState("");
+  const [prospectUrl, setProspectUrl] = useState("");
+  const [prospectGenerating, setProspectGenerating] = useState(false);
+  const [prospectStep, setProspectStep] = useState<1|2|null>(null);
+  const [prospectResult, setProspectResult] = useState<{companyName:string;websiteUrl:string;step1:string;step2:string;generatedAt:string}|null>(null);
+  const [prospectError, setProspectError] = useState("");
   
   // Debounce contact input
   const debouncedContact = useDebounce(contact, 600);
@@ -1219,6 +1227,38 @@ export default function BriefingPage() {
     buildPDF(currentBriefing.text, currentBriefing.co, currentBriefing.ct, currentBriefing.ind, currentBriefing.contactPhotoUrl, currentBriefing.logoUrl);
   };
 
+  const generateProspect = async () => {
+    if (!prospectCompany.trim() || !prospectUrl.trim()) {
+      setProspectError("Please enter both a company name and website URL.");
+      return;
+    }
+    setProspectError("");
+    setProspectGenerating(true);
+    setProspectStep(1);
+    setProspectResult(null);
+    // Clear briefing view so prospect output takes main area
+    setBriefingReady(false);
+    setBriefingText("");
+    setCurrentBriefing(null);
+    try {
+      const base = getBaseUrl();
+      const res = await fetch(`${base}/api/prospect/generate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyName: prospectCompany.trim(), websiteUrl: prospectUrl.trim() }),
+      });
+      setProspectStep(2);
+      if (!res.ok) throw new Error("Generation failed");
+      const data = await res.json();
+      setProspectResult(data);
+    } catch {
+      setProspectError("Generation failed. Please try again.");
+    } finally {
+      setProspectGenerating(false);
+      setProspectStep(null);
+    }
+  };
+
   const showResult = generating || briefingReady;
   const displayBriefing = briefingReady ? currentBriefing : pendingBriefing;
   const logoUrl = displayBriefing?.logoUrl || (briefingReady ? undefined : logoData?.url);
@@ -1418,6 +1458,42 @@ export default function BriefingPage() {
                 )}
 
                 {error && <p style={{fontSize:12,color:"rgba(255,100,100,0.9)",marginTop:8}}>{error}</p>}
+
+                {/* ── Prospect Section ── */}
+                <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${t.divider}`}}>
+                  <p style={{fontSize:10,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:t.textMuted,margin:"0 0 10px"}}>
+                    Prospect
+                  </p>
+                  <GlassInput t={t} label="Company Name" value={prospectCompany} onChange={e=>setProspectCompany((e.target as HTMLInputElement).value)} placeholder="e.g. Lockheed Martin" autoComplete="off"/>
+                  <GlassInput t={t} label="Website URL" value={prospectUrl} onChange={e=>setProspectUrl((e.target as HTMLInputElement).value)} placeholder="e.g. https://lockheedmartin.com" autoComplete="off"/>
+                  {prospectError && <p style={{fontSize:11,color:"rgba(255,100,100,0.9)",marginTop:-6,marginBottom:8}}>{prospectError}</p>}
+                  <button
+                    onClick={generateProspect}
+                    disabled={prospectGenerating}
+                    style={{
+                      width:"100%",background:t.btn,color:t.btnText,border:`1px solid ${t.btnBorder}`,
+                      borderRadius:10,padding:"11px 16px",fontSize:13,fontWeight:500,
+                      fontFamily:"var(--app-font-sans)",cursor:prospectGenerating?"not-allowed":"pointer",
+                      opacity:prospectGenerating?0.6:1,marginTop:4,
+                    }}
+                  >
+                    {prospectGenerating
+                      ? prospectStep===1 ? "Step 1 — Researching…" : "Step 2 — Sales play…"
+                      : "Generate Prospect Report"}
+                  </button>
+                  {prospectResult && (
+                    <button
+                      onClick={() => {
+                        // Import buildProspectPDF dynamically
+                        import("@/pages/ProspectPage").then(m => (m as any).buildProspectPDF?.(prospectResult));
+                      }}
+                      style={{
+                        width:"100%",background:t.btnSm,color:t.btnSmText,border:`1px solid ${t.btnSmBorder}`,
+                        borderRadius:10,padding:"9px 14px",fontSize:12,fontWeight:400,cursor:"pointer",marginTop:4,fontFamily:"var(--app-font-sans)",
+                      }}
+                    >↓ Export Prospect PDF</button>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -1435,7 +1511,67 @@ export default function BriefingPage() {
 
       {/* ─── Main ─── */}
       <main style={{flex:1,overflowY:"auto",position:"relative"}}>
-        {!showResult ? (
+        {prospectResult && !showResult ? (
+          /* ─── Prospect Result ─── */
+          <div style={{padding:"24px 40px 48px",overflowY:"auto",height:"100%"}}>
+            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
+              <div>
+                <div style={{fontSize:11,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:"#0f62fe",marginBottom:4}}>Prospect Report</div>
+                <div style={{fontSize:20,fontWeight:600,color:t.text}}>{prospectResult.companyName}</div>
+                <div style={{fontSize:12,color:t.textMuted,marginTop:2}}>{prospectResult.websiteUrl}</div>
+              </div>
+              <button
+                onClick={async () => {
+                  const m = await import("@/pages/ProspectPage");
+                  (m as any).buildProspectPDF(prospectResult);
+                }}
+                style={{background:"#0f62fe",color:"#fff",border:"none",borderRadius:8,padding:"9px 18px",fontSize:13,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap",flexShrink:0}}
+              >↓ Download PDF</button>
+            </div>
+
+            {/* Step 1 */}
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:"#0f62fe",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+              <span style={{background:"#0f62fe",color:"#fff",width:18,height:18,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>1</span>
+              Company Research & IBM Product Mapping
+            </div>
+            {prospectResult.step1.split(/\n(?=##?\s)/).filter(Boolean).map((sec,i) => {
+              const lines = sec.trim().split("\n");
+              const title = lines[0].replace(/^#+\s*/,"").replace(/\*\*/g,"").trim();
+              const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"").replace(/\*\*/g,"").replace(/\*/g,"");
+              return (
+                <div key={i} style={{background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,borderRadius:10,padding:"16px 18px",marginBottom:12}}>
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent,marginBottom:8}}>{title}</div>
+                  <div style={{fontSize:13,color:t.textSub,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{body}</div>
+                </div>
+              );
+            })}
+
+            {/* Step 2 */}
+            <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:"#0f62fe",marginBottom:12,marginTop:20,display:"flex",alignItems:"center",gap:8}}>
+              <span style={{background:"#0f62fe",color:"#fff",width:18,height:18,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>2</span>
+              Best Fit Use Case & Sales Play
+            </div>
+            {prospectResult.step2.split(/\n(?=##?\s)/).filter(Boolean).map((sec,i) => {
+              const lines = sec.trim().split("\n");
+              const title = lines[0].replace(/^#+\s*/,"").replace(/\*\*/g,"").trim();
+              const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"").replace(/\*\*/g,"").replace(/\*/g,"");
+              return (
+                <div key={i} style={{background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,borderRadius:10,padding:"16px 18px",marginBottom:12}}>
+                  <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent,marginBottom:8}}>{title}</div>
+                  <div style={{fontSize:13,color:t.textSub,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{body}</div>
+                </div>
+              );
+            })}
+          </div>
+        ) : prospectGenerating && !showResult ? (
+          /* ─── Prospect Loading ─── */
+          <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:16}}>
+            <div className="animate-pulse-dot" style={{width:10,height:10,borderRadius:"50%",background:t.accent}}/>
+            <p style={{fontSize:14,color:t.textSub,textAlign:"center"}}>
+              {prospectStep===1 ? "Step 1 — Researching company & mapping IBM products…" : "Step 2 — Building use cases & sales play…"}
+            </p>
+          </div>
+        ) : !showResult ? (
           /* ─── Hero ─── */
           <div style={{padding:"24px 40px 48px",height:"100%",display:"flex",flexDirection:"column"}}>
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>

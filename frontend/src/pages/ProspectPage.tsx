@@ -124,7 +124,7 @@ function SectionCard({ title, body }: { title: string; body: string }) {
 }
 
 /* ─── PDF Builder ─── */
-async function buildProspectPDF(result: ProspectResult) {
+export async function buildProspectPDF(result: ProspectResult) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4" });
   const W = doc.internal.pageSize.getWidth();
