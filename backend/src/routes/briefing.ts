@@ -1320,7 +1320,7 @@ router.get("/parse-contact", async (req, res) => {
   }
 });
 
-// ─── Prospect Generation ─────────────────────────────────────────────────────
+// ─── Prospect Generation (streaming SSE) ────────────────────────────────────
 router.post("/prospect", async (req, res) => {
   const { companyName, websiteUrl, context } = req.body as {
     companyName: string;
@@ -1356,27 +1356,30 @@ Competitive edge: [Why IBM beats Microsoft/AWS here]
 - [Title 1]: [Why they care]
 - [Title 2]: [Why they care]`;
 
-  try {
-    req.log.info({ companyName }, "Prospect generation starting");
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
 
-    const output = await generateText(prompt, {
+  try {
+    req.log.info({ companyName }, "Prospect streaming starting");
+
+    const stream = generateTextStream(prompt, {
       model: "meta-llama/llama-3-1-8b-instruct",
       maxTokens: 400,
       temperature: 0.4,
     });
 
-    req.log.info({ companyName }, "Prospect generation complete");
+    for await (const chunk of stream) {
+      res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
+    }
 
-    res.json({
-      companyName,
-      websiteUrl,
-      step1: output,
-      step2: "",
-      generatedAt: new Date().toISOString(),
-    });
+    res.write(`data: ${JSON.stringify({ done: true, companyName, websiteUrl, generatedAt: new Date().toISOString() })}\n\n`);
+    res.end();
+    req.log.info({ companyName }, "Prospect streaming complete");
   } catch (err: any) {
-    req.log.error({ err: err?.message, companyName }, "Prospect generation failed");
-    res.status(500).json({ error: "Generation failed.", detail: err?.message || String(err) });
+    req.log.error({ err: err?.message, companyName }, "Prospect streaming failed");
+    res.write(`data: ${JSON.stringify({ error: err?.message || "Generation failed" })}\n\n`);
+    res.end();
   }
 });
 
