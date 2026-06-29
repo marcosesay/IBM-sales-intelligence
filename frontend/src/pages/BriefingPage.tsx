@@ -1241,8 +1241,7 @@ export default function BriefingPage() {
     setBriefingText("");
     setCurrentBriefing(null);
     try {
-      const base = getBaseUrl();
-      const res = await fetch(`${base}/api/prospect/generate`, {
+      const res = await fetch(`/api/prospect/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companyName: company.trim(), websiteUrl: prospectUrl.trim(), context: context.trim() }),
