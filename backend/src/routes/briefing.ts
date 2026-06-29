@@ -1364,7 +1364,7 @@ Competitive edge: [Why IBM beats Microsoft/AWS here]
     req.log.info({ companyName }, "Prospect streaming starting");
 
     const stream = generateTextStream(prompt, {
-      model: "meta-llama/llama-3-1-8b-instruct",
+      model: "ibm/granite-3-8b-instruct",
       maxTokens: 400,
       temperature: 0.4,
     });
