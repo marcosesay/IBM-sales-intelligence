@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import BriefingPage from "@/pages/BriefingPage";
 import ArchitecturePage from "@/pages/ArchitecturePage";
 import SetupPage from "@/pages/SetupPage";
+import ProspectPage from "@/pages/ProspectPage";
 
 // Configure API client to point to local API server
 const queryClient = new QueryClient({
@@ -43,6 +44,9 @@ function App() {
     }
     if (path === "/architecture") {
       return <ArchitecturePage />;
+    }
+    if (path === "/prospect") {
+      return <ProspectPage />;
     }
     return <BriefingPage />;
   };

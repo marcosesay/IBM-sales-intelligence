@@ -1475,6 +1475,33 @@ export default function BriefingPage() {
               >
                 ⚙️ Settings
               </button>
+              <button
+                onClick={() => window.location.href = "/prospect"}
+                style={{
+                  background:t.btnSm,
+                  border:`1px solid ${t.btnSmBorder}`,
+                  color:t.btnSmText,
+                  borderRadius:8,
+                  padding:"6px 12px",
+                  fontSize:11,
+                  fontWeight:500,
+                  cursor:"pointer",
+                  fontFamily:"var(--app-font-sans)",
+                  transition:"all 0.2s",
+                  marginLeft:6,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = t.btn;
+                  e.currentTarget.style.transform = "scale(1.02)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = t.btnSm;
+                  e.currentTarget.style.transform = "scale(1)";
+                }}
+                title="Generate a prospecting report for a new account"
+              >
+                🔍 Prospect
+              </button>
             </div>
 
             <div>
