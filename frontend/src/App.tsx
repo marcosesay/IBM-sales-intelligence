@@ -17,6 +17,15 @@ function App() {
   const [isSetupComplete, setIsSetupComplete] = useState<boolean | null>(null);
   const path = window.location.pathname;
 
+  // Render prospect page immediately — no setup check needed
+  if (path === "/prospect") {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <ProspectPage />
+      </QueryClientProvider>
+    );
+  }
+
   useEffect(() => {
     setBaseUrl(import.meta.env.VITE_BACKEND_URL || "http://localhost:3003");
 
@@ -31,8 +40,8 @@ function App() {
     return null;
   }
 
-  // If setup is not complete and not on setup or prospect page, redirect to setup
-  if (!isSetupComplete && path !== "/setup" && path !== "/prospect") {
+  // If setup is not complete and not on setup page, redirect to setup
+  if (!isSetupComplete && path !== "/setup") {
     window.location.href = "/setup";
     return null;
   }
@@ -44,9 +53,6 @@ function App() {
     }
     if (path === "/architecture") {
       return <ArchitecturePage />;
-    }
-    if (path === "/prospect") {
-      return <ProspectPage />;
     }
     return <BriefingPage />;
   };
