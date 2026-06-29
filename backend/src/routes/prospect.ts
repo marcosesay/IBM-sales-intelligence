@@ -167,9 +167,9 @@ Fill in every row with specifics for ${companyName}.`;
       generatedAt: new Date().toISOString(),
     });
 
-  } catch (err) {
+  } catch (err: any) {
     req.log.error({ err, companyName }, "Prospect generation failed");
-    res.status(500).json({ error: "Generation failed. Please try again." });
+    res.status(500).json({ error: "Generation failed. Please try again.", detail: err?.message || String(err) });
   }
 });
 
