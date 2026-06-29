@@ -29,7 +29,7 @@ interface SavedBriefing {
   date: string; ts: number;
 }
 
-const MEETING_TYPES = ["Discovery", "Renewal", "Competitive", "EBC"] as const;
+const MEETING_TYPES = ["Discovery", "Renewal", "Competitive"] as const;
 type MeetingType = typeof MEETING_TYPES[number];
 
 /* ─── Theme tokens ─── */
@@ -1228,8 +1228,8 @@ export default function BriefingPage() {
   };
 
   const generateProspect = async () => {
-    if (!prospectCompany.trim() || !prospectUrl.trim()) {
-      setProspectError("Please enter both a company name and website URL.");
+    if (!company.trim() || !prospectUrl.trim()) {
+      setProspectError("Please enter a company name and website URL.");
       return;
     }
     setProspectError("");
@@ -1245,7 +1245,7 @@ export default function BriefingPage() {
       const res = await fetch(`${base}/api/prospect/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyName: prospectCompany.trim(), websiteUrl: prospectUrl.trim(), context: context.trim() }),
+        body: JSON.stringify({ companyName: company.trim(), websiteUrl: prospectUrl.trim(), context: context.trim() }),
       });
       setProspectStep(2);
       if (!res.ok) throw new Error("Generation failed");
@@ -1406,12 +1406,32 @@ export default function BriefingPage() {
 
               {/* Inputs */}
               <div>
-                <GlassInput t={t} label="LinkedIn URL" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username" autoComplete="off"/>
-                {contact.toLowerCase().includes("linkedin.com/in/") && (
-                  <GlassInput t={t} label="Name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last" autoComplete="off"/>
-                )}
-                <GlassInput t={t} label="Company" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="e.g. JPMorgan Chase" autoComplete="off"/>
+                <GlassInput t={t} label="Company Name" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="e.g. JPMorgan Chase" autoComplete="off"/>
+                <GlassInput t={t} label="Company Website" value={prospectUrl} onChange={e=>setProspectUrl((e.target as HTMLInputElement).value)} placeholder="e.g. https://jpmorgan.com" autoComplete="off"/>
+                <GlassInput t={t} label="Prospect Name (Optional)" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last" autoComplete="off"/>
+                <GlassInput t={t} label="Prospect LinkedIn (Optional)" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username" autoComplete="off"/>
                 <GlassInput t={t} label="Title (Optional)" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics" autoComplete="off"/>
+
+                {/* ── Call Type Radio Buttons ── */}
+                <div style={{marginBottom:12}}>
+                  <p style={{fontSize:11,fontWeight:500,color:t.textDim,letterSpacing:"0.7px",textTransform:"uppercase",marginBottom:8}}>Call Type</p>
+                  <div style={{display:"flex",gap:6}}>
+                    {(["Discovery","Renewal","Competitive"] as const).map(mt=>(
+                      <button
+                        key={mt}
+                        onClick={()=>setMeetingType(mt)}
+                        style={{
+                          flex:1,padding:"7px 4px",fontSize:11,fontWeight:500,
+                          borderRadius:8,cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                          border:`1px solid ${meetingType===mt?t.mtActiveBorder:t.mtInactiveBorder}`,
+                          background:meetingType===mt?t.mtActive:t.mtInactive,
+                          color:meetingType===mt?t.mtActiveText:t.mtInactiveText,
+                          transition:"all 0.15s",
+                        }}
+                      >{mt}</button>
+                    ))}
+                  </div>
+                </div>
 
                 <button
                   onClick={generate}
@@ -1462,11 +1482,6 @@ export default function BriefingPage() {
 
                 {/* ── Prospect Section ── */}
                 <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${t.divider}`}}>
-                  <p style={{fontSize:10,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:t.textMuted,margin:"0 0 10px"}}>
-                    Prospect
-                  </p>
-                  <GlassInput t={t} label="Company Name" value={prospectCompany} onChange={e=>setProspectCompany((e.target as HTMLInputElement).value)} placeholder="e.g. Lockheed Martin" autoComplete="off"/>
-                  <GlassInput t={t} label="Website URL" value={prospectUrl} onChange={e=>setProspectUrl((e.target as HTMLInputElement).value)} placeholder="e.g. https://lockheedmartin.com" autoComplete="off"/>
                   {prospectError && <p style={{fontSize:11,color:"rgba(255,100,100,0.9)",marginTop:-6,marginBottom:8}}>{prospectError}</p>}
                   <button
                     onClick={generateProspect}
