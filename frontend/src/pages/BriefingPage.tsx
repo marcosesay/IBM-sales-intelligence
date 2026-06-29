@@ -1315,11 +1315,14 @@ export default function BriefingPage() {
     setCurrentBriefing(null);
     console.log("fetching /api/prospect/generate");
     try {
+      const controller = new AbortController();
       const res = await fetch(`/api/prospect/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companyName: company.trim(), websiteUrl: prospectUrl.trim(), context: context.trim() }),
+        signal: controller.signal,
       });
+      console.log("fetch response received", res.status);
       setProspectStep(2);
       if (!res.ok) {
         const data = await res.json().catch(() => ({})) as any;
@@ -1328,6 +1331,7 @@ export default function BriefingPage() {
       const data = await res.json();
       setProspectResult(data);
     } catch (err: any) {
+      console.error("prospect fetch error", err);
       setProspectError(err.message || "Generation failed. Please try again.");
     } finally {
       setProspectGenerating(false);
