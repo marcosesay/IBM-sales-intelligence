@@ -1442,7 +1442,7 @@ export default function BriefingPage() {
                     color:t.textMuted,fontSize:12,cursor:saved.length>0?"pointer":"default",
                     padding:"4px 0",fontFamily:"var(--app-font-sans)",
                   }}>
-                    Reports ({saved.length}) {saved.length>0?(showHistory?"▾":"▸"):""}
+                    Pick up where you left off {saved.length>0?(showHistory?"▾":"▸"):""}
                   </button>
                   <button
                     onClick={() => {
@@ -1490,11 +1490,11 @@ export default function BriefingPage() {
 
               {/* Inputs */}
               <div>
-                <GlassInput t={t} label="Company Name" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="e.g. JPMorgan Chase" autoComplete="off"/>
-                <GlassInput t={t} label="Company Website" value={prospectUrl} onChange={e=>setProspectUrl((e.target as HTMLInputElement).value)} placeholder="https://jpmorgan.com" autoComplete="off"/>
-                <GlassInput t={t} label="Prospect Name (Optional)" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last" autoComplete="off"/>
-                <GlassInput t={t} label="Prospect LinkedIn (Optional)" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username" autoComplete="off"/>
-                <GlassInput t={t} label="Title (Optional)" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics" autoComplete="off"/>
+                <GlassInput t={t} label="Account" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="Celonis, linkedin.com/in/..., or celonis.com" autoComplete="off"/>
+                <GlassInput t={t} label="Website" value={prospectUrl} onChange={e=>setProspectUrl((e.target as HTMLInputElement).value)} placeholder="https://jpmorgan.com" autoComplete="off"/>
+                <GlassInput t={t} label="Contact name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last" autoComplete="off"/>
+                <GlassInput t={t} label="LinkedIn URL" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username" autoComplete="off"/>
+                <GlassInput t={t} label="Contact title" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics" autoComplete="off"/>
 
                 {/* ── Call Type Radio Buttons ── */}
                 <div style={{marginBottom:12}}>
@@ -1546,7 +1546,7 @@ export default function BriefingPage() {
                       Generating…
                     </span>
                   ) : (
-                    "Generate Briefing"
+                    "Prep my call"
                   )}
                 </button>
 
@@ -1554,14 +1554,14 @@ export default function BriefingPage() {
                   <button onClick={exportPDF} style={{
                     width:"100%",background:t.btnSm,color:t.btnSmText,border:`1px solid ${t.btnSmBorder}`,
                     borderRadius:10,padding:"9px 14px",fontSize:12,fontWeight:400,cursor:"pointer",marginTop:4,fontFamily:"var(--app-font-sans)",
-                  }}>↓ Export PDF</button>
+                  }}>↓ Save PDF</button>
                 )}
 
                 {error && <p style={{fontSize:12,color:"rgba(255,100,100,0.9)",marginTop:8}}>{error}</p>}
 
                 {/* ── Context ── */}
                 <div style={{marginTop:12}}>
-                  <GlassInput t={t} label="Context (Optional)" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Add context to apply to briefings or prospect reports…" autoComplete="off"/>
+                  <GlassInput t={t} label="Intel to include" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Evaluating Snowflake, budget unlocked Q3…" autoComplete="off"/>
                 </div>
 
                 {/* ── Prospect Section ── */}
@@ -1578,8 +1578,8 @@ export default function BriefingPage() {
                     }}
                   >
                     {prospectGenerating
-                      ? prospectStep===1 ? "Step 1 — Researching…" : "Step 2 — Sales play…"
-                      : "Generate Prospect Report"}
+                      ? prospectStep===1 ? "Reading the account…" : "Building your play…"
+                      : "Build prospect report"}
                   </button>
                   {prospectResult && (
                     <button
@@ -1591,7 +1591,7 @@ export default function BriefingPage() {
                         width:"100%",background:t.btnSm,color:t.btnSmText,border:`1px solid ${t.btnSmBorder}`,
                         borderRadius:10,padding:"9px 14px",fontSize:12,fontWeight:400,cursor:"pointer",marginTop:4,fontFamily:"var(--app-font-sans)",
                       }}
-                    >↓ Export Prospect PDF</button>
+                    >↓ Save prospect PDF</button>
                   )}
                 </div>
               </div>
@@ -1677,7 +1677,7 @@ export default function BriefingPage() {
               }}>
                 <div className="animate-pulse-dot" style={{width:7,height:7,borderRadius:"50%",background:t.accent,flexShrink:0,boxShadow:`0 0 8px ${t.accentGlow}`}} />
                 <span style={{fontSize:13,color:t.textSub,fontWeight:400}}>
-                  {greeting}, {userName && userName !== "Guest" ? <span style={{fontWeight:500}}>{userName.split(' ')[0]}</span> : <span style={{fontWeight:500}}>IBMer</span>} — Your pre-call assistant is ready
+                  {greeting}, {userName && userName !== "Guest" ? <span style={{fontWeight:500}}>{userName.split(' ')[0]}</span> : <span style={{fontWeight:500}}>IBMer</span>} — ready when you are
                 </span>
               </div>
               <button
@@ -1711,10 +1711,10 @@ export default function BriefingPage() {
 
             <div>
               <h1 style={{fontSize:64,fontWeight:200,letterSpacing:"-2.6px",color:t.text,lineHeight:1.04,margin:"16px 0 12px"}}>
-                Sales Intelligence<br/>Simplified
+                Know your account<br/>before the call
               </h1>
               <p style={{fontSize:16,fontWeight:300,color:t.textMuted,lineHeight:1.65,maxWidth:520,margin:"0 0 12px"}}>
-                Enter your prospect's details and receive a precise, research-backed briefing in seconds — powered by AI-driven insights.
+                Drop in a company name. Get a full IBM briefing — in under 30 seconds.
               </p>
               <a
                 href="/architecture"
@@ -1731,12 +1731,12 @@ export default function BriefingPage() {
                 onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
                 onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
               >
-                → See How It Works
+                → How it works
               </a>
             </div>
 
             <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:32}}>
-              {[{dot:true,label:"IBM watsonx"},{label:"Live Research"},{label:"BANT + MEDDIC"},{label:"PDF Export"}].map(pill=>(
+              {[{dot:true,label:"watsonx-powered"},{label:"Live account intel"},{label:"Discovery Questions"},{label:"BANT qualification"},{label:"PDF in one click"}].map(pill=>(
                 <div key={pill.label} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 13px",borderRadius:100,background:t.chipBg,border:`1px solid ${t.chipBorder}`}}>
                   {pill.dot && <div style={{width:5,height:5,borderRadius:"50%",background:t.accent,boxShadow:`0 0 5px ${t.accentGlow}`}}/>}
                   <span style={{fontSize:11,color:t.textMuted,fontWeight:500}}>{pill.label}</span>
