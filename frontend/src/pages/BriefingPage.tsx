@@ -125,6 +125,77 @@ const SECTION_ACCENTS_LIGHT: Record<string, { accent: string; bg: string }> = {
   "Strategic Investment Themes":        { accent: "#0f62fe", bg: "#ebf2ff" },
 };
 
+/* ─── Prospect Loading Screen ─── */
+function ProspectLoadingScreen({ t, companyName }: { t: any; companyName: string }) {
+  const [msgIndex, setMsgIndex] = useState(0);
+  const [dots, setDots] = useState(0);
+
+  const messages = [
+    `Researching ${companyName || "company"}…`,
+    "Scanning industry landscape…",
+    "Mapping IBM product fit…",
+    "Identifying key buyer personas…",
+    "Building use cases…",
+    "Drafting sales play…",
+    "Finalizing recommendations…",
+  ];
+
+  useEffect(() => {
+    const msgTimer = setInterval(() => {
+      setMsgIndex(i => (i + 1) % messages.length);
+    }, 2800);
+    const dotTimer = setInterval(() => {
+      setDots(d => (d + 1) % 4);
+    }, 500);
+    return () => { clearInterval(msgTimer); clearInterval(dotTimer); };
+  }, []);
+
+  const dotStr = ".".repeat(dots);
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:32}}>
+      {/* Spinning ring */}
+      <div style={{position:"relative",width:56,height:56}}>
+        <div style={{
+          position:"absolute",inset:0,borderRadius:"50%",
+          border:`3px solid ${t.divider}`,
+        }}/>
+        <div style={{
+          position:"absolute",inset:0,borderRadius:"50%",
+          border:"3px solid transparent",
+          borderTopColor:t.accent,
+          animation:"spin 0.9s linear infinite",
+        }}/>
+        <div style={{
+          position:"absolute",inset:8,borderRadius:"50%",
+          background:"rgba(110,231,183,0.08)",
+          display:"flex",alignItems:"center",justifyContent:"center",
+        }}>
+          <span style={{fontSize:16}}>🔍</span>
+        </div>
+      </div>
+
+      {/* Status message */}
+      <div style={{textAlign:"center",maxWidth:340}}>
+        <p style={{fontSize:15,fontWeight:500,color:t.text,margin:"0 0 8px",minHeight:24}}>
+          {messages[msgIndex]}{dotStr}
+        </p>
+        <p style={{fontSize:12,color:t.textMuted,margin:0}}>
+          Generating your IBM prospecting report — usually takes 15–30 seconds
+        </p>
+      </div>
+
+      {/* Progress bar */}
+      <div style={{width:280,height:3,borderRadius:2,background:t.divider,overflow:"hidden"}}>
+        <div style={{
+          height:"100%",borderRadius:2,background:t.accent,
+          animation:"progress-slide 1.4s ease-in-out infinite",
+        }}/>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Helpers ─── */
 function getGreeting() {
   const h = new Date().getHours();
@@ -1583,12 +1654,7 @@ export default function BriefingPage() {
           </div>
         ) : prospectGenerating && !showResult ? (
           /* ─── Prospect Loading ─── */
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",height:"100%",gap:16}}>
-            <div className="animate-pulse-dot" style={{width:10,height:10,borderRadius:"50%",background:t.accent}}/>
-            <p style={{fontSize:14,color:t.textSub,textAlign:"center"}}>
-              {prospectStep===1 ? "Step 1 — Researching company & mapping IBM products…" : "Step 2 — Building use cases & sales play…"}
-            </p>
-          </div>
+          <ProspectLoadingScreen t={t} companyName={prospectCompany || company} />
         ) : !showResult ? (
           /* ─── Hero ─── */
           <div style={{padding:"24px 40px 48px",height:"100%",display:"flex",flexDirection:"column"}}>
