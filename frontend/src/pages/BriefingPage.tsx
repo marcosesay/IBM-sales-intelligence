@@ -1305,6 +1305,10 @@ export default function BriefingPage() {
       setProspectError("Please enter a company name and website URL.");
       return;
     }
+    if (company.trim().startsWith("http")) {
+      setProspectError("Company Name should be the company's name (e.g. Celonis), not a URL.");
+      return;
+    }
     setProspectError("");
     setProspectGenerating(true);
     setProspectStep(1);
@@ -1487,7 +1491,7 @@ export default function BriefingPage() {
               {/* Inputs */}
               <div>
                 <GlassInput t={t} label="Company Name" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="e.g. JPMorgan Chase" autoComplete="off"/>
-                <GlassInput t={t} label="Company Website" value={prospectUrl} onChange={e=>setProspectUrl((e.target as HTMLInputElement).value)} placeholder="e.g. https://jpmorgan.com" autoComplete="off"/>
+                <GlassInput t={t} label="Company Website" value={prospectUrl} onChange={e=>setProspectUrl((e.target as HTMLInputElement).value)} placeholder="https://jpmorgan.com" autoComplete="off"/>
                 <GlassInput t={t} label="Prospect Name (Optional)" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last" autoComplete="off"/>
                 <GlassInput t={t} label="Prospect LinkedIn (Optional)" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username" autoComplete="off"/>
                 <GlassInput t={t} label="Title (Optional)" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics" autoComplete="off"/>
@@ -1661,7 +1665,7 @@ export default function BriefingPage() {
           </div>
         ) : prospectGenerating && !showResult ? (
           /* ─── Prospect Loading ─── */
-          <ProspectLoadingScreen t={t} companyName={prospectCompany || company} />
+          <ProspectLoadingScreen t={t} companyName={company.startsWith("http") ? prospectUrl : company} />
         ) : !showResult ? (
           /* ─── Hero ─── */
           <div style={{padding:"24px 40px 48px",height:"100%",display:"flex",flexDirection:"column"}}>
