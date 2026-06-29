@@ -142,6 +142,62 @@ export async function* generateTextStream(
   }
 }
 
+export async function* generateTextStreamTrue(
+  prompt: string,
+  options?: GenerateOptions
+) {
+  const token = await getIamToken();
+
+  const response = await fetch(
+    `${watsonxApiUrl}/ml/v1/text/generation_stream?version=${encodeURIComponent(watsonxVersion)}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "text/event-stream",
+      },
+      body: JSON.stringify({
+        input: prompt,
+        model_id: options?.model || "ibm/granite-13b-chat-v2",
+        project_id: projectId,
+        parameters: {
+          max_new_tokens: options?.maxTokens || 8192,
+          temperature: options?.temperature || 0.7,
+          top_p: options?.topP || 1,
+          repetition_penalty: 1.1,
+        },
+      }),
+    }
+  );
+
+  if (!response.ok || !response.body) {
+    const err = await response.text();
+    throw new Error(`watsonx stream failed (${response.status}): ${err}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    const lines = decoder.decode(value).split("\n");
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = line.slice(6).trim();
+      if (data === "[DONE]") return;
+      try {
+        const parsed = JSON.parse(data) as { results?: Array<{ generated_text?: string }> };
+        const token = parsed.results?.[0]?.generated_text;
+        if (token) yield token;
+      } catch {
+        // skip malformed chunks
+      }
+    }
+  }
+}
+
 export async function generateText(
   prompt: string,
   options?: GenerateOptions

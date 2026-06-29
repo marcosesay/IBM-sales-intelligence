@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { generateTextStream } from "../lib/watsonx-client";
+import { generateTextStream, generateTextStreamTrue } from "../lib/watsonx-client";
 
 const router: IRouter = Router();
 
@@ -1363,7 +1363,7 @@ Competitive edge: [Why IBM beats Microsoft/AWS here]
   try {
     req.log.info({ companyName }, "Prospect streaming starting");
 
-    const stream = generateTextStream(prompt, {
+    const stream = generateTextStreamTrue(prompt, {
       model: "ibm/granite-3-8b-instruct",
       maxTokens: 400,
       temperature: 0.4,
