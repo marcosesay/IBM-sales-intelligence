@@ -1320,7 +1320,7 @@ export default function BriefingPage() {
     console.log("fetching /api/prospect/generate");
     try {
       const controller = new AbortController();
-      const res = await fetch(`/api/prospect/generate`, {
+      const res = await fetch(`/api/briefing/prospect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companyName: company.trim(), websiteUrl: prospectUrl.trim(), context: context.trim() }),
