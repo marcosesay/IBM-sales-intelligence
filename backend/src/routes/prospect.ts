@@ -4,10 +4,12 @@ import { generateText } from "../lib/watsonx-client";
 const router: IRouter = Router();
 
 const MODEL = "meta-llama/llama-3-3-70b-instruct";
-const MAX_TOKENS = 3500;
+const MAX_TOKENS = 2000;
 const TEMPERATURE = 0.6;
 
 router.post("/generate", async (req, res) => {
+  // Set a generous timeout — two sequential LLM calls
+  req.socket.setTimeout(240000);
   const { companyName, websiteUrl, context } = req.body as {
     companyName: string;
     websiteUrl: string;
@@ -74,11 +76,14 @@ Write in a professional, direct tone. Be specific to ${companyName} — avoid ge
 
     req.log.info({ companyName }, "Step 1 complete, starting Step 2");
 
+    // Trim step1 output to avoid exceeding token limits in step2 prompt
+    const step1Summary = step1Output.slice(0, 2000);
+
     // ── Step 2: Best Fit Use Case & Sales Play ──────────────────────────────
     const step2Prompt = `You are an IBM AI sales expert. Based on the following company research for ${companyName}, create a detailed sales play document.${contextBlock}
 
 --- COMPANY RESEARCH ---
-${step1Output}
+${step1Summary}
 --- END RESEARCH ---
 
 Now produce a Best Fit Use Case and Sales Play document:
