@@ -1317,23 +1317,45 @@ export default function BriefingPage() {
     setBriefingReady(false);
     setBriefingText("");
     setCurrentBriefing(null);
-    console.log("fetching /api/prospect/generate");
+    console.log("fetching /api/briefing/prospect (streaming)");
     try {
-      const controller = new AbortController();
       const res = await fetch(`/api/briefing/prospect`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companyName: company.trim(), websiteUrl: prospectUrl.trim(), context: context.trim() }),
-        signal: controller.signal,
       });
       console.log("fetch response received", res.status);
-      setProspectStep(2);
       if (!res.ok) {
         const data = await res.json().catch(() => ({})) as any;
         throw new Error(data.detail || data.error || "Generation failed");
       }
-      const data = await res.json();
-      setProspectResult(data);
+      const reader = res.body!.getReader();
+      const decoder = new TextDecoder();
+      let fullText = "";
+      let metaData: any = {};
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const lines = decoder.decode(value).split("\n");
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue;
+          try {
+            const parsed = JSON.parse(line.slice(6));
+            if (parsed.content) fullText += parsed.content;
+            if (parsed.done) metaData = parsed;
+            if (parsed.error) throw new Error(parsed.error);
+          } catch (e: any) {
+            if (e.message && !e.message.includes("JSON")) throw e;
+          }
+        }
+      }
+      setProspectResult({
+        companyName: metaData.companyName || company.trim(),
+        websiteUrl: metaData.websiteUrl || prospectUrl.trim(),
+        step1: fullText,
+        step2: "",
+        generatedAt: metaData.generatedAt || new Date().toISOString(),
+      });
     } catch (err: any) {
       console.error("prospect fetch error", err);
       setProspectError(err.message || "Generation failed. Please try again.");
