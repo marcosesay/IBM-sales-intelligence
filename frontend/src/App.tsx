@@ -31,8 +31,8 @@ function App() {
     return null;
   }
 
-  // If setup is not complete and not on setup page, redirect to setup
-  if (!isSetupComplete && path !== "/setup") {
+  // If setup is not complete and not on setup or prospect page, redirect to setup
+  if (!isSetupComplete && path !== "/setup" && path !== "/prospect") {
     window.location.href = "/setup";
     return null;
   }
