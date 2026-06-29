@@ -1248,11 +1248,14 @@ export default function BriefingPage() {
         body: JSON.stringify({ companyName: company.trim(), websiteUrl: prospectUrl.trim(), context: context.trim() }),
       });
       setProspectStep(2);
-      if (!res.ok) throw new Error("Generation failed");
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({})) as any;
+        throw new Error(data.detail || data.error || "Generation failed");
+      }
       const data = await res.json();
       setProspectResult(data);
-    } catch {
-      setProspectError("Generation failed. Please try again.");
+    } catch (err: any) {
+      setProspectError(err.message || "Generation failed. Please try again.");
     } finally {
       setProspectGenerating(false);
       setProspectStep(null);
