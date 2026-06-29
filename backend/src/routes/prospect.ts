@@ -15,34 +15,35 @@ router.post("/generate", async (req, res) => {
     return;
   }
 
-  const contextLine = context?.trim() ? `\nSeller context: ${context.trim()}` : "";
+  const ctx = context?.trim() ? ` Seller context: ${context.trim()}.` : "";
 
-  const prompt = `You are an IBM AI sales expert. Write a concise IBM prospecting report for ${companyName} (${websiteUrl}).${contextLine}
+  const prompt = `IBM sales brief for ${companyName}.${ctx}
 
 ## Company Overview
-2 short paragraphs: business model, market, key challenges.
+3 sentences on what ${companyName} does and their key business challenges.
 
-## IBM Product Recommendations
-Top 3 IBM products. Each: product name, why it fits (1 sentence), business outcome (1 sentence).
+## Top IBM Products
+1. [Product]: [Why it fits in 1 sentence]
+2. [Product]: [Why it fits in 1 sentence]
+3. [Product]: [Why it fits in 1 sentence]
 
-## Best Fit Sales Play
-Best single IBM product + 1-line elevator pitch.
-Top 2 use cases: problem, solution, value.
-How to get in the door (entry point).
-Main competitive wedge vs Microsoft/AWS/Google.
+## Sales Play
+Entry point: [How to get in the door]
+Key use case: [Best use case for ${companyName}]
+Elevator pitch: [One sentence IBM pitch]
+Competitive edge: [Why IBM beats Microsoft/AWS here]
 
-## Buyer Personas
-3 titles most likely to buy, one line each.
-
-Keep every section tight. Be specific to ${companyName}.`;
+## Buyers
+- [Title 1]: [Why they care]
+- [Title 2]: [Why they care]`;
 
   try {
     req.log.info({ companyName }, "Prospect generation starting");
 
     const output = await generateText(prompt, {
       model: "meta-llama/llama-3-1-8b-instruct",
-      maxTokens: 1000,
-      temperature: 0.5,
+      maxTokens: 400,
+      temperature: 0.4,
     });
 
     req.log.info({ companyName }, "Prospect generation complete");
@@ -58,7 +59,7 @@ Keep every section tight. Be specific to ${companyName}.`;
   } catch (err: any) {
     req.log.error({ err: err?.message, companyName }, "Prospect generation failed");
     res.status(500).json({
-      error: "Generation failed. Please try again.",
+      error: "Generation failed.",
       detail: err?.message || String(err),
     });
   }
