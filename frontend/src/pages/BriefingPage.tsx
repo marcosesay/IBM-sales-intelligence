@@ -1245,7 +1245,7 @@ export default function BriefingPage() {
       const res = await fetch(`${base}/api/prospect/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyName: prospectCompany.trim(), websiteUrl: prospectUrl.trim() }),
+        body: JSON.stringify({ companyName: prospectCompany.trim(), websiteUrl: prospectUrl.trim(), context: context.trim() }),
       });
       setProspectStep(2);
       if (!res.ok) throw new Error("Generation failed");
@@ -1410,12 +1410,7 @@ export default function BriefingPage() {
                 {contact.toLowerCase().includes("linkedin.com/in/") && (
                   <GlassInput t={t} label="Name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last" autoComplete="off"/>
                 )}
-                <div>
-                  <GlassInput t={t} label="Company" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="e.g. JPMorgan Chase" autoComplete="off"/>
-                </div>
                 <GlassInput t={t} label="Title (Optional)" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics" autoComplete="off"/>
-                <GlassInput t={t} label="Industry (Optional)" value={industry} onChange={e=>setIndustry((e.target as HTMLInputElement).value)} placeholder="e.g. Financial Services" autoComplete="off"/>
-                <GlassInput t={t} label="Context (Optional)" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Anything you already know…" autoComplete="off"/>
 
                 <button
                   onClick={generate}
@@ -1458,6 +1453,11 @@ export default function BriefingPage() {
                 )}
 
                 {error && <p style={{fontSize:12,color:"rgba(255,100,100,0.9)",marginTop:8}}>{error}</p>}
+
+                {/* ── Context ── */}
+                <div style={{marginTop:12}}>
+                  <GlassInput t={t} label="Context (Optional)" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Add context to apply to briefings or prospect reports…" autoComplete="off"/>
+                </div>
 
                 {/* ── Prospect Section ── */}
                 <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${t.divider}`}}>
@@ -1611,33 +1611,7 @@ export default function BriefingPage() {
               >
                 ⚙️ Settings
               </button>
-              <button
-                onClick={() => window.location.href = "/prospect"}
-                style={{
-                  background:t.btnSm,
-                  border:`1px solid ${t.btnSmBorder}`,
-                  color:t.btnSmText,
-                  borderRadius:8,
-                  padding:"6px 12px",
-                  fontSize:11,
-                  fontWeight:500,
-                  cursor:"pointer",
-                  fontFamily:"var(--app-font-sans)",
-                  transition:"all 0.2s",
-                  marginLeft:6,
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = t.btn;
-                  e.currentTarget.style.transform = "scale(1.02)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = t.btnSm;
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
-                title="Generate a prospecting report for a new account"
-              >
-                🔍 Prospect
-              </button>
+
             </div>
 
             <div>

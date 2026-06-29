@@ -8,15 +8,20 @@ const MAX_TOKENS = 3500;
 const TEMPERATURE = 0.6;
 
 router.post("/generate", async (req, res) => {
-  const { companyName, websiteUrl } = req.body as {
+  const { companyName, websiteUrl, context } = req.body as {
     companyName: string;
     websiteUrl: string;
+    context?: string;
   };
 
   if (!companyName || !websiteUrl) {
     res.status(400).json({ error: "companyName and websiteUrl are required" });
     return;
   }
+
+  const contextBlock = context && context.trim()
+    ? `\n\nAdditional context provided by the seller:\n${context.trim()}\nIncorporate this context into your analysis where relevant.`
+    : "";
 
   try {
     req.log.info({ companyName, websiteUrl }, "Starting prospect generation - Step 1");
@@ -25,7 +30,7 @@ router.post("/generate", async (req, res) => {
     const step1Prompt = `You are an IBM AI sales expert. A seller needs a detailed company research brief and IBM product mapping for a new prospect.
 
 Company: ${companyName}
-Website: ${websiteUrl}
+Website: ${websiteUrl}${contextBlock}
 
 Research this company and produce a structured markdown document covering:
 
@@ -70,7 +75,7 @@ Write in a professional, direct tone. Be specific to ${companyName} — avoid ge
     req.log.info({ companyName }, "Step 1 complete, starting Step 2");
 
     // ── Step 2: Best Fit Use Case & Sales Play ──────────────────────────────
-    const step2Prompt = `You are an IBM AI sales expert. Based on the following company research for ${companyName}, create a detailed sales play document.
+    const step2Prompt = `You are an IBM AI sales expert. Based on the following company research for ${companyName}, create a detailed sales play document.${contextBlock}
 
 --- COMPANY RESEARCH ---
 ${step1Output}
