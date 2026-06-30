@@ -1329,9 +1329,7 @@ export default function BriefingPage() {
     const v = raw.trim();
     if (/linkedin\.com\/in\//i.test(v)) {
       if (!contact) setContact(v);
-      const slug = v.split(/in\//i)[1]?.replace(/\/.*$/, "") || "";
-      const name = slug.split("-").filter(p => p && !/^\d+$/.test(p))
-        .map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+      const name = personNameFromLinkedIn(v);
       if (name && !contactName2) setContactName2(name);
     } else if (/^[a-z0-9-]+\.[a-z]{2,}(\.[a-z]{2,})?$/i.test(v.replace(/^https?:\/\//, "").replace(/\/$/, ""))) {
       if (!prospectUrl) setProspectUrl(v.startsWith("http") ? v : `https://${v}`);
