@@ -30,6 +30,8 @@ ${
     : `No website content was retrieved. Base the overview on what you reliably know and note uncertainty. Mark Contacts as "Not found on site."`
 }${ctx}
 
+FORMATTING — the structure must be identical in the web UI and the exported PDF; clarity comes from structure, not styling. EVERY section is bullet points ONLY — NO paragraphs. Each bullet is <= 20 words and starts with a **bolded key phrase**. Max 5 bullets per section; use short sub-bullets, not sentences. Keep Solution Mapping as a clean, minimal Markdown table. Every section must be readable in under 10 seconds. Executive, consultative tone; no fluff; no lead-in (no "Here's..." or "The final answer is").
+
 Produce these sections in this order:
 
 ## Company Overview
@@ -57,6 +59,8 @@ Output clean Markdown only, starting directly with the first "##" heading. No pr
 Company: ${company}
 Website: ${url}
 ${scraped ? `Website content:\n"""\n${scraped}\n"""` : ""}${ctx}
+
+FORMATTING — the structure must be identical in the web UI and the exported PDF; clarity comes from structure, not styling. EVERY section is bullet points ONLY — NO paragraphs. Each bullet is <= 20 words and starts with a **bolded key phrase**. Max 5 bullets per section; use short sub-bullets, not sentences. Keep Solution Mapping as a clean, minimal Markdown table. Every section must be readable in under 10 seconds. Executive, consultative tone; no fluff; no lead-in (no "Here's..." or "The final answer is").
 
 Produce these sections in this order:
 

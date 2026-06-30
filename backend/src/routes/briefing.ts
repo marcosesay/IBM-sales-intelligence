@@ -409,6 +409,9 @@ ${researchBlock}
 ${IBM_PRODUCTS}
 
 IMPORTANT INSTRUCTIONS:
+- FORMATTING — the structure must be identical in the web UI and the exported PDF; clarity comes from structure, not visual styling. EVERY section is bullet points ONLY — NO paragraphs anywhere, including "Who is" and "Company Background". Each bullet is <= 20 words and starts with a **bolded key phrase** for scannability. Max 5 bullets per section. Use short sub-bullets instead of sentences. Use a clean, minimal Markdown table only where a structured comparison genuinely fits. Every section must be readable in under 10 seconds. Executive, consultative tone (IBM / top-tier consulting); no fluff; no lead-in preamble.
+- Keep section headers exactly as specified — short and consistent across the whole brief.
+- Reduce redundancy: never repeat the same fact across sections.
 - For the Company Background section: if Live Company Research is provided above, anchor your analysis in those facts and expand on them. Do not contradict the research data.
 - If no live research is provided, draw on your training knowledge and be appropriately measured about uncertainty.
 - DO NOT make assumptions about seniority level, tenure, or experience unless explicitly stated in the title

@@ -826,6 +826,76 @@ function ProductRecsCard({ content, industry, t, accent, bg }: {
 }
 
 /* ─── Section Card ─── */
+/* Render inline **bold** spans (clarity from structure, consistent UI+PDF). */
+function renderInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((p, i) => {
+    const m = p.match(/^\*\*([^*]+)\*\*$/);
+    return m
+      ? <strong key={i} style={{ fontWeight: 700 }}>{m[1]}</strong>
+      : <span key={i}>{p}</span>;
+  });
+}
+
+/* Render a markdown body: bullets, numbered lists, and clean tables, with
+   inline bold. Used by the merged research/sales-play sections. */
+function MarkdownBody({ body, t, accent }: { body: string; t: typeof DARK; accent: string }) {
+  const lines = body.split("\n");
+  const out: React.ReactNode[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const l = lines[i].trim();
+
+    // Table block: consecutive lines that look like | a | b | c |
+    if (l.includes("|") && l.split("|").length >= 3) {
+      const tbl: string[] = [];
+      while (i < lines.length && lines[i].trim().includes("|")) { tbl.push(lines[i].trim()); i++; }
+      const rows = tbl
+        .map(r => r.replace(/^\||\|$/g, "").split("|").map(c => c.trim()))
+        .filter(cells => !cells.every(c => /^:?-{2,}:?$|^$/.test(c)));
+      if (rows.length) {
+        const [head, ...rest] = rows;
+        out.push(
+          <table key={`tbl${i}`} style={{ width: "100%", borderCollapse: "collapse", margin: "6px 0 12px", fontSize: 12.5 }}>
+            <thead><tr>{head.map((h, hi) => (
+              <th key={hi} style={{ textAlign: "left", padding: "6px 10px", borderBottom: `1.5px solid ${accent}`, color: t.textSub, fontWeight: 600 }}>{renderInline(h)}</th>
+            ))}</tr></thead>
+            <tbody>{rest.map((r, ri) => (
+              <tr key={ri}>{r.map((c, ci) => (
+                <td key={ci} style={{ padding: "6px 10px", borderBottom: `1px solid ${t.sectionHeaderBorder}`, color: t.sectionText, verticalAlign: "top" }}>{renderInline(c)}</td>
+              ))}</tr>
+            ))}</tbody>
+          </table>
+        );
+      }
+      continue;
+    }
+
+    if (!l) { out.push(<div key={i} style={{ height: 4 }} />); i++; continue; }
+    if (/^[-*•]\s/.test(l)) {
+      out.push(
+        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5, alignItems: "flex-start" }}>
+          <span style={{ color: accent, flexShrink: 0, lineHeight: 1.6 }}>–</span>
+          <span style={{ color: t.sectionBullet, lineHeight: 1.6 }}>{renderInline(l.replace(/^[-*•]\s/, ""))}</span>
+        </div>
+      );
+      i++; continue;
+    }
+    if (/^\d[.)]\s/.test(l)) {
+      out.push(
+        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5, alignItems: "flex-start" }}>
+          <span style={{ color: accent, fontWeight: 600, flexShrink: 0 }}>{l.match(/^\d+/)?.[0]}.</span>
+          <span style={{ color: t.sectionBullet, lineHeight: 1.6 }}>{renderInline(l.replace(/^\d[.)]\s/, ""))}</span>
+        </div>
+      );
+      i++; continue;
+    }
+    out.push(<p key={i} style={{ margin: "0 0 6px", color: t.sectionText, lineHeight: 1.6 }}>{renderInline(l)}</p>);
+    i++;
+  }
+  return <>{out}</>;
+}
+
 function SectionCard({ title, content, industry, t, streaming }: {
   title: string; content: string; industry?: string;
   t: typeof DARK; streaming?: boolean;
@@ -839,7 +909,7 @@ function SectionCard({ title, content, industry, t, streaming }: {
   const rows: React.ReactNode[] = [];
   if (!isProductRecs) {
     // Strip ALL asterisks - no markdown rendering
-    const lines = content.replace(/\*\*\*/g,"").replace(/\*\*/g,"").replace(/\*/g,"").replace(/^--$/gm,"").split("\n");
+    const lines = content.replace(/\*\*\*/g,"**").replace(/^--$/gm,"").split("\n");
     // Count real content lines to adjust font sizing
     const contentLines = lines.filter(l => l.trim().length > 0).length;
     // Use slightly larger text if fewer lines (less content = more space to fill)
@@ -854,14 +924,14 @@ function SectionCard({ title, content, industry, t, streaming }: {
         rows.push(
           <div key={i} style={{display:"flex",gap:10,marginBottom:6,alignItems:"flex-start"}}>
             <span style={{color:accent,fontSize:13,lineHeight:"1.5",flexShrink:0}}>–</span>
-            <span style={{color:t.sectionBullet,fontSize:bodyFontSize,lineHeight:1.65}}>{l.slice(2)}</span>
+            <span style={{color:t.sectionBullet,fontSize:bodyFontSize,lineHeight:1.65}}>{renderInline(l.slice(2))}</span>
           </div>
         );
       } else if (l.match(/^\d[.)]/)) {
         rows.push(
           <div key={i} style={{display:"flex",gap:10,marginBottom:9,alignItems:"flex-start"}}>
             <span style={{color:accent,fontSize:11,fontWeight:600,flexShrink:0,minWidth:16,paddingTop:2}}>{l[0]}.</span>
-            <span style={{color:t.sectionBullet,fontSize:bodyFontSize,lineHeight:1.7}}>{l.slice(2).trim()}</span>
+            <span style={{color:t.sectionBullet,fontSize:bodyFontSize,lineHeight:1.7}}>{renderInline(l.slice(2).trim())}</span>
           </div>
         );
       } else {
@@ -870,11 +940,11 @@ function SectionCard({ title, content, industry, t, streaming }: {
           rows.push(
             <p key={i} style={{margin:"0 0 8px",fontSize:bodyFontSize,lineHeight:1.65}}>
               <strong style={{color:t.textSub,fontWeight:600}}>{labelMatch[1]}:</strong>
-              <span style={{color:t.sectionText}}>{" "}{labelMatch[2]}</span>
+              <span style={{color:t.sectionText}}>{" "}{renderInline(labelMatch[2])}</span>
             </p>
           );
         } else {
-          rows.push(<p key={i} style={{margin:"0 0 7px",color:t.sectionText,fontSize:bodyFontSize,lineHeight:1.65}}>{l}</p>);
+          rows.push(<p key={i} style={{margin:"0 0 7px",color:t.sectionText,fontSize:bodyFontSize,lineHeight:1.65}}>{renderInline(l)}</p>);
         }
       }
     });
@@ -965,6 +1035,7 @@ export default function BriefingPage() {
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [error, setError]       = useState("");
   const textRef = useRef("");
+  const pdfRef = useRef<HTMLDivElement>(null);
 
   const toggleTheme = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
@@ -1168,6 +1239,12 @@ export default function BriefingPage() {
     return sections;
   }, [briefingText, generating]);
 
+  // Hide the contact section when the user gave no contact name and no LinkedIn.
+  const hasContact = Boolean(contactName2.trim() || contact.trim());
+  const visibleSections = streamingSections.filter(
+    (sec) => hasContact || !/^who is\b/i.test(sec.title.trim())
+  );
+
   const generate = useCallback(async () => {
     const effectiveCompany = company.trim();
     
@@ -1330,9 +1407,47 @@ export default function BriefingPage() {
     setPendingBriefing(null); setAlreadySaved(false); setGenerating(false); textRef.current = "";
     setProspectResult(null); setProspectError(""); setProspectGenerating(false); setProspectStep(null);
   };
-  const exportPDF = () => {
-    if (!currentBriefing) return;
-    buildPDF(currentBriefing.text, currentBriefing.co, currentBriefing.ct, currentBriefing.ind, currentBriefing.contactPhotoUrl, currentBriefing.logoUrl);
+  const [exporting, setExporting] = useState(false);
+  // Export the PDF by snapshotting the rendered brief so the PDF and UI are
+  // byte-for-byte the same layout, order, and content (incl. the merged
+  // research + sales-play sections). No second renderer to drift out of sync.
+  const exportPDF = async () => {
+    const el = pdfRef.current;
+    if (!el || exporting) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas")).default;
+      const { jsPDF } = await import("jspdf");
+      const canvas = await html2canvas(el, {
+        scale: 2,
+        backgroundColor: t.bodyBg,
+        useCORS: true,
+        logging: false,
+        windowWidth: el.scrollWidth,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({ unit: "mm", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      let heightLeft = imgH;
+      let position = 0;
+      pdf.addImage(imgData, "PNG", 0, position, imgW, imgH);
+      heightLeft -= pageH;
+      while (heightLeft > 0) {
+        position -= pageH;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgW, imgH);
+        heightLeft -= pageH;
+      }
+      const safeCo = (displayBriefing?.co || "briefing").replace(/[^a-z0-9]+/gi, "-");
+      pdf.save(`${safeCo}-IBM-brief.pdf`);
+    } catch (e) {
+      console.error("PDF export failed:", e);
+    } finally {
+      setExporting(false);
+    }
   };
 
   const generateProspect = async () => {
@@ -1602,36 +1717,6 @@ export default function BriefingPage() {
                   <GlassInput t={t} label="Intel to include" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Evaluating Snowflake, budget unlocked Q3…" autoComplete="off"/>
                 </div>
 
-                {/* ── Prospect Section ── */}
-                <div style={{marginTop:20,paddingTop:16,borderTop:`1px solid ${t.divider}`}}>
-                  {prospectError && <p style={{fontSize:11,color:"rgba(255,100,100,0.9)",marginTop:-6,marginBottom:8}}>{prospectError}</p>}
-                  <button
-                    onClick={(e) => { e.preventDefault(); generateProspect(); }}
-                    disabled={prospectGenerating}
-                    style={{
-                      width:"100%",background:t.btn,color:t.btnText,border:`1px solid ${t.btnBorder}`,
-                      borderRadius:10,padding:"11px 16px",fontSize:13,fontWeight:500,
-                      fontFamily:"var(--app-font-sans)",cursor:prospectGenerating?"not-allowed":"pointer",
-                      opacity:prospectGenerating?0.6:1,marginTop:4,
-                    }}
-                  >
-                    {prospectGenerating
-                      ? prospectStep===1 ? "Reading the account…" : "Building your play…"
-                      : "Build prospect report"}
-                  </button>
-                  {prospectResult && (
-                    <button
-                      onClick={() => {
-                        // Import buildProspectPDF dynamically
-                        import("@/pages/ProspectPage").then(m => (m as any).buildProspectPDF?.(prospectResult));
-                      }}
-                      style={{
-                        width:"100%",background:t.btnSm,color:t.btnSmText,border:`1px solid ${t.btnSmBorder}`,
-                        borderRadius:10,padding:"9px 14px",fontSize:12,fontWeight:400,cursor:"pointer",marginTop:4,fontFamily:"var(--app-font-sans)",
-                      }}
-                    >↓ Save prospect PDF</button>
-                  )}
-                </div>
               </div>
             </div>
 
@@ -1672,14 +1757,14 @@ export default function BriefingPage() {
               <span style={{background:"#0f62fe",color:"#fff",width:18,height:18,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>1</span>
               Company Research & IBM Product Mapping
             </div>
-            {prospectResult.step1.split(/\n(?=##?\s)/).filter(Boolean).map((sec,i) => {
+            {prospectResult.step1.split(/\n(?=##?\s)/).filter(sec => sec.trim().startsWith("#")).map((sec,i) => {
               const lines = sec.trim().split("\n");
               const title = lines[0].replace(/^#+\s*/,"").replace(/\*\*/g,"").trim();
-              const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"").replace(/\*\*/g,"").replace(/\*/g,"");
+              const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"**");
               return (
                 <div key={i} style={{background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,borderRadius:10,padding:"16px 18px",marginBottom:12}}>
                   <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent,marginBottom:8}}>{title}</div>
-                  <div style={{fontSize:13,color:t.textSub,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{body}</div>
+                  <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={body} t={t} accent={t.accent}/></div>
                 </div>
               );
             })}
@@ -1689,14 +1774,14 @@ export default function BriefingPage() {
               <span style={{background:"#0f62fe",color:"#fff",width:18,height:18,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>2</span>
               Best Fit Use Case & Sales Play
             </div>
-            {prospectResult.step2.split(/\n(?=##?\s)/).filter(Boolean).map((sec,i) => {
+            {prospectResult.step2.split(/\n(?=##?\s)/).filter(sec => sec.trim().startsWith("#")).map((sec,i) => {
               const lines = sec.trim().split("\n");
               const title = lines[0].replace(/^#+\s*/,"").replace(/\*\*/g,"").trim();
-              const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"").replace(/\*\*/g,"").replace(/\*/g,"");
+              const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"**");
               return (
                 <div key={i} style={{background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,borderRadius:10,padding:"16px 18px",marginBottom:12}}>
                   <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent,marginBottom:8}}>{title}</div>
-                  <div style={{fontSize:13,color:t.textSub,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{body}</div>
+                  <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={body} t={t} accent={t.accent}/></div>
                 </div>
               );
             })}
@@ -1982,6 +2067,8 @@ export default function BriefingPage() {
               ))}
             </div>
 
+            {/* PDF capture region — keeps UI and PDF identical */}
+            <div ref={pdfRef} style={{background:t.bodyBg,padding:"4px 0 8px"}}>
             {/* Briefing header */}
             <div style={{marginBottom:24,display:"flex",alignItems:"center",gap:14}}>
               {/* Contact photo on the LEFT - only show if there's a contact name */}
@@ -2020,14 +2107,14 @@ export default function BriefingPage() {
             </div>
 
             {/* Streaming sections - first two full width, last two side-by-side */}
-            {streamingSections.slice(0, 2).map(sec=>(
+            {visibleSections.slice(0, 2).map(sec=>(
               <SectionCard key={sec.title} title={sec.title} content={sec.content} industry={displayBriefing?.ind} t={t} streaming={sec.isStreaming}/>
             ))}
             
             {/* Last two sections in a grid with equal heights */}
-            {streamingSections.length > 2 && (
+            {visibleSections.length > 2 && (
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,alignItems:"stretch"}}>
-                {streamingSections.slice(2, 4).map(sec=>(
+                {visibleSections.slice(2, 4).map(sec=>(
                   <SectionCard key={sec.title} title={sec.title} content={sec.content} industry={displayBriefing?.ind} t={t} streaming={sec.isStreaming}/>
                 ))}
               </div>
@@ -2058,14 +2145,14 @@ export default function BriefingPage() {
                   <span style={{background:"#0f62fe",color:"#fff",width:18,height:18,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>1</span>
                   Company Research & IBM Product Mapping
                 </div>
-                {prospectResult.step1.split(/\n(?=##?\s)/).filter(Boolean).map((sec,i) => {
+                {prospectResult.step1.split(/\n(?=##?\s)/).filter(sec => sec.trim().startsWith("#")).map((sec,i) => {
                   const lines = sec.trim().split("\n");
                   const title = lines[0].replace(/^#+\s*/,"").replace(/\*\*/g,"").trim();
-                  const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"").replace(/\*\*/g,"").replace(/\*/g,"");
+                  const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"**");
                   return (
                     <div key={`p1-${i}`} style={{background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,borderRadius:10,padding:"16px 18px",marginBottom:12}}>
                       <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent,marginBottom:8}}>{title}</div>
-                      <div style={{fontSize:13,color:t.textSub,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{body}</div>
+                      <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={body} t={t} accent={t.accent}/></div>
                     </div>
                   );
                 })}
@@ -2073,19 +2160,22 @@ export default function BriefingPage() {
                   <span style={{background:"#0f62fe",color:"#fff",width:18,height:18,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>2</span>
                   Best Fit Use Case & Sales Play
                 </div>
-                {prospectResult.step2.split(/\n(?=##?\s)/).filter(Boolean).map((sec,i) => {
+                {prospectResult.step2.split(/\n(?=##?\s)/).filter(sec => sec.trim().startsWith("#")).map((sec,i) => {
                   const lines = sec.trim().split("\n");
                   const title = lines[0].replace(/^#+\s*/,"").replace(/\*\*/g,"").trim();
-                  const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"").replace(/\*\*/g,"").replace(/\*/g,"");
+                  const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"**");
                   return (
                     <div key={`p2-${i}`} style={{background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,borderRadius:10,padding:"16px 18px",marginBottom:12}}>
                       <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent,marginBottom:8}}>{title}</div>
-                      <div style={{fontSize:13,color:t.textSub,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{body}</div>
+                      <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={body} t={t} accent={t.accent}/></div>
                     </div>
                   );
                 })}
               </div>
             )}
+
+            </div>
+            {/* /PDF capture region */}
 
             {/* Waiting for first chunk */}
             {generating && streamingSections.length===0 && (
