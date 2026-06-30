@@ -83,13 +83,16 @@ Produce these sections in this order:
 Six numbered steps from entry through expansion (entry wedge, discovery, technical proof/demo, initial land, value realization, expansion). Under each numbered step, four short labeled lines: **Title:** a 2-4 word step name, **Do:** the action, **Say:** one line to say to the buyer, **Outcome:** the expected result. Lead with at least one data-foundation focus product in the early steps (entry/discovery/proof), and build the expansion arc data → governance → AI/analytics. Keep every line short — this renders as a horizontal flow. Every step specific to this account, never generic.
 
 ## Competitive Wedge
-Exactly 3 bullets — one each for Microsoft Azure (OpenAI), AWS (Bedrock/SageMaker), and open-source/self-hosted. Each a sharp one-line competitive soundbite on governance, data gravity, hybrid/on-prem, or total cost. No paragraphs.
+Exactly 3 bullets — one each for Microsoft Azure (OpenAI), AWS (Bedrock/SageMaker), and open-source/self-hosted. For each: name their genuine strength briefly, then IBM's decisive counter, then a line the seller can say. Format: **<Competitor>:** their strength, then IBM's edge on governance / data gravity / hybrid / total cost — *Say:* "<one sharp line>". No paragraphs.
+
+## Why Act Now
+2–3 bullets. Urgency drivers specific to THIS account — tie each to a real risk, deadline, regulatory pressure, market move, or cost of inaction. Each bullet <= 18 words and starts with a **bolded driver**. No generic urgency; give the seller a reason to push timing this quarter.
 
 ## Sales Card
-4–5 lines: target buyer, primary pain, lead product, proof point.
+5 lines, each a labeled one-liner: **Target buyer:**, **Primary pain:**, **Lead product:**, **Proof point:**, **Say this:** (one opening line the seller can use almost verbatim).
 
 ## Elevator Pitch
-3–4 sentences. Reference the specific IBM products recommended for this account and the concrete business outcome they drive. Make it sound natural spoken aloud, not a slogan.
+Exactly 2 sentences. Lead with the business value and outcome for this account, not a product description. Natural to say aloud in a real conversation — not a slogan.
 
 OUTPUT RULES (critical): Produce each section above exactly once, in the given order, then end. Do not repeat any section, do not invent extra sections (no "Key Messages", "Next Steps", or duplicate tables), and do not add notes, commentary, questions, apologies, or any text about revising or following instructions. Return only the section content.`;
 }
@@ -127,7 +130,7 @@ router.post("/generate", async (req, res) => {
       }),
       generateText(salesPlayPrompt(companyName, site, scraped, ctx), {
         model: MODEL,
-        maxTokens: 1000,
+        maxTokens: 1200,
         temperature: 0.3,
       }),
     ]);
