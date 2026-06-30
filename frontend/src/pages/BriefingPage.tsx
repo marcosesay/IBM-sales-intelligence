@@ -2178,11 +2178,14 @@ export default function BriefingPage() {
                 </div>
               )}
 
-              {/* Decision-moment cue — appears only once the account is ready */}
+              {/* Decision-moment cue — confidence signal: you have enough, just go */}
               {briefReady && !generating && (
-                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:7,marginTop:18,marginBottom:-4}}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#42be65" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                  <span style={{fontSize:12.5,fontWeight:600,color:t.textSub}}>You're ready to generate</span>
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,marginTop:18,marginBottom:-2}}>
+                  <div style={{display:"flex",alignItems:"center",gap:7}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#42be65" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                    <span style={{fontSize:12.5,fontWeight:600,color:t.textSub}}>You're ready to generate</span>
+                  </div>
+                  <span style={{fontSize:11,color:t.textMuted}}>That's enough — add details only if you want a sharper brief.</span>
                 </div>
               )}
 
@@ -2190,6 +2193,8 @@ export default function BriefingPage() {
               <button
                 onClick={generate}
                 disabled={!briefReady||generating}
+                onMouseEnter={e=>{ if(briefReady&&!generating){ e.currentTarget.style.background="#1f6dff"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 10px 30px rgba(15,98,254,0.55)"; } }}
+                onMouseLeave={e=>{ if(briefReady&&!generating){ e.currentTarget.style.background="#0f62fe"; e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="0 6px 24px rgba(15,98,254,0.45)"; } }}
                 style={{width:"100%",marginTop:18,
                   background:briefReady?"#0f62fe":t.btnSm,
                   border:briefReady?"none":`1px solid ${t.btnSmBorder}`,
