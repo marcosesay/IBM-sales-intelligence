@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { generateTextStream, generateTextStreamTrue } from "../lib/watsonx-client";
+import { fetchSiteText } from "../lib/scrape";
 
 const router: IRouter = Router();
 
@@ -349,13 +350,15 @@ Combined positioning: Supports measurable operational improvement with better vi
 }
 
 router.post("/generate", async (req, res) => {
-  const { company, industry, contactName, contactTitle, context, callType } = req.body as {
+  const { company, industry, contactName, contactTitle, context, callType, websiteUrl, companyContext } = req.body as {
     company: string;
     industry?: string;
     contactName?: string;
     contactTitle?: string;
     context?: string;
     callType?: string;
+    websiteUrl?: string;
+    companyContext?: string;
   };
 
   if (!company) {
@@ -370,7 +373,25 @@ router.post("/generate", async (req, res) => {
   // Detect if context contains structured web research (injected by /company-research endpoint)
   const RESEARCH_MARKER = "Company Overview (from web):";
   const hasResearch = context && context.includes(RESEARCH_MARKER);
-  const researchBlock = hasResearch ? context : "";
+
+  // Scrape the prospect's own site (optional) so the brief is tailored to real
+  // content. Plus any wiki/news enrichment the client passes via companyContext.
+  const site = (websiteUrl || "").trim();
+  let scraped = "";
+  if (site) {
+    try {
+      scraped = await fetchSiteText(site);
+    } catch {
+      scraped = ""; // non-fatal — brief still generates without it
+    }
+  }
+
+  const researchParts: string[] = [];
+  if (hasResearch && context) researchParts.push(context);
+  if (companyContext && companyContext.trim()) researchParts.push(companyContext.trim());
+  if (scraped) researchParts.push(`Content scraped from ${site}:\n${scraped}`);
+  const researchBlock = researchParts.join("\n\n");
+
   const userContext = hasResearch ? "None" : (context || "None");
 
   const prompt = `You are an expert enterprise sales coach helping a Solutions Engineer prepare for a ${ct} call.

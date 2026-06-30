@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
 import { generateText } from "../lib/watsonx-client";
+import { fetchSiteText } from "../lib/scrape";
 
 const router: IRouter = Router();
 
@@ -8,87 +9,6 @@ const router: IRouter = Router();
 // "meta-llama/llama-3-1-8b-instruct" if you want it faster at lower quality.
 const MODEL = "meta-llama/llama-3-3-70b-instruct";
 
-// ---------------------------------------------------------------------------
-// Scrape the prospect's OWN site (homepage + likely about/contact pages) so
-// the overview and contacts are grounded in real content. No external
-// services — only the prospect's domain is fetched. Degrades to "" on failure.
-// ---------------------------------------------------------------------------
-function htmlToText(html: string): string {
-  return html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-async function fetchPageText(url: string): Promise<string> {
-  try {
-    const res = await fetch(url, {
-      headers: { "User-Agent": "Mozilla/5.0" },
-      signal: AbortSignal.timeout(8000), // a slow page can't stall the brief
-    });
-    if (!res.ok) return "";
-    return htmlToText(await res.text());
-  } catch {
-    return "";
-  }
-}
-
-async function fetchSiteText(url: string, maxChars = 9000): Promise<string> {
-  const normalized = url.startsWith("http") ? url : `https://${url}`;
-  let origin: string;
-  try {
-    origin = new URL(normalized).origin;
-  } catch {
-    return "";
-  }
-
-  const homepageHtml = await fetch(normalized, {
-    headers: { "User-Agent": "Mozilla/5.0" },
-    signal: AbortSignal.timeout(8000),
-  })
-    .then((r) => (r.ok ? r.text() : ""))
-    .catch(() => "");
-
-  const sections: string[] = [];
-  if (homepageHtml) sections.push(`[Homepage]\n${htmlToText(homepageHtml)}`);
-
-  // Discover same-domain about/contact links from the homepage.
-  const candidates = new Set<string>();
-  const linkRe = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-  let m: RegExpExecArray | null;
-  while ((m = linkRe.exec(homepageHtml)) !== null) {
-    const href = m[1];
-    const label = htmlToText(m[2]).toLowerCase();
-    if (!/about|contact|company|leadership|team|who-we-are/i.test(href + " " + label)) continue;
-    try {
-      const abs = new URL(href, origin).href;
-      if (abs.startsWith(origin)) candidates.add(abs);
-    } catch {
-      /* skip malformed href */
-    }
-  }
-  if (candidates.size === 0) {
-    for (const path of ["/about", "/about-us", "/contact", "/company"]) {
-      candidates.add(origin + path);
-    }
-  }
-
-  const extra = await Promise.all(
-    Array.from(candidates)
-      .slice(0, 3)
-      .map(async (u) => {
-        const t = await fetchPageText(u);
-        return t ? `[${u}]\n${t}` : "";
-      })
-  );
-  for (const e of extra) if (e) sections.push(e);
-
-  return sections.join("\n\n").slice(0, maxChars).trim();
-}
 
 // ---------------------------------------------------------------------------
 // Prompts — single-string (the helper has no system param). Persona folded in.
@@ -162,12 +82,14 @@ One sentence, under 40 words.`;
 router.post("/generate", async (req, res) => {
   const { companyName, websiteUrl, context } = req.body as {
     companyName: string;
-    websiteUrl: string;
+    websiteUrl?: string;
     context?: string;
   };
 
-  if (!companyName || !websiteUrl) {
-    res.status(400).json({ error: "companyName and websiteUrl are required" });
+  const site = (websiteUrl || "").trim();
+
+  if (!companyName) {
+    res.status(400).json({ error: "companyName is required" });
     return;
   }
 
@@ -176,16 +98,16 @@ router.post("/generate", async (req, res) => {
   try {
     req.log.info({ companyName }, "Prospect generation starting");
 
-    const scraped = await fetchSiteText(websiteUrl);
+    const scraped = site ? await fetchSiteText(site) : "";
 
     // Two sections in parallel — no chaining, no streaming.
     const [step1, step2] = await Promise.all([
-      generateText(researchPrompt(companyName, websiteUrl, scraped, ctx), {
+      generateText(researchPrompt(companyName, site, scraped, ctx), {
         model: MODEL,
         maxTokens: 1100,
         temperature: 0.3,
       }),
-      generateText(salesPlayPrompt(companyName, websiteUrl, scraped, ctx), {
+      generateText(salesPlayPrompt(companyName, site, scraped, ctx), {
         model: MODEL,
         maxTokens: 1000,
         temperature: 0.3,
@@ -199,7 +121,7 @@ router.post("/generate", async (req, res) => {
 
     res.json({
       companyName,
-      websiteUrl,
+      websiteUrl: site,
       step1,
       step2,
       usedWebsiteContent: Boolean(scraped),
