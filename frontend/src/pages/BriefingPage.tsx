@@ -2212,17 +2212,6 @@ export default function BriefingPage() {
                 </div>
               )}
 
-              {/* what you'll get — compact, scannable (not a boxy panel) */}
-              {!generating && (
-                <div style={{display:"flex",justifyContent:"center",gap:18,marginTop:22,flexWrap:"wrap"}}>
-                  {["Know the account fast","Ask smarter discovery questions","Lead with the right IBM solution"].map(it=>(
-                    <span key={it} style={{display:"flex",alignItems:"center",gap:6,fontSize:11.5,color:t.textSub}}>
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{it}
-                    </span>
-                  ))}
-                </div>
-              )}
-
               {/* Secondary controls — understated below the primary path */}
               <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:26,flexWrap:"wrap"}}>
                 <span style={{fontSize:10.5,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",color:t.textDim}}>Call type</span>
@@ -2253,37 +2242,21 @@ export default function BriefingPage() {
               </div>
             </div>
 
-            {/* Section divider */}
-            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
-              <span style={{fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",color:t.textDim}}>What Your Sales Brief Will Provide</span>
-              <span style={{flex:1,height:1,background:t.divider}}/>
-            </div>
-
-            <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:40}}>
-              {[
-                { title:"Company Intelligence", sub:"Know exactly how this company makes money", sub2:"Key priorities, gaps, and where IBM fits",
-                  icon:<path d="M4 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M14 10h5a1 1 0 0 1 1 1v10M4 21h17M8 8h2M8 12h2M8 16h2"/> },
-                { title:"Discovery Questions", sub:"Walk into the call with the right questions", sub2:"Tailored to the contact and deal type",
-                  icon:<><circle cx="11" cy="11" r="6"/><path d="M20.5 20.5 16.5 16.5"/></> },
-                { title:"Opportunity Qualification", sub:"Quickly assess if this deal is real", sub2:"BANT + MEDDIC signals upfront",
-                  icon:<path d="M4 4v16h16M8 16v-4M12 16V9M16 16v-7"/> },
-                { title:"IBM Product Fit", sub:"Know what to sell before the call starts", sub2:"Mapped IBM solutions with talking points",
-                  icon:<><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></> },
-              ].map(f=>(
-                <div key={f.title} className="feature-card" style={{
-                  borderRadius:12,padding:"16px 15px 14px",
-                  background:t.card,
-                  border:`1px solid ${t.cardBorder}`,boxShadow:t.cardShadow,
-                  display:"flex",flexDirection:"column",gap:8,
-                }}>
-                  <div style={{width:30,height:30,borderRadius:8,background:"rgba(15,98,254,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>{f.icon}</svg>
-                  </div>
-                  <p style={{fontSize:12.5,fontWeight:600,color:t.text,margin:0,letterSpacing:"-0.2px",lineHeight:1.3}}>{f.title}</p>
-                  <p style={{fontSize:11,color:t.textSub,margin:0,lineHeight:1.45,fontWeight:500}}>{f.sub}</p>
-                  <p style={{fontSize:10,color:t.textMuted,margin:0,lineHeight:1.45}}>{f.sub2}</p>
-                </div>
-              ))}
+            {/* ─── Outcome strip — single scannable value preview, reinforces the CTA without competing ─── */}
+            <div style={{maxWidth:640,margin:"4px auto 40px",textAlign:"center"}}>
+              <div style={{fontSize:10.5,letterSpacing:"0.12em",textTransform:"uppercase",color:t.textDim,marginBottom:16}}>What you'll get in 30 seconds</div>
+              <div style={{display:"flex",justifyContent:"center",gap:"12px 30px",flexWrap:"wrap"}}>
+                {[
+                  "Know the account instantly",
+                  "Ask smarter questions",
+                  "Qualify the deal quickly",
+                  "Lead with the right IBM solution",
+                ].map(it=>(
+                  <span key={it} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:500,color:t.textSub}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#42be65" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M20 6 9 17l-5-5"/></svg>{it}
+                  </span>
+                ))}
+              </div>
             </div>
             {/* Industry News Section - Dynamic from last 24 hours */}
             {generalNewsData && generalNewsData.length > 0 && (
