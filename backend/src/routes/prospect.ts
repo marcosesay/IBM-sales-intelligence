@@ -83,7 +83,7 @@ Produce these sections in this order:
 Six numbered steps from entry through expansion (entry wedge, discovery, technical proof/demo, initial land, value realization, expansion). Under each numbered step, four short labeled lines: **Title:** a 2-4 word step name, **Do:** the action, **Say:** one line to say to the buyer, **Outcome:** the expected result. Lead with at least one data-foundation focus product in the early steps (entry/discovery/proof), and build the expansion arc data → governance → AI/analytics. Keep every line short — this renders as a horizontal flow. Every step specific to this account, never generic.
 
 ## Competitive Wedge
-Exactly 3 bullets — one each for Microsoft Azure (OpenAI), AWS (Bedrock/SageMaker), and open-source/self-hosted. For each: name their genuine strength briefly, then IBM's decisive counter, then a line the seller can say. Format: **<Competitor>:** their strength, then IBM's edge on governance / data gravity / hybrid / total cost — *Say:* "<one sharp line>". No paragraphs.
+Exactly 3 bullets — one each for Microsoft Azure (OpenAI), AWS (Bedrock/SageMaker), and open-source/self-hosted. For each: name their genuine strength briefly, then IBM's decisive counter, then a line the seller can say. Format: **<Competitor>:** their strength, then IBM's edge on governance / data gravity / hybrid / total cost — **Say:** "<one sharp line>". No paragraphs.
 
 ## Why Act Now
 2–3 bullets. Urgency drivers specific to THIS account — tie each to a real risk, deadline, regulatory pressure, market move, or cost of inaction. Each bullet <= 18 words and starts with a **bolded driver**. No generic urgency; give the seller a reason to push timing this quarter.
