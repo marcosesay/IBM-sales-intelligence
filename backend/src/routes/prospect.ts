@@ -9,6 +9,19 @@ const router: IRouter = Router();
 // "meta-llama/llama-3-1-8b-instruct" if you want it faster at lower quality.
 const MODEL = "meta-llama/llama-3-3-70b-instruct";
 
+// ---------------------------------------------------------------------------
+// IBM product strategy — injected into every section so recommendations stay
+// tight, data-first, and anchored to IBM's core Data & AI focus products.
+// Answers "what should IBM LEAD with to win this deal?", not "what could we sell?"
+// ---------------------------------------------------------------------------
+const PRODUCT_STRATEGY = `IBM PRODUCT STRATEGY (follow strictly):
+Lead with IBM's core Data & AI focus products, prioritized in this DATA-FIRST order:
+1) Data foundation — watsonx.data, watsonx.data integration, Db2, Netezza, DataStage, Data Replication
+2) Governance & trust — IBM Guardium, watsonx.governance
+3) AI & productivity — watsonx.ai, watsonx Orchestrate, watsonx Code Assistant
+4) Analytics & automation — Cognos Analytics, Planning Analytics, SPSS, Decision Optimization, FileNet
+Recommend a MAXIMUM of 4 products across the whole brief. Choose only the most relevant for this account's business problem, industry, and call type. Be decisive: name ONE product per need — never list alternatives or "options". Every AI use case must be anchored in data readiness (data + governance precede AI). For each product, make explicit: WHY this specific product (not an alternative), the exact business pain it removes for THIS account, and a measurable business outcome. Write like a top IBM seller — lead with hybrid-cloud, governance, integration, and data-gravity differentiation vs Azure/OpenAI, AWS, and open-source. No generic AI messaging. Do not recommend legacy or non-core IBM products unless clearly the best fit.`;
+
 
 // ---------------------------------------------------------------------------
 // Prompts — single-string (the helper has no system param). Persona folded in.
@@ -32,10 +45,12 @@ ${
 
 FORMATTING — the structure must be identical in the web UI and the exported PDF; clarity comes from structure, not styling. EVERY section is bullet points ONLY — NO paragraphs. Each bullet is <= 20 words and starts with a **bolded key phrase**. Max 5 bullets per section; use short sub-bullets, not sentences. Keep Solution Mapping as a clean, minimal Markdown table. Every section must be readable in under 10 seconds. Executive, consultative tone; no fluff; no lead-in (no "Here's..." or "The final answer is"). Write in a single confident pass: no hedging ("could/may/might"), no repetition, no self-revision, exactly one final version.
 
+${PRODUCT_STRATEGY}
+
 Produce these sections in this order:
 
 ## Solution Mapping
-A decision tool. Markdown table with columns: Line of Business | IBM Product | Use Case | Business Impact. Exactly 4 rows, ORDERED BY PRIORITY — the top row is the single best opportunity, descending from there. Keep every cell under 6 words. Use Case must be specific to this account (never generic); Business Impact is a one-phrase outcome. This table is the ONLY place to map products to lines of business — do not restate it as prose.
+A decision tool. Markdown table with columns: Line of Business | IBM Product | Use Case | Business Impact. Exactly 4 rows, ORDERED DATA-FIRST BY PRIORITY: row 1 = the data-foundation play (watsonx.data / Db2 / DataStage), row 2 = governance (IBM Guardium / watsonx.governance), row 3 = integration or the next data play, row 4 = one AI or analytics product the data foundation unlocks. Use ONLY focus products from the strategy above. Keep every cell under 6 words. Use Case must be specific to this account (never generic); Business Impact is a one-phrase measurable outcome. This table is the ONLY place to map products to lines of business — do not restate it as prose.
 
 ## Contacts
 List names, titles, emails, or phone numbers ONLY if they appear in the website content above. If none are present, OMIT this section entirely — do not output the heading, an empty table, or any placeholder text.
@@ -57,13 +72,15 @@ ${scraped ? `Website content:\n"""\n${scraped}\n"""` : ""}${ctx}
 
 FORMATTING — the structure must be identical in the web UI and the exported PDF; clarity comes from structure, not styling. EVERY section is bullet points ONLY — NO paragraphs. Each bullet is <= 20 words and starts with a **bolded key phrase**. Max 5 bullets per section; use short sub-bullets, not sentences. Keep Solution Mapping as a clean, minimal Markdown table. Every section must be readable in under 10 seconds. Executive, consultative tone; no fluff; no lead-in (no "Here's..." or "The final answer is"). Write in a single confident pass: no hedging ("could/may/might"), no repetition, no self-revision, exactly one final version.
 
+${PRODUCT_STRATEGY}
+
 Produce these sections in this order:
 
 ## Best-Fit Use Cases
-2–3 use cases tied to THIS company's actual business. For each: the IBM product that delivers it and the business outcome.
+2–3 use cases tied to THIS company's actual business, each anchored in data readiness. For each: the single focus IBM product that delivers it (from the strategy above), the specific business pain it removes, and a measurable outcome.
 
 ## 6-Step Sales Play
-Six numbered steps from entry through expansion (entry wedge, discovery, technical proof/demo, initial land, value realization, expansion). Under each numbered step, four short labeled lines: **Title:** a 2-4 word step name, **Do:** the action, **Say:** one line to say to the buyer, **Outcome:** the expected result. Keep every line short — this renders as a horizontal flow. Every step specific to this account, never generic.
+Six numbered steps from entry through expansion (entry wedge, discovery, technical proof/demo, initial land, value realization, expansion). Under each numbered step, four short labeled lines: **Title:** a 2-4 word step name, **Do:** the action, **Say:** one line to say to the buyer, **Outcome:** the expected result. Lead with at least one data-foundation focus product in the early steps (entry/discovery/proof), and build the expansion arc data → governance → AI/analytics. Keep every line short — this renders as a horizontal flow. Every step specific to this account, never generic.
 
 ## Competitive Wedge
 Exactly 3 bullets — one each for Microsoft Azure (OpenAI), AWS (Bedrock/SageMaker), and open-source/self-hosted. Each a sharp one-line competitive soundbite on governance, data gravity, hybrid/on-prem, or total cost. No paragraphs.
