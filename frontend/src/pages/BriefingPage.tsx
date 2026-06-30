@@ -1181,6 +1181,41 @@ export default function BriefingPage() {
     setBriefingReady(false);
     setAlreadySaved(false);
     textRef.current = "";
+
+    // ── Kick off the prospect report (9 elements) concurrently — non-blocking ──
+    // Result renders beneath the brief sections once it resolves. If it fails,
+    // the brief is unaffected.
+    setProspectResult(null);
+    setProspectError("");
+    setProspectGenerating(true);
+    (async () => {
+      try {
+        const pr = await fetch(`${getBaseUrl()}/api/prospect/generate`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            companyName: effectiveCompany,
+            websiteUrl: prospectUrl.trim() || undefined,
+            context: context.trim(),
+          }),
+        });
+        if (pr.ok) {
+          const pdata = await pr.json();
+          setProspectResult({
+            companyName: pdata.companyName || effectiveCompany,
+            websiteUrl: pdata.websiteUrl || prospectUrl.trim(),
+            step1: pdata.step1 || "",
+            step2: pdata.step2 || "",
+            generatedAt: pdata.generatedAt || new Date().toISOString(),
+          });
+        }
+      } catch {
+        /* non-fatal — brief still renders */
+      } finally {
+        setProspectGenerating(false);
+      }
+    })();
+
     setPendingBriefing({
       co: effectiveCompany, ct: contactName.trim(), ti: title.trim(),
       ind: industry.trim(), callType: meetingType,
@@ -1234,6 +1269,7 @@ export default function BriefingPage() {
           contactName: contactName.trim(), contactTitle: title.trim(),
           context: context.trim(), callType: meetingType,
           companyContext: companyContext || undefined,
+          websiteUrl: prospectUrl.trim() || undefined,
         }),
       });
       if (!res.ok) {
@@ -1274,7 +1310,7 @@ export default function BriefingPage() {
     } finally {
       setGenerating(false);
     }
-  }, [company, industry, contactName, title, context, meetingType, logoData, contactPhotoUrl]);
+  }, [company, industry, contactName, title, context, meetingType, logoData, contactPhotoUrl, prospectUrl]);
 
   const saveBriefing = () => {
     if (!currentBriefing) return;
@@ -1292,6 +1328,7 @@ export default function BriefingPage() {
   const newBriefing = () => {
     setBriefingReady(false); setBriefingText(""); setCurrentBriefing(null);
     setPendingBriefing(null); setAlreadySaved(false); setGenerating(false); textRef.current = "";
+    setProspectResult(null); setProspectError(""); setProspectGenerating(false); setProspectStep(null);
   };
   const exportPDF = () => {
     if (!currentBriefing) return;
@@ -2006,6 +2043,48 @@ export default function BriefingPage() {
                 t={t}
                 streaming={false}
               />
+            )}
+
+            {/* ── Company Research & Sales Play (prospect report, merged into brief) ── */}
+            {prospectGenerating && !prospectResult && (
+              <div style={{display:"flex",alignItems:"center",gap:10,padding:"18px 0",color:t.textDim}}>
+                <div className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:t.accent,boxShadow:`0 0 6px ${t.accentGlow}`}}/>
+                <span style={{fontSize:13,fontWeight:300}}>Building product mapping & sales play…</span>
+              </div>
+            )}
+            {prospectResult && (prospectResult.step1 || prospectResult.step2) && (
+              <div style={{marginTop:28}}>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:"#0f62fe",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{background:"#0f62fe",color:"#fff",width:18,height:18,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>1</span>
+                  Company Research & IBM Product Mapping
+                </div>
+                {prospectResult.step1.split(/\n(?=##?\s)/).filter(Boolean).map((sec,i) => {
+                  const lines = sec.trim().split("\n");
+                  const title = lines[0].replace(/^#+\s*/,"").replace(/\*\*/g,"").trim();
+                  const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"").replace(/\*\*/g,"").replace(/\*/g,"");
+                  return (
+                    <div key={`p1-${i}`} style={{background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,borderRadius:10,padding:"16px 18px",marginBottom:12}}>
+                      <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent,marginBottom:8}}>{title}</div>
+                      <div style={{fontSize:13,color:t.textSub,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{body}</div>
+                    </div>
+                  );
+                })}
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:"#0f62fe",marginBottom:12,marginTop:20,display:"flex",alignItems:"center",gap:8}}>
+                  <span style={{background:"#0f62fe",color:"#fff",width:18,height:18,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>2</span>
+                  Best Fit Use Case & Sales Play
+                </div>
+                {prospectResult.step2.split(/\n(?=##?\s)/).filter(Boolean).map((sec,i) => {
+                  const lines = sec.trim().split("\n");
+                  const title = lines[0].replace(/^#+\s*/,"").replace(/\*\*/g,"").trim();
+                  const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"").replace(/\*\*/g,"").replace(/\*/g,"");
+                  return (
+                    <div key={`p2-${i}`} style={{background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,borderRadius:10,padding:"16px 18px",marginBottom:12}}>
+                      <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent,marginBottom:8}}>{title}</div>
+                      <div style={{fontSize:13,color:t.textSub,lineHeight:1.7,whiteSpace:"pre-wrap"}}>{body}</div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
 
             {/* Waiting for first chunk */}
