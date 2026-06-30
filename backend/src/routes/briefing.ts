@@ -82,16 +82,10 @@ function buildSections(callType: string, company: string, industry: string, titl
 Write 2-3 sharp prose paragraphs that give an IBM seller a clear mental picture of this person. Vary your angle — you might open with what drives them professionally, what they're under pressure to solve, how they think about technology decisions, or what a win looks like for them. Do not use a formulaic structure. Make each paragraph add something new: their mindset, their influence, their likely skepticism or enthusiasm. Start the first paragraph with ${contactName ? `"${contactName}"` : "the contact's name"} — not "As a professional", not "In their role". Write like a sharp analyst who has studied this person, not like a template being filled in.
 
 ## Company Background
-Provide a comprehensive company overview covering:
-1) ${company}'s business model, market position, and recent strategic initiatives in ${industry}
-2) Key challenges and opportunities the company is facing
-3) The company's likely AI/technology maturity level and digital transformation stage
-4) Recent news or developments that might create urgency
-
+Write 4-5 bullets only — NO paragraphs. Each bullet starts with a **bolded key phrase** and is <= 12 words. Cover, one per bullet: business model & market position; a recent initiative or news creating urgency; the key challenge they face; their AI/tech maturity; the single biggest opportunity for IBM.
 Then on a new line write exactly: ***Likely Tech Stack & Competitive Landscape:***
-Follow with 2-3 sentences covering: what data, AI, or analytics vendors ${company} likely uses based on their industry and size, which of those vendors IBM directly competes with or displaces, and the single strongest IBM displacement angle for this account.
-
-Write the overview in clear prose paragraphs. Keep the entire section to 3 paragraphs maximum.
+Follow with ONE bullet (<= 22 words) naming the data/AI vendors ${company} likely uses, which of those IBM displaces, and the single strongest IBM displacement angle for this account.
+Keep the whole section tight and scannable in under 10 seconds.
 
 ## Discovery Questions
 List exactly 8 discovery questions as a simple numbered list. Each question on its own line. No sub-headers. No explanations after each question. Just the questions.
@@ -103,7 +97,7 @@ Questions must be specifically tailored to:
 Do NOT use generic questions. Every question should feel like it was written specifically for this person at this company.
 
 ## Opportunity Qualification
-Write exactly these 6 items in this exact format, no additional content before or after:
+Output ALL SIX items below, each on its own line, in this exact order and format — never omit one, even if you must note uncertainty. Do not merge items. Do not add any other lines.
 ***Budget***: [1-2 sentences about budget likelihood]
 ***Authority***: [1-2 sentences about authority]
 ***Need***: [1-2 sentences about need]
