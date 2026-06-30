@@ -1072,6 +1072,7 @@ export default function BriefingPage() {
   const [prospectStep, setProspectStep] = useState<1|2|null>(null);
   const [prospectResult, setProspectResult] = useState<{companyName:string;websiteUrl:string;step1:string;step2:string;generatedAt:string}|null>(null);
   const [prospectError, setProspectError] = useState("");
+  const [openRefs, setOpenRefs] = useState<Record<string, boolean>>({});
   
   // Debounce contact input
   const debouncedContact = useDebounce(contact, 600);
@@ -1228,7 +1229,7 @@ export default function BriefingPage() {
         seen.add(key);
         return true;
       })
-      .slice(0, 5);
+      .slice(0, 6);
 
     // Always ensure a Product Recommendations section exists
     const hasProductSec = sections.some(s => PRODUCT_TITLES.includes(s.title));
@@ -1250,6 +1251,66 @@ export default function BriefingPage() {
     (sec) =>
       (hasContact || !/^who is\b/i.test(sec.title.trim())) &&
       !PRODUCT_SECTION_TITLES.includes(sec.title.trim())
+  );
+
+  // ── Dashboard accessors: pull named sections from the brief + sanitized prospect blobs ──
+  const prospectMap = useMemo(() => {
+    const map: Record<string, { title: string; body: string }> = {};
+    if (!prospectResult) return map;
+    const add = (raw: string) => {
+      (raw || "").split(/\n(?=##?\s)/).forEach((chunk) => {
+        const tc = chunk.trim();
+        if (!tc.startsWith("#")) return;
+        const lines = tc.split("\n");
+        const secTitle = lines[0].replace(/^#+\s*/, "").replace(/\*\*/g, "").trim();
+        const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g, "**");
+        const key = secTitle.toLowerCase();
+        if (!map[key]) map[key] = { title: secTitle, body };
+      });
+    };
+    add(prospectResult.step1);
+    add(prospectResult.step2);
+    return map;
+  }, [prospectResult]);
+  const getProspect = (kw: string) => {
+    const k = Object.keys(prospectMap).find((key) => key.includes(kw));
+    return k ? prospectMap[k] : null;
+  };
+  const getBrief = (kw: string) =>
+    streamingSections.find((s) => s.title.toLowerCase().includes(kw)) || null;
+
+  const dashKeyTakeaways = getBrief("key takeaway");
+  const dashBackground = getBrief("background") || getBrief("account health") || getBrief("competitive landscape") || getBrief("strategic agenda");
+  const dashQual = getBrief("qualification");
+  const dashDiscovery = getBrief("question");
+  const dashWhoIs = getBrief("who is");
+  const dashPitch = getProspect("elevator pitch");
+  const dashWedge = getProspect("competitive wedge");
+  const dashCard = getProspect("sales card");
+  const dashUseCase = getProspect("use case");
+  const dashPlay = getProspect("sales play");
+  const dashMapping = getProspect("solution mapping");
+  const dashContract = getProspect("contract vehicle");
+  const dashContacts = getProspect("contacts");
+
+  const toggleRef = (k: string) => setOpenRefs((p) => ({ ...p, [k]: !p[k] }));
+  const dashCardBase: React.CSSProperties = { background: t.sectionCard, border: `1px solid ${t.sectionCardBorder}`, borderRadius: 12, padding: "16px 18px" };
+  const dashCardAccent: React.CSSProperties = { ...dashCardBase, border: `1.5px solid ${t.accent}` };
+  const dashLabel: React.CSSProperties = { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.accent, marginBottom: 8 };
+  const dashTier = (txt: string) => (
+    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.textDim, margin: "24px 0 11px 2px", display: "flex", alignItems: "center", gap: 10 }}>
+      <span>{txt}</span>
+      <span style={{ flex: 1, height: 1, background: t.sectionCardBorder }} />
+    </div>
+  );
+  const dashRefRow = (key: string, refTitle: string, body: React.ReactNode) => (
+    <div style={{ background: t.sectionCard, border: `1px solid ${t.sectionCardBorder}`, borderRadius: 10, marginBottom: 8, overflow: "hidden" }}>
+      <button onClick={() => toggleRef(key)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: "transparent", border: "none", padding: "12px 16px", cursor: "pointer", fontFamily: "inherit" }}>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: t.textSub }}>{refTitle}</span>
+        <span style={{ color: t.textDim, fontSize: 10, transform: openRefs[key] ? "rotate(180deg)" : "none", transition: "transform .15s" }}>▼</span>
+      </button>
+      <div className="ref-body" style={{ display: openRefs[key] ? "block" : "none", padding: "0 16px 14px", fontSize: 13, color: t.textSub, lineHeight: 1.7 }}>{body}</div>
+    </div>
   );
 
   const generate = useCallback(async () => {
@@ -2078,73 +2139,84 @@ export default function BriefingPage() {
 
             </div>
 
-            {/* Streaming sections - first two full width, last two side-by-side */}
-            {visibleSections.slice(0, 2).map(sec=>(
-              <SectionCard key={sec.title} title={sec.title} content={sec.content} industry={displayBriefing?.ind} t={t} streaming={sec.isStreaming}/>
-            ))}
-            
-            {/* Last two sections in a grid with equal heights */}
-            {visibleSections.length > 2 && (
-              <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,alignItems:"stretch"}}>
-                {visibleSections.slice(2, 4).map(sec=>(
-                  <SectionCard key={sec.title} title={sec.title} content={sec.content} industry={displayBriefing?.ind} t={t} streaming={sec.isStreaming}/>
-                ))}
+            {/* ════════ TIER 1 · SNAPSHOT — above the fold ════════ */}
+            {dashTier("Snapshot")}
+            <div style={{display:"grid",gridTemplateColumns:"1.3fr 1fr",gap:12,marginBottom:12,alignItems:"stretch"}}>
+              <div style={dashCardAccent}>
+                <div style={dashLabel}>Key Takeaways</div>
+                {dashKeyTakeaways && dashKeyTakeaways.content
+                  ? <div style={{fontSize:14,color:t.text,lineHeight:1.75}}><MarkdownBody body={dashKeyTakeaways.content} t={t} accent={t.accent}/></div>
+                  : <div style={{fontSize:13,color:t.textDim}}>Generating…</div>}
+              </div>
+              {dashWedge
+                ? <div style={dashCardBase}>
+                    <div style={dashLabel}>Why IBM Wins</div>
+                    <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashWedge.body} t={t} accent={t.accent}/></div>
+                  </div>
+                : <div style={{...dashCardBase,display:"flex",alignItems:"center",justifyContent:"center",color:t.textDim,fontSize:12}}>Why IBM wins — loading…</div>}
+            </div>
+            {(dashPitch || dashCard) && (
+              <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:12,alignItems:"stretch"}}>
+                {dashPitch && (
+                  <div style={{...dashCardAccent,background:t.badgeBg}}>
+                    <div style={dashLabel}>Elevator Pitch</div>
+                    <div style={{fontSize:14,color:t.text,lineHeight:1.65,fontStyle:"italic"}}><MarkdownBody body={dashPitch.body} t={t} accent={t.accent}/></div>
+                  </div>
+                )}
+                {dashCard && (
+                  <div style={dashCardBase}>
+                    <div style={dashLabel}>Sales Card</div>
+                    <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashCard.body} t={t} accent={t.accent}/></div>
+                  </div>
+                )}
               </div>
             )}
-            
-            {/* 5th section — Product Recommendations, always rendered independently when brief is ready */}
+
+            {/* ════════ TIER 2 · INSIGHTS ════════ */}
+            {(dashBackground || dashQual) && dashTier("Strategy")}
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,alignItems:"stretch"}}>
+              {dashBackground && <SectionCard key={dashBackground.title} title={dashBackground.title} content={dashBackground.content} industry={displayBriefing?.ind} t={t} streaming={dashBackground.isStreaming}/>}
+              {dashQual && <SectionCard key={dashQual.title} title={dashQual.title} content={dashQual.content} industry={displayBriefing?.ind} t={t} streaming={dashQual.isStreaming}/>}
+            </div>
+
+            {(dashMapping || briefingReady || generating) && dashTier("Mapping")}
+            {dashMapping && (
+              <div style={{...dashCardBase,marginBottom:12}}>
+                <div style={dashLabel}>Solution Mapping</div>
+                <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashMapping.body} t={t} accent={t.accent}/></div>
+              </div>
+            )}
             {(briefingReady || generating) && (
-              <SectionCard
-                key="Product Recommendations"
-                title="Product Recommendations"
-                content={briefingText || "use-catalogue-fallback"}
-                industry={displayBriefing?.ind || ""}
-                t={t}
-                streaming={false}
-              />
+              <SectionCard key="Product Recommendations" title="Product Recommendations" content={briefingText || "use-catalogue-fallback"} industry={displayBriefing?.ind || ""} t={t} streaming={false}/>
             )}
 
-            {/* ── Company Research & Sales Play (prospect report, merged into brief) ── */}
+            {(dashUseCase || dashPlay) && dashTier("Execution")}
+            {dashUseCase && (
+              <div style={{...dashCardBase,marginBottom:12}}>
+                <div style={dashLabel}>Best-Fit Use Cases</div>
+                <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashUseCase.body} t={t} accent={t.accent}/></div>
+              </div>
+            )}
+            {dashPlay && (
+              <div style={dashCardBase}>
+                <div style={dashLabel}>6-Step Sales Play</div>
+                <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashPlay.body} t={t} accent={t.accent}/></div>
+              </div>
+            )}
+
             {prospectGenerating && !prospectResult && (
-              <div style={{display:"flex",alignItems:"center",gap:10,padding:"18px 0",color:t.textDim}}>
+              <div style={{display:"flex",alignItems:"center",gap:10,padding:"16px 0",color:t.textDim}}>
                 <div className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:t.accent,boxShadow:`0 0 6px ${t.accentGlow}`}}/>
                 <span style={{fontSize:13,fontWeight:300}}>Building product mapping & sales play…</span>
               </div>
             )}
-            {prospectResult && (prospectResult.step1 || prospectResult.step2) && (
-              <div style={{marginTop:28}}>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:"#0f62fe",marginBottom:12,display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{background:"#0f62fe",color:"#fff",width:18,height:18,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>1</span>
-                  Company Research & IBM Product Mapping
-                </div>
-                {prospectResult.step1.split(/\n(?=##?\s)/).filter(sec => sec.trim().startsWith("#")).map((sec,i) => {
-                  const lines = sec.trim().split("\n");
-                  const title = lines[0].replace(/^#+\s*/,"").replace(/\*\*/g,"").trim();
-                  const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"**");
-                  return (
-                    <div key={`p1-${i}`} style={{background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,borderRadius:10,padding:"16px 18px",marginBottom:12}}>
-                      <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent,marginBottom:8}}>{title}</div>
-                      <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={body} t={t} accent={t.accent}/></div>
-                    </div>
-                  );
-                })}
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:"#0f62fe",marginBottom:12,marginTop:20,display:"flex",alignItems:"center",gap:8}}>
-                  <span style={{background:"#0f62fe",color:"#fff",width:18,height:18,borderRadius:"50%",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>2</span>
-                  Best Fit Use Case & Sales Play
-                </div>
-                {prospectResult.step2.split(/\n(?=##?\s)/).filter(sec => sec.trim().startsWith("#")).map((sec,i) => {
-                  const lines = sec.trim().split("\n");
-                  const title = lines[0].replace(/^#+\s*/,"").replace(/\*\*/g,"").trim();
-                  const body = lines.slice(1).join("\n").trim().replace(/\*\*\*/g,"**");
-                  return (
-                    <div key={`p2-${i}`} style={{background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,borderRadius:10,padding:"16px 18px",marginBottom:12}}>
-                      <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent,marginBottom:8}}>{title}</div>
-                      <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={body} t={t} accent={t.accent}/></div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+
+            {/* ════════ TIER 3 · REFERENCE — collapsible ════════ */}
+            {((hasContact && dashWhoIs) || dashDiscovery || dashContract || dashContacts) && dashTier("Reference")}
+            {hasContact && dashWhoIs && dashRefRow("whois", dashWhoIs.title, <MarkdownBody body={dashWhoIs.content} t={t} accent={t.accent}/>)}
+            {dashDiscovery && dashRefRow("discovery", dashDiscovery.title, <MarkdownBody body={dashDiscovery.content} t={t} accent={t.accent}/>)}
+            {dashContract && dashRefRow("contract", dashContract.title, <MarkdownBody body={dashContract.body} t={t} accent={t.accent}/>)}
+            {dashContacts && dashRefRow("contacts", "Contacts", <MarkdownBody body={dashContacts.body} t={t} accent={t.accent}/>)}
 
             </div>
             {/* /PDF capture region */}
