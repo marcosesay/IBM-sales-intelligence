@@ -950,7 +950,16 @@ function cleanProspectMarkdown(raw: string, keywords: string[]): string {
       /(\n|^)\s*(please let me know|i revised nothing|i revised|i did not revise|in conclusion|to reiterate|however, since i am being|given the constraints|therefore, without explicit|thus, in the absence|note:|here is the (revised|rewritten)|the above response|the response (generated|provided))[\s\S]*$/i,
       ""
     ).trim();
-    kept.push(cleaned);
+    // Drop any individual leaked instruction lines (e.g. "STOP NOW", "Do NOT repeat…").
+    const lineFiltered = cleaned.split("\n").filter(line => {
+      const lc = line.trim().toLowerCase();
+      if (!lc) return true;
+      if (/^(stop\b|stop rules|stop now)/.test(lc)) return false;
+      if (/\bstop (immediately|now)\b/.test(lc)) return false;
+      if (/^(do not (repeat|invent|add|output)|output only|produce each section|as an ai|i (cannot|can't|will not)|here is the (revised|rewritten))/.test(lc)) return false;
+      return true;
+    }).join("\n").trim();
+    kept.push(lineFiltered);
   }
   return kept.join("\n\n");
 }

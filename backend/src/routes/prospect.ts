@@ -45,7 +45,7 @@ Names, titles, emails, or phone numbers ONLY if present in the website content a
 
 Do NOT include a company overview or a general product-recommendations section — those appear earlier in the brief. Avoid repeating anything already covered by Company Background or Product Recommendations.
 
-STOP RULES (critical): Produce each section above exactly once, in the given order. After the final section, STOP immediately. Do NOT repeat any section. Do NOT invent extra sections (no "Key Messages", "Next Steps", or duplicate tables). Do NOT add notes, commentary, questions, apologies, or any text about revising or following instructions. Output only the section content.`;
+OUTPUT RULES (critical): Produce each section above exactly once, in the given order, then end. Do not repeat any section, do not invent extra sections (no "Key Messages", "Next Steps", or duplicate tables), and do not add notes, commentary, questions, apologies, or any text about revising or following instructions. Return only the section content.`;
 }
 
 function salesPlayPrompt(company: string, url: string, scraped: string, ctx: string): string {
@@ -77,7 +77,7 @@ How IBM wins vs. each, 1–2 sentences each: Microsoft Azure (OpenAI), AWS (Bedr
 ## Elevator Pitch
 3–4 sentences. Reference the specific IBM products recommended for this account and the concrete business outcome they drive. Make it sound natural spoken aloud, not a slogan.
 
-STOP RULES (critical): Produce each section above exactly once, in the given order. After the final section, STOP immediately. Do NOT repeat any section. Do NOT invent extra sections (no "Key Messages", "Next Steps", or duplicate tables). Do NOT add notes, commentary, questions, apologies, or any text about revising or following instructions. Output only the section content.`;
+OUTPUT RULES (critical): Produce each section above exactly once, in the given order, then end. Do not repeat any section, do not invent extra sections (no "Key Messages", "Next Steps", or duplicate tables), and do not add notes, commentary, questions, apologies, or any text about revising or following instructions. Return only the section content.`;
 }
 
 // ---------------------------------------------------------------------------
