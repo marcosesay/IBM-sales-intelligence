@@ -106,11 +106,11 @@ Output ALL SIX items below, each on its own line, in this exact order and format
 ***Political Blockers***: [1-2 sentences about blockers]
 
 ## Product Recommendations
-List exactly 3 IBM product names only, one per line, using *italic* format. Nothing else - no descriptions, no bullet points. Just 3 product names.
+List exactly 3 IBM products this account should LEAD with, ordered most-important-first and data-first (data foundation → governance → AI/analytics). Choose ONLY IBM core Data & AI focus products: watsonx.data, watsonx.data integration, Db2, Netezza, DataStage, Data Replication, IBM Guardium, watsonx.governance, watsonx.ai, watsonx Orchestrate, watsonx Code Assistant, Cognos Analytics, Planning Analytics, SPSS, Decision Optimization, FileNet. Be decisive — one best-fit product per need, never alternatives. One product per line, formatted EXACTLY as: *Product Name* — <one specific reason it fits ${company}, the business pain it removes, and a measurable outcome>.
 Example:
-*IBM watsonx.ai*
-*IBM watsonx.data*
-*IBM watsonx.governance*`,
+*watsonx.data* — Unifies siloed data across hybrid cloud, cutting reporting latency from days to hours.
+*IBM Guardium* — Secures regulated data at the source, removing audit exposure before the deal closes.
+*watsonx.ai* — Turns the governed data foundation into AI that lifts analyst throughput measurably.`,
 
     "Renewal": `## Who is ${contactName || "the Contact"}?
 
@@ -139,11 +139,11 @@ Write exactly these 6 items in this exact format, no additional content before o
 ***Political Blockers***: [1-2 sentences]
 
 ## Retention & Upsell Positioning
-List exactly 3 IBM product names only, one per line, using *italic* format. No descriptions, no bullet points. Just 3 names.
+List exactly 3 IBM products this account should LEAD with, ordered most-important-first and data-first (data foundation → governance → AI/analytics). Choose ONLY IBM core Data & AI focus products: watsonx.data, watsonx.data integration, Db2, Netezza, DataStage, Data Replication, IBM Guardium, watsonx.governance, watsonx.ai, watsonx Orchestrate, watsonx Code Assistant, Cognos Analytics, Planning Analytics, SPSS, Decision Optimization, FileNet. Be decisive — one best-fit product per need, never alternatives. One product per line, formatted EXACTLY as: *Product Name* — <one specific reason it fits ${company}, the business pain it removes, and a measurable outcome>.
 Example:
-*IBM watsonx.ai*
-*IBM watsonx.data*
-*IBM watsonx.governance*`,
+*watsonx.data* — Unifies siloed data across hybrid cloud, cutting reporting latency from days to hours.
+*IBM Guardium* — Secures regulated data at the source, removing audit exposure before the deal closes.
+*watsonx.ai* — Turns the governed data foundation into AI that lifts analyst throughput measurably.`,
 
     "Competitive": `## Who is ${contactName || "the Contact"}?
 
@@ -171,11 +171,11 @@ Write exactly these 6 items in this exact format, no additional content before o
 ***Political Blockers***: [1-2 sentences]
 
 ## IBM Differentiation
-List exactly 3 IBM product names only, one per line, using *italic* format. No descriptions, no bullet points. Just 3 names.
+List exactly 3 IBM products this account should LEAD with, ordered most-important-first and data-first (data foundation → governance → AI/analytics). Choose ONLY IBM core Data & AI focus products: watsonx.data, watsonx.data integration, Db2, Netezza, DataStage, Data Replication, IBM Guardium, watsonx.governance, watsonx.ai, watsonx Orchestrate, watsonx Code Assistant, Cognos Analytics, Planning Analytics, SPSS, Decision Optimization, FileNet. Be decisive — one best-fit product per need, never alternatives. One product per line, formatted EXACTLY as: *Product Name* — <one specific reason it fits ${company}, the business pain it removes, and a measurable outcome>.
 Example:
-*IBM watsonx.ai*
-*IBM watsonx.data*
-*IBM watsonx.governance*`,
+*watsonx.data* — Unifies siloed data across hybrid cloud, cutting reporting latency from days to hours.
+*IBM Guardium* — Secures regulated data at the source, removing audit exposure before the deal closes.
+*watsonx.ai* — Turns the governed data foundation into AI that lifts analyst throughput measurably.`,
 
     "EBC": `## Who is ${contactName || "the Contact"}?
 
@@ -203,11 +203,11 @@ Write exactly these 6 items in this exact format, no additional content before o
 ***Political Blockers***: [1-2 sentences]
 
 ## Strategic Investment Themes
-List exactly 3 IBM product names only, one per line, using *italic* format. No descriptions, no bullet points. Just 3 names.
+List exactly 3 IBM products this account should LEAD with, ordered most-important-first and data-first (data foundation → governance → AI/analytics). Choose ONLY IBM core Data & AI focus products: watsonx.data, watsonx.data integration, Db2, Netezza, DataStage, Data Replication, IBM Guardium, watsonx.governance, watsonx.ai, watsonx Orchestrate, watsonx Code Assistant, Cognos Analytics, Planning Analytics, SPSS, Decision Optimization, FileNet. Be decisive — one best-fit product per need, never alternatives. One product per line, formatted EXACTLY as: *Product Name* — <one specific reason it fits ${company}, the business pain it removes, and a measurable outcome>.
 Example:
-*IBM watsonx.ai*
-*IBM watsonx.data*
-*IBM watsonx.governance*`,
+*watsonx.data* — Unifies siloed data across hybrid cloud, cutting reporting latency from days to hours.
+*IBM Guardium* — Secures regulated data at the source, removing audit exposure before the deal closes.
+*watsonx.ai* — Turns the governed data foundation into AI that lifts analyst throughput measurably.`,
   };
   return sections[callType] ?? sections["Discovery"];
 }
@@ -419,6 +419,7 @@ IMPORTANT INSTRUCTIONS:
 - NO REPETITION — never repeat a sentence, bullet, or idea anywhere in the briefing. If two lines would say the same thing, keep one. When content feels repetitive, shorten it rather than expand.
 - CONFIDENT POV — write like a senior IBM seller with a clear point of view. Banish hedging ("could", "may", "might", "perhaps"). State it directly: "The biggest opportunity is…", never "The company may benefit from…".
 - PRUNE — every section must earn its place. If a section would read the same for any account (generic), make it specific to this one or cut it entirely. Fewer, sharper sections beat completeness.
+- PRODUCT STRATEGY — anchor every product mention to IBM's core Data & AI focus products, prioritized DATA-FIRST: (1) data foundation (watsonx.data, watsonx.data integration, Db2, Netezza, DataStage, Data Replication), (2) governance (IBM Guardium, watsonx.governance), (3) AI & productivity (watsonx.ai, watsonx Orchestrate, watsonx Code Assistant), (4) analytics & automation (Cognos Analytics, Planning Analytics, SPSS, Decision Optimization, FileNet). Recommend at most 4 products across the whole brief; be decisive (one product per need, no alternatives); anchor every AI use case in data readiness; lead with hybrid-cloud, governance, integration, and data-gravity differentiation vs Azure/OpenAI, AWS, and open-source; never use generic AI messaging.
 
 Write the following pre-call sales briefing. Use exactly these six ## section headers in this order, and write only the content for each — no commentary, no notes, no preamble:
 

@@ -747,6 +747,18 @@ const IBM_PRODUCTS: Record<string, { tag: string; desc: string }> = {
   "IBM OpenPages":      { tag: "GRC & Risk Management",            desc: "Centralise governance, risk, and compliance workflows with AI-assisted risk identification and reporting. Embeds watsonx AI to surface high-priority risks and automate control testing across the enterprise." },
   "IBM DataStage":      { tag: "Data Integration & ETL",           desc: "High-volume data integration and transformation pipelines for hybrid cloud and on-prem environments. Connects 100+ data sources with parallel processing and native IBM Cloud Pak for Data integration." },
   "IBM Knowledge Catalog": { tag: "Data Governance",               desc: "Discover, catalog, and govern data assets enterprise-wide with automated metadata and policy management. Enforces data access policies in real time and integrates with watsonx.data for unified data governance." },
+  "IBM Db2":            { tag: "Hybrid Data Engine",              desc: "Enterprise SQL engine for mission-critical transactional and analytical workloads across hybrid cloud. Db2 AI Advanced Edition adds in-engine ML and federation, so teams query data where it lives without migration." },
+  "IBM Guardium":       { tag: "Data Security & Compliance",      desc: "Discover, classify, and protect sensitive data with real-time activity monitoring and automated compliance controls. Enforces policy at the data source across on-prem and multicloud, closing audit gaps before they surface." },
+  "watsonx Orchestrate":{ tag: "AI Agents & Automation",         desc: "Build and run AI agents that automate repetitive cross-application work through natural language. Governed deployment and pre-built skills let business teams ship automations without heavy engineering." },
+  "watsonx Code Assistant": { tag: "AI Code Generation",         desc: "Accelerate development and app modernization with IBM Granite code models. Specialized for enterprise languages and COBOL-to-Java modernization, with code that stays auditable and governed." },
+  "IBM Netezza":        { tag: "Cloud Data Warehouse",           desc: "High-performance warehouse for large-scale analytics with in-database machine learning. Runs the same engine on-prem and across clouds, scaling query performance without lock-in." },
+  "IBM Informix":       { tag: "Embedded Database",              desc: "Low-footprint database optimized for IoT, edge, and time-series workloads. Runs autonomously with minimal administration where compute and connectivity are constrained." },
+  "IBM Cognos Analytics": { tag: "BI & Analytics",              desc: "AI-assisted business intelligence that turns governed data into dashboards, reports, and natural-language insight. Embeds into watsonx.data so analytics inherit enterprise governance." },
+  "IBM Planning Analytics": { tag: "Planning & FP&A",           desc: "Integrated financial and operational planning, budgeting, and forecasting at scale. The TM1 engine handles complex what-if modeling far beyond spreadsheet limits." },
+  "IBM SPSS":           { tag: "Statistical Analysis",           desc: "Advanced statistical modeling and predictive analytics for research and operational decisions. A visual workflow makes sophisticated techniques accessible without coding." },
+  "IBM Decision Optimization": { tag: "Prescriptive Optimization", desc: "Solves complex scheduling, allocation, and supply-chain problems with mathematical optimization. Integrates with watsonx.ai to pair predictions with optimal actions." },
+  "IBM Data Replication": { tag: "Real-Time Data Sync",          desc: "Low-latency change-data-capture replication keeps systems and the lakehouse continuously in sync. Feeds real-time analytics and AI without straining source systems." },
+  "IBM FileNet":        { tag: "Enterprise Content Mgmt",        desc: "Manage high-volume enterprise content and documents with governed workflow and retention. Surfaces unstructured content to AI pipelines under full compliance control." },
 };
 
 /** Parse AI-generated product section into structured {name, desc} pairs.
@@ -800,12 +812,12 @@ function parseProductRecs(raw: string, industry: string): { name: string; tag: s
   if (results.length < 2) {
     const ind = (industry || "").toLowerCase();
     const priority = ind.includes("financ") || ind.includes("bank") || ind.includes("insur")
-      ? ["watsonx.ai","watsonx.governance","IBM OpenPages"]
+      ? ["watsonx.data","IBM Guardium","watsonx.ai"]
       : ind.includes("health") || ind.includes("pharma") || ind.includes("life")
-      ? ["watsonx.ai","watsonx.governance","watsonx.data"]
+      ? ["watsonx.data","IBM Guardium","watsonx.ai"]
       : ind.includes("retail") || ind.includes("consumer")
-      ? ["watsonx.ai","watsonx.data","IBM Knowledge Catalog"]
-      : ["watsonx.ai","watsonx.data","watsonx.governance"];
+      ? ["watsonx.data","IBM DataStage","watsonx.ai"]
+      : ["watsonx.data","watsonx.governance","watsonx.ai"];
 
     for (const key of priority) {
       if (!results.find(r => r.name === key)) {
