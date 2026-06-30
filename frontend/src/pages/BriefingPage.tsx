@@ -1040,6 +1040,81 @@ function WireframeGlobe({ rgb, size = 300 }: { rgb: string; size?: number }) {
   return <canvas ref={ref} aria-hidden="true" style={{ display: "block" }} />;
 }
 
+/* ─── Sales Play Flow — horizontal pipeline of step cards ─── */
+const PLAY_STAGES: { label: string; icon: React.ReactNode }[] = [
+  { label: "Engage",   icon: <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/> },
+  { label: "Discover", icon: <><circle cx="11" cy="11" r="6"/><path d="M20.5 20.5 16.5 16.5"/></> },
+  { label: "Prove",    icon: <><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></> },
+  { label: "Land",     icon: <path d="M4 22V4l13 4-13 4"/> },
+  { label: "Realize",  icon: <><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></> },
+  { label: "Expand",   icon: <path d="M7 17 17 7M8 7h9v9"/> },
+];
+
+function parseSalesPlay(body: string): { title: string; do: string; say: string; outcome: string }[] {
+  const lines = body.split("\n");
+  const steps: { title: string; do: string; say: string; outcome: string }[] = [];
+  let cur: { title: string; do: string; say: string; outcome: string } | null = null;
+  const assign = (step: { [k: string]: string }, raw: string) => {
+    const cleaned = raw.replace(/^[-–•*\s]+/, "");
+    const m = cleaned.match(/^\*{0,2}\s*(title|do|say|outcome)\s*\*{0,2}\s*:\s*(.*)$/i);
+    if (!m) return;
+    step[m[1].toLowerCase()] = m[2].replace(/\*\*/g, "").trim();
+  };
+  for (const raw of lines) {
+    const line = raw.trim();
+    if (!line) continue;
+    const num = line.match(/^(\d+)[.)]\s*(.*)$/);
+    if (num) {
+      if (cur) steps.push(cur);
+      cur = { title: "", do: "", say: "", outcome: "" };
+      if (num[2]) assign(cur, num[2]);
+    } else if (cur) {
+      assign(cur, line);
+    }
+  }
+  if (cur) steps.push(cur);
+  return steps.filter(s => s.title || s.do || s.say || s.outcome);
+}
+
+function SalesPlayFlow({ body, t }: { body: string; t: typeof DARK }) {
+  const steps = parseSalesPlay(body);
+  // Fallback: if the model didn't produce parseable steps, render the original markdown.
+  if (steps.length < 2) return <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={body} t={t} accent={t.accent}/></div>;
+  return (
+    <div style={{display:"flex",alignItems:"stretch",overflowX:"auto",paddingBottom:6}}>
+      {steps.map((s, i) => {
+        const stage = PLAY_STAGES[i] || PLAY_STAGES[PLAY_STAGES.length - 1];
+        return (
+          <div key={i} style={{display:"flex",alignItems:"center",flexShrink:0}}>
+            <div style={{
+              width:212,flexShrink:0,background:t.input,border:`1px solid ${t.inputBorder}`,
+              borderTop:`2px solid ${t.accent}`,borderRadius:10,padding:"12px 13px",
+              display:"flex",flexDirection:"column",gap:7,minHeight:158,
+            }}>
+              <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                <div style={{display:"flex",alignItems:"center",gap:7}}>
+                  <span style={{width:18,height:18,borderRadius:"50%",background:t.accent,color:"#fff",fontSize:10,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{i+1}</span>
+                  <span style={{fontSize:9,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent}}>{stage.label}</span>
+                </div>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>{stage.icon}</svg>
+              </div>
+              {s.title && <div style={{fontSize:12.5,fontWeight:600,color:t.text,lineHeight:1.25}}>{s.title}</div>}
+              {s.do && <div style={{fontSize:11,color:t.textSub,lineHeight:1.4}}><span style={{fontWeight:700,color:t.text}}>Do </span>{s.do}</div>}
+              {s.say && <div style={{fontSize:11,color:t.textSub,lineHeight:1.4,fontStyle:"italic"}}><span style={{fontWeight:700,color:t.text,fontStyle:"normal"}}>Say </span>“{s.say.replace(/^["“]|["”]$/g, "")}”</div>}
+              {s.outcome && <div style={{fontSize:11,color:t.textSub,lineHeight:1.4,marginTop:"auto"}}><span style={{fontWeight:700,color:t.accent}}>→ </span>{s.outcome}</div>}
+            </div>
+            {i < steps.length - 1 && (
+              <div style={{flexShrink:0,padding:"0 6px",color:t.accent,opacity:0.55}}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function SectionCard({ title, content, industry, t, streaming }: {
   title: string; content: string; industry?: string;
   t: typeof DARK; streaming?: boolean;
@@ -2486,7 +2561,7 @@ export default function BriefingPage() {
             {dashPlay && (
               <div className="dash-card" style={dashCardBase}>
                 <div className="dash-label" style={dashLabel}>6-Step Sales Play</div>
-                <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashPlay.body} t={t} accent={t.accent}/></div>
+                <SalesPlayFlow body={dashPlay.body} t={t}/>
               </div>
             )}
 
