@@ -63,29 +63,30 @@ function detectIndustry(name: string): string {
 
 /* ─── Theme tokens ─── */
 const DARK = {
-  bodyBg: "linear-gradient(160deg,#2a2a2a 0%,#1e1e1e 35%,#252528 65%,#1a1a1c 100%)",
-  sidebar: "rgba(255,255,255,0.04)", sidebarBorder: "rgba(255,255,255,0.08)",
-  card: "rgba(255,255,255,0.05)", cardBorder: "rgba(255,255,255,0.09)",
-  cardShadow: "inset 0 1px 0 rgba(255,255,255,0.10),0 2px 12px rgba(0,0,0,0.2)",
-  input: "rgba(255,255,255,0.05)", inputBorder: "rgba(255,255,255,0.10)",
-  text: "rgba(255,255,255,0.85)", textSub: "rgba(255,255,255,0.62)",
-  textMuted: "rgba(255,255,255,0.35)", textDim: "rgba(255,255,255,0.22)",
-  divider: "rgba(255,255,255,0.07)",
-  btn: "rgba(200,200,215,0.12)", btnBorder: "rgba(255,255,255,0.16)", btnText: "rgba(255,255,255,0.82)",
-  btnSm: "rgba(255,255,255,0.06)", btnSmBorder: "rgba(255,255,255,0.12)", btnSmText: "rgba(255,255,255,0.65)",
-  pill: "rgba(255,255,255,0.06)", pillBorder: "rgba(255,255,255,0.11)",
-  chipBg: "rgba(255,255,255,0.05)", chipBorder: "rgba(255,255,255,0.09)",
+  // True IBM Carbon dark: near-black canvas, surfaces by elevation, high-contrast text.
+  bodyBg: "linear-gradient(160deg,#0d0d0d 0%,#161616 45%,#0a0a0a 100%)",
+  sidebar: "#161616", sidebarBorder: "rgba(255,255,255,0.08)",
+  card: "#1c1c1c", cardBorder: "rgba(255,255,255,0.08)",
+  cardShadow: "inset 0 1px 0 rgba(255,255,255,0.05),0 2px 16px rgba(0,0,0,0.4)",
+  input: "#161616", inputBorder: "rgba(255,255,255,0.12)",
+  text: "#f4f4f4", textSub: "#c6c6c6",
+  textMuted: "#8d8d8d", textDim: "#6f6f6f",
+  divider: "rgba(255,255,255,0.08)",
+  btn: "rgba(255,255,255,0.10)", btnBorder: "rgba(255,255,255,0.16)", btnText: "#e0e0e0",
+  btnSm: "rgba(255,255,255,0.05)", btnSmBorder: "rgba(255,255,255,0.12)", btnSmText: "#8d8d8d",
+  pill: "#1c1c1c", pillBorder: "rgba(255,255,255,0.08)",
+  chipBg: "#1c1c1c", chipBorder: "rgba(255,255,255,0.08)",
   accent: "#4589ff", accentGlow: "rgba(69,137,255,0.7)",
-  mtActive: "rgba(210,210,225,0.16)", mtActiveBorder: "rgba(210,210,225,0.32)", mtActiveText: "rgba(225,225,240,0.9)",
-  mtInactive: "rgba(255,255,255,0.05)", mtInactiveBorder: "rgba(255,255,255,0.10)", mtInactiveText: "rgba(255,255,255,0.42)",
-  sectionCard: "rgba(255,255,255,0.05)", sectionCardBorder: "rgba(255,255,255,0.09)",
-  sectionHeaderBorder: "rgba(255,255,255,0.06)",
-  sectionText: "rgba(255,255,255,0.60)", sectionBullet: "rgba(255,255,255,0.65)",
-  overlay: "rgba(26,26,28,0.96)",
-  toggleBg: "rgba(255,255,255,0.08)", toggleBorder: "rgba(255,255,255,0.14)", toggleIcon: "rgba(255,255,255,0.6)",
-  progressBar: "rgba(69,137,255,0.6)",
-  badgeBg: "rgba(180,200,220,0.10)", badgeBorder: "rgba(180,200,220,0.16)", badgeText: "rgba(180,200,220,0.65)",
-  nameLine: "rgba(255,255,255,0.85)", dateText: "rgba(255,255,255,0.20)",
+  mtActive: "rgba(15,98,254,0.18)", mtActiveBorder: "rgba(15,98,254,0.55)", mtActiveText: "#78a9ff",
+  mtInactive: "rgba(255,255,255,0.05)", mtInactiveBorder: "rgba(255,255,255,0.10)", mtInactiveText: "#8d8d8d",
+  sectionCard: "#1c1c1c", sectionCardBorder: "rgba(255,255,255,0.08)",
+  sectionHeaderBorder: "rgba(255,255,255,0.07)",
+  sectionText: "#c6c6c6", sectionBullet: "#a8a8a8",
+  overlay: "rgba(13,13,13,0.97)",
+  toggleBg: "rgba(255,255,255,0.08)", toggleBorder: "rgba(255,255,255,0.14)", toggleIcon: "#c6c6c6",
+  progressBar: "rgba(69,137,255,0.7)",
+  badgeBg: "rgba(69,137,255,0.10)", badgeBorder: "rgba(69,137,255,0.20)", badgeText: "#78a9ff",
+  nameLine: "#f4f4f4", dateText: "#6f6f6f",
   topBar: "rgba(255,255,255,0.07)",
 };
 
@@ -2127,17 +2128,25 @@ export default function BriefingPage() {
                 Drop in a company name. Get a full IBM briefing in under 30 seconds.
               </p>
 
-              {/* Account input — the centerpiece */}
-              <input
-                value={company}
-                onChange={e=>handleAccountInput((e.target as HTMLInputElement).value)}
-                onKeyDown={e=>{ if(e.key==="Enter" && briefReady && !generating) generate(); }}
-                placeholder={ACCOUNT_PLACEHOLDERS[phIdx]}
-                autoComplete="off"
-                style={{width:"100%",background:t.input,border:`1px solid ${company?"#0f62fe":t.inputBorder}`,
-                  borderRadius:13,fontSize:16,color:t.text,fontFamily:"var(--app-font-sans)",padding:"17px 18px",outline:"none",
-                  boxShadow:company?"0 0 0 3px rgba(15,98,254,0.16)":"inset 0 1px 0 rgba(255,255,255,0.06)",transition:"all 0.2s"}}
-              />
+              {/* Account input — the centerpiece, with leading search icon */}
+              <div style={{position:"relative"}}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={company?"#4589ff":t.textMuted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
+                  style={{position:"absolute",left:18,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke 0.2s"}}>
+                  <circle cx="11" cy="11" r="6"/><path d="M20.5 20.5 16.5 16.5"/>
+                </svg>
+                <input
+                  value={company}
+                  onChange={e=>handleAccountInput((e.target as HTMLInputElement).value)}
+                  onKeyDown={e=>{ if(e.key==="Enter" && briefReady && !generating) generate(); }}
+                  placeholder={ACCOUNT_PLACEHOLDERS[phIdx]}
+                  autoComplete="off"
+                  onFocus={e=>{ if(!company) e.currentTarget.style.boxShadow="0 0 0 3px rgba(69,137,255,0.18)"; }}
+                  onBlur={e=>{ if(!company) e.currentTarget.style.boxShadow="inset 0 1px 0 rgba(255,255,255,0.06)"; }}
+                  style={{width:"100%",background:t.input,border:`1px solid ${company?"#0f62fe":t.inputBorder}`,
+                    borderRadius:13,fontSize:16,color:t.text,fontFamily:"var(--app-font-sans)",padding:"17px 18px 17px 46px",outline:"none",
+                    boxShadow:company?"0 0 0 3px rgba(69,137,255,0.18)":"inset 0 1px 0 rgba(255,255,255,0.06)",transition:"all 0.2s"}}
+                />
+              </div>
 
               {/* inline feedback (left) or sample-account nudge */}
               {company.trim() ? (
@@ -2164,9 +2173,10 @@ export default function BriefingPage() {
                 style={{width:"100%",marginTop:18,
                   background:briefReady?"#0f62fe":t.btnSm,
                   border:briefReady?"none":`1px solid ${t.btnSmBorder}`,
-                  color:briefReady?"#fff":t.textDim,fontSize:15,fontWeight:600,
-                  borderRadius:13,padding:"16px",cursor:briefReady&&!generating?"pointer":"default",
-                  fontFamily:"var(--app-font-sans)",opacity:generating?0.85:1,transition:"all 0.2s"}}>
+                  color:briefReady?"#fff":t.textDim,fontSize:15.5,fontWeight:700,
+                  borderRadius:13,padding:"17px",cursor:briefReady&&!generating?"pointer":"default",
+                  fontFamily:"var(--app-font-sans)",opacity:generating?0.85:1,transition:"all 0.2s",
+                  boxShadow:briefReady?"0 6px 24px rgba(15,98,254,0.45)":"none"}}>
                 {generating
                   ? <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><span className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:"currentColor"}}/>Analyzing account…</span>
                   : "Generate My Call Brief  →"}
@@ -2178,7 +2188,18 @@ export default function BriefingPage() {
               {/* trust line */}
               {!generating && (
                 <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginTop:14,fontSize:10.5,color:t.textMuted,flexWrap:"wrap"}}>
-                  <span>30-second briefing</span><span>·</span><span>Built for IBM sellers</span><span>·</span><span>Real-time company intelligence</span>
+                  <span>30-second briefing</span><span>·</span><span>Built for IBM sellers</span><span>·</span><span>watsonx-secured</span>
+                </div>
+              )}
+
+              {/* what you'll get — compact, scannable (not a boxy panel) */}
+              {!generating && (
+                <div style={{display:"flex",justifyContent:"center",gap:18,marginTop:22,flexWrap:"wrap"}}>
+                  {["Key company insights","6 discovery questions","IBM solution mapping"].map(it=>(
+                    <span key={it} style={{display:"flex",alignItems:"center",gap:6,fontSize:11.5,color:t.textSub}}>
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{it}
+                    </span>
+                  ))}
                 </div>
               )}
 
@@ -2230,18 +2251,17 @@ export default function BriefingPage() {
                   icon:<><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></> },
               ].map(f=>(
                 <div key={f.title} className="feature-card" style={{
-                  borderRadius:12,padding:"14px 14px 12px",
-                  background:t.card,backdropFilter:"blur(28px) saturate(160%)",
-                  WebkitBackdropFilter:"blur(28px) saturate(160%)",
-                  border:`1px solid ${t.cardBorder}`,borderLeft:"2px solid #0f62fe",boxShadow:t.cardShadow,
-                  display:"flex",flexDirection:"column",gap:7,
+                  borderRadius:12,padding:"16px 15px 14px",
+                  background:t.card,
+                  border:`1px solid ${t.cardBorder}`,boxShadow:t.cardShadow,
+                  display:"flex",flexDirection:"column",gap:8,
                 }}>
-                  <div style={{display:"flex",alignItems:"center",gap:8}}>
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>{f.icon}</svg>
-                    <p style={{fontSize:11,fontWeight:600,color:t.text,margin:0,letterSpacing:"-0.2px",lineHeight:1.3}}>{f.title}</p>
+                  <div style={{width:30,height:30,borderRadius:8,background:"rgba(15,98,254,0.15)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>{f.icon}</svg>
                   </div>
-                  <p style={{fontSize:11,color:t.textSub,margin:0,lineHeight:1.45,fontWeight:500,paddingLeft:1}}>{f.sub}</p>
-                  <p style={{fontSize:10,color:t.textMuted,margin:0,lineHeight:1.45,paddingLeft:1}}>{f.sub2}</p>
+                  <p style={{fontSize:12.5,fontWeight:600,color:t.text,margin:0,letterSpacing:"-0.2px",lineHeight:1.3}}>{f.title}</p>
+                  <p style={{fontSize:11,color:t.textSub,margin:0,lineHeight:1.45,fontWeight:500}}>{f.sub}</p>
+                  <p style={{fontSize:10,color:t.textMuted,margin:0,lineHeight:1.45}}>{f.sub2}</p>
                 </div>
               ))}
             </div>
