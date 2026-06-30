@@ -79,7 +79,7 @@ function buildSections(callType: string, company: string, industry: string, titl
   const sections: Record<string, string> = {
     "Discovery": `## Who is ${contactName || "the Contact"}?
 
-Write 2-3 sharp prose paragraphs that give an IBM seller a clear mental picture of this person. Vary your angle — you might open with what drives them professionally, what they're under pressure to solve, how they think about technology decisions, or what a win looks like for them. Do not use a formulaic structure. Make each paragraph add something new: their mindset, their influence, their likely skepticism or enthusiasm. Start the first paragraph with ${contactName ? `"${contactName}"` : "the contact's name"} — not "As a professional", not "In their role". Write like a sharp analyst who has studied this person, not like a template being filled in.
+4-5 bullets only — NO paragraphs. Each starts with a **bolded key phrase** and is <= 14 words. Cover, one per bullet: what drives them; the pressure they are under to solve something; how they make technology decisions; where they may be skeptical; what a win looks like for them. Studied and specific to this person — never templated. Lead the first bullet with the contact's actual name where known.
 
 ## Company Background
 Write 4-5 bullets only — NO paragraphs. Each bullet starts with a **bolded key phrase** and is <= 12 words. Cover, one per bullet: business model & market position; a recent initiative or news creating urgency; the key challenge they face; their AI/tech maturity; the single biggest opportunity for IBM.
@@ -114,7 +114,7 @@ Example:
 
     "Renewal": `## Who is ${contactName || "the Contact"}?
 
-Write 2-3 sharp prose paragraphs that give an IBM seller a clear mental picture of this person in the context of a renewal. Vary your angle — their relationship with the current solution, what success or frustration looks like for them, how they'll evaluate whether to expand or cut. Do not use a formulaic structure. Start the first paragraph with ${contactName ? `"${contactName}"` : "the contact's name"} — not "As a professional". Write like a sharp analyst, not a template.
+4-5 bullets only — NO paragraphs. Each starts with a **bolded key phrase** and is <= 14 words. Cover, one per bullet: what drives them; the pressure they are under to solve something; how they make technology decisions; where they may be skeptical; what a win looks like for them. Studied and specific to this person — never templated. Lead the first bullet with the contact's actual name where known.
 
 ## Account Health & Risk
 Provide a comprehensive account assessment covering:
@@ -124,7 +124,7 @@ Provide a comprehensive account assessment covering:
 4) Expansion opportunities based on ${industry} trends
 5) Contract timing considerations and renewal risk factors
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
+Write 4-5 bullets only — NO paragraphs. Each starts with a **bolded key phrase**, is <= 14 words, and carries one decision-useful fact. Scannable in under 10 seconds.
 
 ## Renewal & Expansion Questions
 List exactly 8 questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
@@ -147,7 +147,7 @@ Example:
 
     "Competitive": `## Who is ${contactName || "the Contact"}?
 
-Write 2-3 sharp prose paragraphs that give an IBM seller a clear mental picture of this person in a competitive situation. Vary your angle — their relationship with the incumbent, what would make them consider a switch, how they evaluate vendors, what risk or politics they're navigating. Do not use a formulaic structure. Start the first paragraph with ${contactName ? `"${contactName}"` : "the contact's name"} — not "As a professional". Write like a sharp analyst, not a template.
+4-5 bullets only — NO paragraphs. Each starts with a **bolded key phrase** and is <= 14 words. Cover, one per bullet: what drives them; the pressure they are under to solve something; how they make technology decisions; where they may be skeptical; what a win looks like for them. Studied and specific to this person — never templated. Lead the first bullet with the contact's actual name where known.
 
 ## Competitive Landscape
 Provide a comprehensive competitive analysis covering:
@@ -156,7 +156,7 @@ Provide a comprehensive competitive analysis covering:
 3) Recent competitive wins/losses in similar ${industry} accounts
 4) Key differentiation opportunities for IBM based on ${company}'s needs
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
+Write 4-5 bullets only — NO paragraphs. Each starts with a **bolded key phrase**, is <= 14 words, and carries one decision-useful fact. Scannable in under 10 seconds.
 
 ## Competitive Discovery Questions
 List exactly 8 questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
@@ -179,7 +179,7 @@ Example:
 
     "EBC": `## Who is ${contactName || "the Contact"}?
 
-Write 2-3 sharp prose paragraphs that give an IBM seller a clear mental picture of this executive. Vary your angle — their strategic agenda, how they define success at the board level, what pressure they're under, what a transformative investment would need to deliver for them to champion it. Do not use a formulaic structure. Start the first paragraph with ${contactName ? `"${contactName}"` : "the contact's name"} — not "As a professional". Write like a sharp analyst, not a template.
+4-5 bullets only — NO paragraphs. Each starts with a **bolded key phrase** and is <= 14 words. Cover, one per bullet: what drives them; the pressure they are under to solve something; how they make technology decisions; where they may be skeptical; what a win looks like for them. Studied and specific to this person — never templated. Lead the first bullet with the contact's actual name where known.
 
 ## Company Strategic Agenda
 Provide a comprehensive strategic overview covering:
@@ -188,7 +188,7 @@ Provide a comprehensive strategic overview covering:
 3) Competitive pressures and market dynamics affecting strategic decisions
 4) How technology investments tie to business outcomes and KPIs
 
-Write in clear, informative prose paragraphs (2-3 paragraphs). No sub-headers, no bullet lists. Make this section substantive and actionable.
+Write 4-5 bullets only — NO paragraphs. Each starts with a **bolded key phrase**, is <= 14 words, and carries one decision-useful fact. Scannable in under 10 seconds.
 
 ## Executive Engagement Questions
 List exactly 8 strategic C-suite questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
@@ -412,11 +412,19 @@ IMPORTANT INSTRUCTIONS:
 - If the title is generic (like "professional"), tailor content for a mid-level professional, not executives
 - Focus on practical, actionable insights rather than assumptions about the contact's influence or authority
 - Be accurate and conservative in your assessments
+- CLEANUP — never output raw URLs, system notes, placeholders, or any instruction/meta text (e.g. "STOP", "as an AI", "Note:"). Reference any source by name in plain words. Everything must read as polished, client-ready copy.
+- DENSITY — be ruthless: cut filler words, prefer sharp fragments over full sentences, and make every line carry a decision-useful fact. When in doubt, cut.
+- PURPOSE — each section answers a clear question: Company Background = "what matters about this account?"; Opportunity Qualification = "is this deal real?"; Product Recommendations = "where does IBM win?"; Discovery Questions = "what should I ask?". Deliver that answer.
 
 Write the following pre-call sales briefing. Use exactly these six ## section headers in this order, and write only the content for each — no commentary, no notes, no preamble:
 
 ## Key Takeaways
-Exactly 3 bullets, no more. Each is the single most important thing the seller must know walking in — the kind of insight that changes how you open the call. <= 18 words each, starting with a **bolded key phrase**. No filler, no generic statements.
+This is the seller's "Start Here" cheat sheet — the first thing they read walking into the call. Output EXACTLY these 5 bullets, in this order, each beginning with the bolded label shown and <= 18 words. Specific to this account; no generic statements; no filler.
+- **Open with:** the sharpest way to start the conversation given what is happening at the company right now.
+- **Biggest opportunity:** the single largest opening for IBM in this account.
+- **Lead with:** the top IBM play — name the product — and why it fits here.
+- **Ask first:** the one question that qualifies this deal fastest.
+- **Risk if no action:** what the seller loses by not moving — urgency in one line.
 
 ## Who is ${contactName || "the Contact"}?
 ## Company Background
