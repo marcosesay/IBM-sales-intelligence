@@ -9,6 +9,12 @@ COPY index.html tsconfig.json vite.config.ts components.json ./
 COPY public ./public
 COPY src ./src
 
+# Bake the backend's PUBLIC URL so the browser calls it directly (the nginx
+# /api proxy path fails: internal svc address won't resolve and proxying to the
+# public HTTPS upstream throws SSL handshake errors). Direct calls + backend CORS
+# is the path that works.
+RUN echo 'VITE_BACKEND_URL=https://ibm-sales-intelligence.23ij0n2ztu5p.ca-tor.codeengine.appdomain.cloud' > .env.production
+
 RUN npm run build
 
 # ---
