@@ -898,6 +898,110 @@ function MarkdownBody({ body, t, accent }: { body: string; t: typeof DARK; accen
   return <>{out}</>;
 }
 
+/* Whitelisted prospect section keywords (lowercased substring match). Anything
+   the model emits outside these is dropped — no hallucinated "Key Messages",
+   "Next Steps", or stray tables. */
+const STEP1_KEYWORDS = ["solution mapping", "contract vehicle", "contacts"];
+const STEP2_KEYWORDS = ["best-fit use case", "best fit use case", "sales play", "competitive wedge", "sales card", "elevator pitch"];
+
+/* Sanitize a prospect markdown blob: keep only whitelisted sections, each once
+   (first wins), strip any leaked model commentary. Returns clean markdown. */
+function cleanProspectMarkdown(raw: string, keywords: string[]): string {
+  const chunks = raw.split(/\n(?=##?\s)/);
+  const seen = new Set<string>();
+  const kept: string[] = [];
+  for (const c of chunks) {
+    const t = c.trim();
+    if (!t.startsWith("#")) continue;
+    const firstLine = t.split("\n")[0].replace(/^#+\s*/, "").replace(/\*\*/g, "").trim().toLowerCase();
+    const k = keywords.find(kw => firstLine.includes(kw));
+    if (!k || seen.has(k)) continue;
+    seen.add(k);
+    const cleaned = t.replace(
+      /(\n|^)\s*(please let me know|i revised nothing|i revised|i did not revise|in conclusion|to reiterate|however, since i am being|given the constraints|therefore, without explicit|thus, in the absence|note:|here is the (revised|rewritten)|the above response|the response (generated|provided))[\s\S]*$/i,
+      ""
+    ).trim();
+    kept.push(cleaned);
+  }
+  return kept.join("\n\n");
+}
+
+/* Rotating wireframe globe — pure canvas 2D, no dependencies. Depth-shaded
+   (front lines brighter, back faint) with a slight axial tilt and a few data
+   nodes. Color is theme-driven via the rgb prop. */
+const GLOBE_NODES = [
+  { lat: 0.62, lon: 0.4 }, { lat: -0.3, lon: 2.1 }, { lat: 0.18, lon: 3.6 },
+  { lat: 0.92, lon: 5.0 }, { lat: -0.66, lon: 1.2 }, { lat: 0.08, lon: 4.4 },
+  { lat: -0.5, lon: 5.7 }, { lat: 0.42, lon: 2.9 },
+];
+function WireframeGlobe({ rgb, size = 300 }: { rgb: string; size?: number }) {
+  const ref = useRef<HTMLCanvasElement | null>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + "px";
+    canvas.style.height = size + "px";
+    ctx.scale(dpr, dpr);
+    const R = size * 0.40, cx = size / 2, cy = size / 2;
+    const LAT = 9, LONG = 18, SEG = 54;
+    const tilt = -0.32, ct = Math.cos(tilt), st = Math.sin(tilt);
+    const proj = (lat: number, lon: number, rot: number) => {
+      const x = Math.cos(lat) * Math.sin(lon + rot);
+      const y = Math.sin(lat);
+      const z = Math.cos(lat) * Math.cos(lon + rot);
+      return { sx: cx + x * R, sy: cy - (y * ct - z * st) * R, z: y * st + z * ct };
+    };
+    let raf = 0;
+    const t0 = performance.now();
+    const seg = (a: { sx: number; sy: number; z: number }, b: { sx: number; sy: number; z: number }) => {
+      const d = ((a.z + b.z) / 2 + 1) / 2;
+      ctx.beginPath();
+      ctx.moveTo(a.sx, a.sy);
+      ctx.lineTo(b.sx, b.sy);
+      ctx.strokeStyle = `rgba(${rgb},${(0.05 + 0.30 * d).toFixed(3)})`;
+      ctx.lineWidth = 0.5 + 0.6 * d;
+      ctx.stroke();
+    };
+    const draw = (now: number) => {
+      const rot = (now - t0) * 0.00016;
+      ctx.clearRect(0, 0, size, size);
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(${rgb},0.10)`;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      for (let i = 1; i < LAT; i++) {
+        const lat = -Math.PI / 2 + (i / LAT) * Math.PI;
+        let prev = proj(lat, 0, rot);
+        for (let s = 1; s <= SEG; s++) { const cur = proj(lat, (s / SEG) * Math.PI * 2, rot); seg(prev, cur); prev = cur; }
+      }
+      for (let j = 0; j < LONG; j++) {
+        const lon = (j / LONG) * Math.PI * 2;
+        let prev = proj(-Math.PI / 2, lon, rot);
+        for (let s = 1; s <= SEG; s++) { const cur = proj(-Math.PI / 2 + (s / SEG) * Math.PI, lon, rot); seg(prev, cur); prev = cur; }
+      }
+      for (const n of GLOBE_NODES) {
+        const p = proj(n.lat, n.lon, rot);
+        if (p.z < -0.1) continue;
+        const d = (p.z + 1) / 2;
+        ctx.beginPath();
+        ctx.arc(p.sx, p.sy, 1.5 + 1.4 * d, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${rgb},${(0.25 + 0.55 * d).toFixed(3)})`;
+        ctx.fill();
+      }
+      raf = requestAnimationFrame(draw);
+    };
+    raf = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(raf);
+  }, [rgb, size]);
+  return <canvas ref={ref} aria-hidden="true" style={{ display: "block" }} />;
+}
+
 function SectionCard({ title, content, industry, t, streaming }: {
   title: string; content: string; industry?: string;
   t: typeof DARK; streaming?: boolean;
@@ -955,7 +1059,7 @@ function SectionCard({ title, content, industry, t, streaming }: {
   }
 
   return (
-    <div className="animate-fade-in" style={{
+    <div className="animate-fade-in dash-card" style={{
       background: t.sectionCard, backdropFilter:"blur(28px) saturate(150%)",
       WebkitBackdropFilter:"blur(28px) saturate(150%)",
       border:`1px solid ${t.sectionCardBorder}`, borderRadius:14,
@@ -1181,15 +1285,20 @@ export default function BriefingPage() {
             if (cutOff) break;
             const trimmed = line.trim();
 
-            // Extract and remove IBM product lines
-            if (IBM_PRODUCT_NAMES.some(p => trimmed.toLowerCase().includes(p.toLowerCase()))) {
-              const matched = IBM_PRODUCT_NAMES.find(p => trimmed.toLowerCase().includes(p.toLowerCase()));
-              if (matched && !extractedProducts.includes(matched)) extractedProducts.push(matched);
-              continue;
+            // Detect BANT labels FIRST — a BANT line must never be dropped, even if it names a product
+            const bantMatch = BANT_LABELS.find(b => trimmed.startsWith(`***${b}`) || trimmed.startsWith(`**${b}`) || trimmed.startsWith(`${b}:`));
+
+            // Extract + remove ONLY standalone product lines (a lone "watsonx.data" entry),
+            // never a BANT line that merely mentions a product mid-sentence.
+            if (!bantMatch) {
+              const bare = trimmed.replace(/^[-*\s]+/, "").toLowerCase();
+              const loneProduct = IBM_PRODUCT_NAMES.find(p => bare.startsWith(p.toLowerCase()));
+              if (loneProduct) {
+                if (!extractedProducts.includes(loneProduct)) extractedProducts.push(loneProduct);
+                continue;
+              }
             }
 
-            // Detect BANT labels
-            const bantMatch = BANT_LABELS.find(b => trimmed.startsWith(`***${b}`) || trimmed.startsWith(`**${b}`) || trimmed.startsWith(`${b}:`));
             if (bantMatch) {
               if (bantSeen.has(bantMatch)) { cutOff = true; break; }
               bantSeen.add(bantMatch);
@@ -1297,17 +1406,20 @@ export default function BriefingPage() {
   const dashCardBase: React.CSSProperties = { background: t.sectionCard, border: `1px solid ${t.sectionCardBorder}`, borderRadius: 12, padding: "16px 18px" };
   const dashCardAccent: React.CSSProperties = { ...dashCardBase, border: `1.5px solid ${t.accent}` };
   const dashLabel: React.CSSProperties = { fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", color: t.accent, marginBottom: 8 };
-  const dashTier = (txt: string) => (
-    <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.textDim, margin: "24px 0 11px 2px", display: "flex", alignItems: "center", gap: 10 }}>
-      <span>{txt}</span>
-      <span style={{ flex: 1, height: 1, background: t.sectionCardBorder }} />
+  const dashTier = (txt: string, sub?: string) => (
+    <div className="dash-tier" data-tier={txt} style={{ margin: "24px 0 11px 2px" }}>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: t.textDim, display: "flex", alignItems: "center", gap: 10 }}>
+        <span className="dash-tier-title">{txt}</span>
+        <span style={{ flex: 1, height: 1, background: t.sectionCardBorder }} />
+      </div>
+      {sub && <div className="dash-tier-sub" style={{ fontSize: 11, color: t.textDim, marginTop: 3, fontStyle: "italic" }}>{sub}</div>}
     </div>
   );
   const dashRefRow = (key: string, refTitle: string, body: React.ReactNode) => (
-    <div style={{ background: t.sectionCard, border: `1px solid ${t.sectionCardBorder}`, borderRadius: 10, marginBottom: 8, overflow: "hidden" }}>
+    <div className="dash-ref" style={{ background: t.sectionCard, border: `1px solid ${t.sectionCardBorder}`, borderRadius: 10, marginBottom: 8, overflow: "hidden" }}>
       <button onClick={() => toggleRef(key)} style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between", background: "transparent", border: "none", padding: "12px 16px", cursor: "pointer", fontFamily: "inherit" }}>
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: t.textSub }}>{refTitle}</span>
-        <span style={{ color: t.textDim, fontSize: 10, transform: openRefs[key] ? "rotate(180deg)" : "none", transition: "transform .15s" }}>▼</span>
+        <span className="dash-ref-title" style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.07em", textTransform: "uppercase", color: t.textSub }}>{refTitle}</span>
+        <span className="ref-chevron" style={{ color: t.textDim, fontSize: 10, transform: openRefs[key] ? "rotate(180deg)" : "none", transition: "transform .15s" }}>▼</span>
       </button>
       <div className="ref-body" style={{ display: openRefs[key] ? "block" : "none", padding: "0 16px 14px", fontSize: 13, color: t.textSub, lineHeight: 1.7 }}>{body}</div>
     </div>
@@ -1349,8 +1461,8 @@ export default function BriefingPage() {
           setProspectResult({
             companyName: pdata.companyName || effectiveCompany,
             websiteUrl: pdata.websiteUrl || prospectUrl.trim(),
-            step1: pdata.step1 || "",
-            step2: pdata.step2 || "",
+            step1: cleanProspectMarkdown(pdata.step1 || "", STEP1_KEYWORDS),
+            step2: cleanProspectMarkdown(pdata.step2 || "", STEP2_KEYWORDS),
             generatedAt: pdata.generatedAt || new Date().toISOString(),
           });
         }
@@ -1865,7 +1977,8 @@ export default function BriefingPage() {
 
             </div>
 
-            <div>
+            <div style={{display:"flex",alignItems:"center",gap:36,flexWrap:"wrap",marginBottom:4}}>
+              <div style={{flex:"1 1 360px",minWidth:280}}>
               <h1 style={{fontSize:64,fontWeight:200,letterSpacing:"-2.6px",color:t.text,lineHeight:1.04,margin:"16px 0 12px"}}>
                 Know your account<br/>before the call
               </h1>
@@ -1889,6 +2002,10 @@ export default function BriefingPage() {
               >
                 → How it works
               </a>
+              </div>
+              <div style={{flex:"0 0 auto",marginLeft:"auto"}}>
+                <WireframeGlobe rgb={theme==="dark" ? "120,225,190" : "5,150,105"} size={300}/>
+              </div>
             </div>
 
             <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:32}}>
@@ -2102,6 +2219,7 @@ export default function BriefingPage() {
 
             {/* PDF capture region — keeps UI and PDF identical */}
             <div ref={pdfRef} className="pdf-capture" style={{background:t.bodyBg,padding:"4px 0 8px"}}>
+            <div className="print-brand">IBM · Pre-Call Intelligence Briefing</div>
             {/* Briefing header */}
             <div style={{marginBottom:24,display:"flex",alignItems:"center",gap:14}}>
               {/* Contact photo on the LEFT - only show if there's a contact name */}
@@ -2140,32 +2258,32 @@ export default function BriefingPage() {
             </div>
 
             {/* ════════ TIER 1 · SNAPSHOT — above the fold ════════ */}
-            {dashTier("Snapshot")}
+            {dashTier("Snapshot", "The 30-second read before you dial")}
             <div style={{display:"grid",gridTemplateColumns:"1.3fr 1fr",gap:12,marginBottom:12,alignItems:"stretch"}}>
-              <div style={dashCardAccent}>
-                <div style={dashLabel}>Key Takeaways</div>
+              <div className="dash-card dash-primary" style={dashCardAccent}>
+                <div className="dash-label" style={dashLabel}>Key Takeaways</div>
                 {dashKeyTakeaways && dashKeyTakeaways.content
                   ? <div style={{fontSize:14,color:t.text,lineHeight:1.75}}><MarkdownBody body={dashKeyTakeaways.content} t={t} accent={t.accent}/></div>
                   : <div style={{fontSize:13,color:t.textDim}}>Generating…</div>}
               </div>
               {dashWedge
-                ? <div style={dashCardBase}>
-                    <div style={dashLabel}>Why IBM Wins</div>
+                ? <div className="dash-card" style={dashCardBase}>
+                    <div className="dash-label" style={dashLabel}>Why IBM Wins</div>
                     <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashWedge.body} t={t} accent={t.accent}/></div>
                   </div>
-                : <div style={{...dashCardBase,display:"flex",alignItems:"center",justifyContent:"center",color:t.textDim,fontSize:12}}>Why IBM wins — loading…</div>}
+                : <div className="dash-card" style={{...dashCardBase,display:"flex",alignItems:"center",justifyContent:"center",color:t.textDim,fontSize:12}}>Why IBM wins — loading…</div>}
             </div>
             {(dashPitch || dashCard) && (
               <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:12,alignItems:"stretch"}}>
                 {dashPitch && (
-                  <div style={{...dashCardAccent,background:t.badgeBg}}>
-                    <div style={dashLabel}>Elevator Pitch</div>
+                  <div className="dash-card dash-primary" style={{...dashCardAccent,background:t.badgeBg}}>
+                    <div className="dash-label" style={dashLabel}>Elevator Pitch</div>
                     <div style={{fontSize:14,color:t.text,lineHeight:1.65,fontStyle:"italic"}}><MarkdownBody body={dashPitch.body} t={t} accent={t.accent}/></div>
                   </div>
                 )}
                 {dashCard && (
-                  <div style={dashCardBase}>
-                    <div style={dashLabel}>Sales Card</div>
+                  <div className="dash-card" style={dashCardBase}>
+                    <div className="dash-label" style={dashLabel}>Sales Card</div>
                     <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashCard.body} t={t} accent={t.accent}/></div>
                   </div>
                 )}
@@ -2173,16 +2291,16 @@ export default function BriefingPage() {
             )}
 
             {/* ════════ TIER 2 · INSIGHTS ════════ */}
-            {(dashBackground || dashQual) && dashTier("Strategy")}
+            {(dashBackground || dashQual) && dashTier("Strategy", "Who they are → why now")}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,alignItems:"stretch"}}>
               {dashBackground && <SectionCard key={dashBackground.title} title={dashBackground.title} content={dashBackground.content} industry={displayBriefing?.ind} t={t} streaming={dashBackground.isStreaming}/>}
               {dashQual && <SectionCard key={dashQual.title} title={dashQual.title} content={dashQual.content} industry={displayBriefing?.ind} t={t} streaming={dashQual.isStreaming}/>}
             </div>
 
-            {(dashMapping || briefingReady || generating) && dashTier("Mapping")}
+            {(dashMapping || briefingReady || generating) && dashTier("Mapping", "Where IBM fits")}
             {dashMapping && (
-              <div style={{...dashCardBase,marginBottom:12}}>
-                <div style={dashLabel}>Solution Mapping</div>
+              <div className="dash-card" style={{...dashCardBase,marginBottom:12}}>
+                <div className="dash-label" style={dashLabel}>Solution Mapping</div>
                 <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashMapping.body} t={t} accent={t.accent}/></div>
               </div>
             )}
@@ -2190,16 +2308,16 @@ export default function BriefingPage() {
               <SectionCard key="Product Recommendations" title="Product Recommendations" content={briefingText || "use-catalogue-fallback"} industry={displayBriefing?.ind || ""} t={t} streaming={false}/>
             )}
 
-            {(dashUseCase || dashPlay) && dashTier("Execution")}
+            {(dashUseCase || dashPlay) && dashTier("Execution", "How to win the deal")}
             {dashUseCase && (
-              <div style={{...dashCardBase,marginBottom:12}}>
-                <div style={dashLabel}>Best-Fit Use Cases</div>
+              <div className="dash-card" style={{...dashCardBase,marginBottom:12}}>
+                <div className="dash-label" style={dashLabel}>Best-Fit Use Cases</div>
                 <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashUseCase.body} t={t} accent={t.accent}/></div>
               </div>
             )}
             {dashPlay && (
-              <div style={dashCardBase}>
-                <div style={dashLabel}>6-Step Sales Play</div>
+              <div className="dash-card" style={dashCardBase}>
+                <div className="dash-label" style={dashLabel}>6-Step Sales Play</div>
                 <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashPlay.body} t={t} accent={t.accent}/></div>
               </div>
             )}
@@ -2212,7 +2330,7 @@ export default function BriefingPage() {
             )}
 
             {/* ════════ TIER 3 · REFERENCE — collapsible ════════ */}
-            {((hasContact && dashWhoIs) || dashDiscovery || dashContract || dashContacts) && dashTier("Reference")}
+            {((hasContact && dashWhoIs) || dashDiscovery || dashContract || dashContacts) && dashTier("Reference", "Detail on demand")}
             {hasContact && dashWhoIs && dashRefRow("whois", dashWhoIs.title, <MarkdownBody body={dashWhoIs.content} t={t} accent={t.accent}/>)}
             {dashDiscovery && dashRefRow("discovery", dashDiscovery.title, <MarkdownBody body={dashDiscovery.content} t={t} accent={t.accent}/>)}
             {dashContract && dashRefRow("contract", dashContract.title, <MarkdownBody body={dashContract.body} t={t} accent={t.accent}/>)}

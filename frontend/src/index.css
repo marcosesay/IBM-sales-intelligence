@@ -62,34 +62,81 @@
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
 
+/* print letterhead is hidden on screen, shown only when printing */
+.print-brand { display: none; }
+
 /* ── Print / Export to PDF ──────────────────────────────────────────────
-   Export uses window.print(). Isolate the brief capture region and reset it
-   to a clean white, client-ready document. Handles modern CSS (oklch) that
-   html2canvas cannot. */
+   Export uses window.print(). Same DOM as the UI (so PDF = UI structure),
+   restyled into a designed, client-ready consulting deliverable: blue tier
+   dividers, emphasized snapshot cards, shaded tables, page-break control. */
 @media print {
-  @page { margin: 14mm; }
-  body { background: #fff !important; }
+  @page { margin: 15mm 13mm; }
+  html, body { background: #fff !important; }
   body * { visibility: hidden !important; }
   .pdf-capture, .pdf-capture * { visibility: visible !important; }
   .pdf-capture {
-    position: absolute !important;
-    left: 0; top: 0; width: 100% !important;
-    background: #fff !important;
-    color: #111 !important;
-    padding: 0 !important;
+    position: absolute !important; left: 0; top: 0; width: 100% !important;
+    background: #fff !important; color: #1f1f1f !important; padding: 0 !important;
+    font-size: 10.5pt; line-height: 1.5;
   }
+
+  /* Neutralize the dark glass theme; hierarchy is rebuilt by higher-specificity rules below */
   .pdf-capture * {
-    color: #111 !important;
-    background: transparent !important;
-    background-color: transparent !important;
-    box-shadow: none !important;
-    -webkit-backdrop-filter: none !important;
-    backdrop-filter: none !important;
-    border-color: #d9d9d9 !important;
+    background: transparent !important; background-color: transparent !important;
+    box-shadow: none !important; backdrop-filter: none !important; -webkit-backdrop-filter: none !important;
+    border-color: #e2e2e2 !important; color: #262626 !important; text-shadow: none !important;
   }
   .pdf-capture strong { font-weight: 700 !important; color: #000 !important; }
-  .pdf-capture table { border-collapse: collapse !important; width: 100% !important; }
-  .pdf-capture th, .pdf-capture td { border: 1px solid #ccc !important; }
+  .pdf-capture h1 { color: #000 !important; font-size: 19pt !important; letter-spacing: -0.3px !important; }
+
+  /* Consulting letterhead */
+  .pdf-capture .print-brand {
+    display: block !important; visibility: visible !important;
+    font-size: 8.5pt !important; font-weight: 700 !important; letter-spacing: 0.14em !important;
+    text-transform: uppercase !important; color: #0f62fe !important;
+    border-bottom: 2px solid #0f62fe !important; padding-bottom: 6px !important; margin-bottom: 14px !important;
+  }
+
+  /* Tier headers — blue, dividers, strong separation, never orphaned at page bottom */
+  .pdf-capture .dash-tier { margin: 16px 0 9px !important; padding-bottom: 3px !important; border-bottom: 1.5px solid #0f62fe !important; break-after: avoid !important; page-break-after: avoid !important; }
+  .pdf-capture .dash-tier-title { color: #0f62fe !important; font-weight: 700 !important; font-size: 9pt !important; letter-spacing: 0.14em !important; }
+  .pdf-capture .dash-tier-sub { color: #6b6b6b !important; font-size: 8.5pt !important; }
+
+  /* Deterministic pagination: page 1 = Snapshot, page 2 = Strategy + Mapping,
+     page 3 = Execution + Reference. Breaks before Strategy and Execution only. */
+  .pdf-capture .dash-tier[data-tier="Strategy"],
+  .pdf-capture .dash-tier[data-tier="Execution"] {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  /* Secondary cards — clean white block, hairline, kept whole across pages */
+  .pdf-capture .dash-card {
+    background: #fff !important; border: 1px solid #d7d7d7 !important; border-radius: 6px !important;
+    padding: 11px 14px !important; margin-bottom: 10px !important;
+    break-inside: avoid !important; page-break-inside: avoid !important;
+  }
+  /* Primary (Snapshot) cards — emphasized: tint + blue rule so the top hits hard */
+  .pdf-capture .dash-primary {
+    background: #f4f7ff !important; border: 1px solid #b9ccf0 !important;
+    border-left: 3px solid #0f62fe !important;
+  }
+  /* Section labels inside cards */
+  .pdf-capture .dash-label { color: #0f62fe !important; font-weight: 700 !important; font-size: 8pt !important; letter-spacing: 0.08em !important; }
+
+  /* Tables — shaded header, fixed layout, clean wrapping, rows kept whole */
+  .pdf-capture table { border-collapse: collapse !important; width: 100% !important; table-layout: fixed !important; font-size: 9pt !important; margin-top: 4px !important; }
+  .pdf-capture thead, .pdf-capture tr { break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pdf-capture th { background: #eef2f9 !important; border: 1px solid #c2cfe2 !important; padding: 6px 9px !important; text-align: left !important; font-weight: 700 !important; color: #0a2a52 !important; }
+  .pdf-capture td { border: 1px solid #d6d6d6 !important; padding: 5px 9px !important; vertical-align: top !important; overflow-wrap: break-word !important; }
+
+  /* Reference rows — expanded into labeled blocks; collapse chevron hidden */
+  .pdf-capture .dash-ref { border: 1px solid #d7d7d7 !important; border-radius: 6px !important; margin-bottom: 8px !important; break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pdf-capture .dash-ref-title { color: #0f62fe !important; font-weight: 700 !important; }
+  .pdf-capture .ref-chevron { display: none !important; visibility: hidden !important; }
   .pdf-capture .ref-body { display: block !important; }
-  .pdf-capture > div { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Bullet rhythm */
+  .pdf-capture ul, .pdf-capture ol { margin: 2px 0 !important; padding-left: 18px !important; }
+  .pdf-capture li { margin: 2px 0 !important; }
 }

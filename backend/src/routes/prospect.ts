@@ -35,7 +35,7 @@ FORMATTING — the structure must be identical in the web UI and the exported PD
 Produce these sections in this order:
 
 ## Solution Mapping
-A Markdown table with columns: Line of Business | IBM Product | Use Case. 4–6 rows. This table is the ONLY place to map products to lines of business — do not restate it as prose.
+A Markdown table with columns: Line of Business | IBM Product | Use Case. Exactly 4 rows. Keep every cell under 6 words — no sentences, no wrapping. This table is the ONLY place to map products to lines of business — do not restate it as prose.
 
 ## Contract Vehicle Alignment & Differentiators
 How IBM can be procured for this account and 2–3 differentiators that matter here.
@@ -43,7 +43,9 @@ How IBM can be procured for this account and 2–3 differentiators that matter h
 ## Contacts
 Names, titles, emails, or phone numbers ONLY if present in the website content above. Otherwise: "Not found on site."
 
-Do NOT include a company overview or a general product-recommendations section — those appear earlier in the brief. Avoid repeating anything already covered by Company Background or Product Recommendations.`;
+Do NOT include a company overview or a general product-recommendations section — those appear earlier in the brief. Avoid repeating anything already covered by Company Background or Product Recommendations.
+
+STOP RULES (critical): Produce each section above exactly once, in the given order. After the final section, STOP immediately. Do NOT repeat any section. Do NOT invent extra sections (no "Key Messages", "Next Steps", or duplicate tables). Do NOT add notes, commentary, questions, apologies, or any text about revising or following instructions. Output only the section content.`;
 }
 
 function salesPlayPrompt(company: string, url: string, scraped: string, ctx: string): string {
@@ -73,7 +75,9 @@ How IBM wins vs. each, 1–2 sentences each: Microsoft Azure (OpenAI), AWS (Bedr
 4–5 lines: target buyer, primary pain, lead product, proof point.
 
 ## Elevator Pitch
-3–4 sentences. Reference the specific IBM products recommended for this account and the concrete business outcome they drive. Make it sound natural spoken aloud, not a slogan.`;
+3–4 sentences. Reference the specific IBM products recommended for this account and the concrete business outcome they drive. Make it sound natural spoken aloud, not a slogan.
+
+STOP RULES (critical): Produce each section above exactly once, in the given order. After the final section, STOP immediately. Do NOT repeat any section. Do NOT invent extra sections (no "Key Messages", "Next Steps", or duplicate tables). Do NOT add notes, commentary, questions, apologies, or any text about revising or following instructions. Output only the section content.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -104,7 +108,7 @@ router.post("/generate", async (req, res) => {
     const [step1, step2] = await Promise.all([
       generateText(researchPrompt(companyName, site, scraped, ctx), {
         model: MODEL,
-        maxTokens: 1100,
+        maxTokens: 950,
         temperature: 0.3,
       }),
       generateText(salesPlayPrompt(companyName, site, scraped, ctx), {
