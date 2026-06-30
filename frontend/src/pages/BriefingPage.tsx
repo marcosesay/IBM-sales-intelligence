@@ -1094,11 +1094,11 @@ function SalesPlayFlow({ body, t }: { body: string; t: typeof DARK }) {
   // Fallback: if the model didn't produce parseable steps, render the original markdown.
   if (steps.length < 2) return <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={body} t={t} accent={t.accent}/></div>;
   return (
-    <div style={{display:"flex",alignItems:"stretch",overflowX:"auto",paddingBottom:6}}>
+    <div className="sales-play-flow" style={{display:"flex",alignItems:"stretch",overflowX:"auto",paddingBottom:6}}>
       {steps.map((s, i) => {
         const stage = PLAY_STAGES[i] || PLAY_STAGES[PLAY_STAGES.length - 1];
         return (
-          <div key={i} style={{display:"flex",alignItems:"center",flexShrink:0}}>
+          <div key={i} className="sales-play-step" style={{display:"flex",alignItems:"center",flexShrink:0}}>
             <div style={{
               width:212,flexShrink:0,background:t.input,border:`1px solid ${t.inputBorder}`,
               borderTop:`2px solid ${t.accent}`,borderRadius:10,padding:"12px 13px",
@@ -1117,7 +1117,7 @@ function SalesPlayFlow({ body, t }: { body: string; t: typeof DARK }) {
               {s.outcome && <div style={{fontSize:11,color:t.textSub,lineHeight:1.4,marginTop:"auto"}}><span style={{fontWeight:700,color:t.accent}}>→ </span>{s.outcome}</div>}
             </div>
             {i < steps.length - 1 && (
-              <div style={{flexShrink:0,padding:"0 6px",color:t.accent,opacity:0.55}}>
+              <div className="sales-play-arrow" style={{flexShrink:0,padding:"0 6px",color:t.accent,opacity:0.55}}>
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
               </div>
             )}
