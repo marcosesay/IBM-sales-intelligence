@@ -35,13 +35,10 @@ FORMATTING — the structure must be identical in the web UI and the exported PD
 Produce these sections in this order:
 
 ## Solution Mapping
-A Markdown table with columns: Line of Business | IBM Product | Priority | Business Impact | Where to Start. Exactly 4 rows. Keep every cell under 6 words. Priority is High / Medium / Low. Business Impact is a one-phrase outcome. In Where to Start, mark ONLY the 1–2 highest-priority rows "Start here" and leave the others blank. This table is the ONLY place to map products to lines of business — do not restate it as prose.
-
-## Contract Vehicle Alignment & Differentiators
-How IBM can be procured for this account and 2–3 differentiators that matter here.
+A decision tool. Markdown table with columns: Line of Business | IBM Product | Use Case | Business Impact. Exactly 4 rows, ORDERED BY PRIORITY — the top row is the single best opportunity, descending from there. Keep every cell under 6 words. Use Case must be specific to this account (never generic); Business Impact is a one-phrase outcome. This table is the ONLY place to map products to lines of business — do not restate it as prose.
 
 ## Contacts
-Names, titles, emails, or phone numbers ONLY if present in the website content above. Otherwise: "Not found on site."
+List names, titles, emails, or phone numbers ONLY if they appear in the website content above. If none are present, OMIT this section entirely — do not output the heading, an empty table, or any placeholder text.
 
 Do NOT include a company overview or a general product-recommendations section — those appear earlier in the brief. Avoid repeating anything already covered by Company Background or Product Recommendations.
 
@@ -66,10 +63,10 @@ Produce these sections in this order:
 2–3 use cases tied to THIS company's actual business. For each: the IBM product that delivers it and the business outcome.
 
 ## 6-Step Sales Play
-Six numbered steps from entry through expansion (entry wedge, discovery, technical proof/demo, initial land, value realization, expansion). Write it as a playbook — under each numbered step, three sub-bullets: **Do:** the action, **Say:** one line to say to the buyer, **Outcome:** the expected result. Every step specific to this account, never generic.
+Six numbered steps from entry through expansion (entry wedge, discovery, technical proof/demo, initial land, value realization, expansion). Under each numbered step, four short labeled lines: **Title:** a 2-4 word step name, **Do:** the action, **Say:** one line to say to the buyer, **Outcome:** the expected result. Keep every line short — this renders as a horizontal flow. Every step specific to this account, never generic.
 
 ## Competitive Wedge
-How IBM wins vs. each, 1–2 sentences each: Microsoft Azure (OpenAI), AWS (Bedrock/SageMaker), and open-source/self-hosted stacks. Emphasize governance, data gravity, hybrid/on-prem, total cost.
+Exactly 3 bullets — one each for Microsoft Azure (OpenAI), AWS (Bedrock/SageMaker), and open-source/self-hosted. Each a sharp one-line competitive soundbite on governance, data gravity, hybrid/on-prem, or total cost. No paragraphs.
 
 ## Sales Card
 4–5 lines: target buyer, primary pain, lead product, proof point.

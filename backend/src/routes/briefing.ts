@@ -418,6 +418,7 @@ IMPORTANT INSTRUCTIONS:
 - SINGLE PASS — deliver one final briefing in a single confident pass. Never revise yourself mid-output, never produce multiple versions or variants of the same content, and never explain your reasoning. No phrases like "the correct response should be", "here is the revised", or "let me reconsider".
 - NO REPETITION — never repeat a sentence, bullet, or idea anywhere in the briefing. If two lines would say the same thing, keep one. When content feels repetitive, shorten it rather than expand.
 - CONFIDENT POV — write like a senior IBM seller with a clear point of view. Banish hedging ("could", "may", "might", "perhaps"). State it directly: "The biggest opportunity is…", never "The company may benefit from…".
+- PRUNE — every section must earn its place. If a section would read the same for any account (generic), make it specific to this one or cut it entirely. Fewer, sharper sections beat completeness.
 
 Write the following pre-call sales briefing. Use exactly these six ## section headers in this order, and write only the content for each — no commentary, no notes, no preamble:
 
