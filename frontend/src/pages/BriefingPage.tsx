@@ -944,7 +944,7 @@ function MarkdownBody({ body, t, accent }: { body: string; t: typeof DARK; accen
    the model emits outside these is dropped — no hallucinated "Key Messages",
    "Next Steps", or stray tables. */
 const STEP1_KEYWORDS = ["solution mapping", "contract vehicle", "contacts"];
-const STEP2_KEYWORDS = ["best-fit use case", "best fit use case", "sales play", "competitive wedge", "sales card", "elevator pitch"];
+const STEP2_KEYWORDS = ["best-fit use case", "best fit use case", "sales play", "competitive wedge", "why act now", "sales card", "elevator pitch", "what to do next"];
 
 /* Sanitize a prospect markdown blob: keep only whitelisted sections, each once
    (first wins), strip any leaked model commentary. Returns clean markdown. */
@@ -960,7 +960,7 @@ function cleanProspectMarkdown(raw: string, keywords: string[]): string {
     if (!k || seen.has(k)) continue;
     seen.add(k);
     const cleaned = t.replace(
-      /(\n|^)\s*(please let me know|i revised nothing|i revised|i did not revise|in conclusion|to reiterate|however, since i am being|given the constraints|therefore, without explicit|thus, in the absence|note:|here is the (revised|rewritten)|the above response|the response (generated|provided))[\s\S]*$/i,
+      /(\n|^)\s*(please let me know|i revised nothing|i revised|i did not revise|in conclusion|to reiterate|however, since i am being|however, since there|however, i (will|need|had)|given the constraints|given the lack of|therefore, without explicit|thus, in the absence|note that|note:|in real[- ]world|for actual sales|here is the (revised|rewritten)|the above response|the response (generated|provided))[\s\S]*$/i,
       ""
     ).trim();
     // Drop any individual leaked instruction lines (e.g. "STOP NOW", "Do NOT repeat…").
@@ -1784,8 +1784,8 @@ export default function BriefingPage() {
       setProspectResult({
         companyName: data.companyName || company.trim(),
         websiteUrl: data.websiteUrl || prospectUrl.trim(),
-        step1: data.step1 || "",
-        step2: data.step2 || "",
+        step1: cleanProspectMarkdown(data.step1 || "", STEP1_KEYWORDS),
+        step2: cleanProspectMarkdown(data.step2 || "", STEP2_KEYWORDS),
         generatedAt: data.generatedAt || new Date().toISOString(),
       });
     } catch (err: any) {
