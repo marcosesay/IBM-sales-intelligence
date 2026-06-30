@@ -46,7 +46,7 @@ const DARK = {
   btnSm: "rgba(255,255,255,0.06)", btnSmBorder: "rgba(255,255,255,0.12)", btnSmText: "rgba(255,255,255,0.65)",
   pill: "rgba(255,255,255,0.06)", pillBorder: "rgba(255,255,255,0.11)",
   chipBg: "rgba(255,255,255,0.05)", chipBorder: "rgba(255,255,255,0.09)",
-  accent: "#6ee7b7", accentGlow: "rgba(110,231,183,0.7)",
+  accent: "#4589ff", accentGlow: "rgba(69,137,255,0.7)",
   mtActive: "rgba(210,210,225,0.16)", mtActiveBorder: "rgba(210,210,225,0.32)", mtActiveText: "rgba(225,225,240,0.9)",
   mtInactive: "rgba(255,255,255,0.05)", mtInactiveBorder: "rgba(255,255,255,0.10)", mtInactiveText: "rgba(255,255,255,0.42)",
   sectionCard: "rgba(255,255,255,0.05)", sectionCardBorder: "rgba(255,255,255,0.09)",
@@ -54,7 +54,7 @@ const DARK = {
   sectionText: "rgba(255,255,255,0.60)", sectionBullet: "rgba(255,255,255,0.65)",
   overlay: "rgba(26,26,28,0.96)",
   toggleBg: "rgba(255,255,255,0.08)", toggleBorder: "rgba(255,255,255,0.14)", toggleIcon: "rgba(255,255,255,0.6)",
-  progressBar: "rgba(110,231,183,0.6)",
+  progressBar: "rgba(69,137,255,0.6)",
   badgeBg: "rgba(180,200,220,0.10)", badgeBorder: "rgba(180,200,220,0.16)", badgeText: "rgba(180,200,220,0.65)",
   nameLine: "rgba(255,255,255,0.85)", dateText: "rgba(255,255,255,0.20)",
   topBar: "rgba(255,255,255,0.07)",
@@ -73,7 +73,7 @@ const LIGHT = {
   btnSm: "rgba(0,0,0,0.05)", btnSmBorder: "rgba(0,0,0,0.10)", btnSmText: "rgba(0,0,0,0.60)",
   pill: "rgba(0,0,0,0.05)", pillBorder: "rgba(0,0,0,0.09)",
   chipBg: "rgba(0,0,0,0.04)", chipBorder: "rgba(0,0,0,0.08)",
-  accent: "#059669", accentGlow: "rgba(5,150,105,0.4)",
+  accent: "#0f62fe", accentGlow: "rgba(15,98,254,0.4)",
   mtActive: "rgba(10,80,200,0.10)", mtActiveBorder: "rgba(10,80,200,0.30)", mtActiveText: "rgba(10,80,200,0.85)",
   mtInactive: "rgba(0,0,0,0.04)", mtInactiveBorder: "rgba(0,0,0,0.10)", mtInactiveText: "rgba(0,0,0,0.55)",
   sectionCard: "rgba(255,255,255,0.95)", sectionCardBorder: "rgba(0,0,0,0.09)",
@@ -81,7 +81,7 @@ const LIGHT = {
   sectionText: "rgba(0,0,0,0.60)", sectionBullet: "rgba(0,0,0,0.65)",
   overlay: "rgba(240,240,245,0.96)",
   toggleBg: "rgba(0,0,0,0.06)", toggleBorder: "rgba(0,0,0,0.12)", toggleIcon: "rgba(0,0,0,0.6)",
-  progressBar: "rgba(5,150,105,0.7)",
+  progressBar: "rgba(15,98,254,0.7)",
   badgeBg: "rgba(10,80,200,0.08)", badgeBorder: "rgba(10,80,200,0.18)", badgeText: "rgba(10,80,200,0.80)",
   nameLine: "rgba(0,0,0,0.85)", dateText: "rgba(0,0,0,0.30)",
   topBar: "rgba(0,0,0,0.05)",
@@ -168,7 +168,7 @@ function ProspectLoadingScreen({ t, companyName }: { t: any; companyName: string
         }}/>
         <div style={{
           position:"absolute",inset:8,borderRadius:"50%",
-          background:"rgba(110,231,183,0.08)",
+          background:"rgba(69,137,255,0.08)",
           display:"flex",alignItems:"center",justifyContent:"center",
         }}>
           <span style={{fontSize:16}}>🔍</span>
@@ -2004,7 +2004,7 @@ export default function BriefingPage() {
               </a>
               </div>
               <div style={{flex:"0 0 auto",marginLeft:"auto"}}>
-                <WireframeGlobe rgb={theme==="dark" ? "120,225,190" : "5,150,105"} size={300}/>
+                <WireframeGlobe rgb={theme==="dark" ? "120,169,255" : "15,98,254"} size={300}/>
               </div>
             </div>
 
