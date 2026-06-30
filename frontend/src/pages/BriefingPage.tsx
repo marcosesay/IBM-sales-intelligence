@@ -1810,11 +1810,11 @@ export default function BriefingPage() {
   };
 
   return (
-    <div style={{display:"flex",height:"100vh",overflow:"hidden",fontFamily:"var(--app-font-sans)",background:t.bodyBg,color:t.text}}>
+    <div className="app-shell" style={{display:"flex",height:"100vh",overflow:"hidden",fontFamily:"var(--app-font-sans)",background:t.bodyBg,color:t.text}}>
 
 
       {/* ─── Main ─── */}
-      <main style={{flex:1,overflowY:"auto",position:"relative"}}>
+      <main className="app-main" style={{flex:1,overflowY:"auto",position:"relative"}}>
         {prospectResult && !showResult ? (
           /* ─── Prospect Result ─── */
           <div style={{padding:"24px 40px 48px",overflowY:"auto",height:"100%"}}>
@@ -2195,7 +2195,7 @@ export default function BriefingPage() {
           <div style={{padding:"0 32px 64px",maxWidth:1400,margin:"0 auto"}}>
             {/* Progress bar while generating */}
             {generating && (
-              <div style={{position:"sticky",top:0,zIndex:10,background:t.bodyBg,paddingTop:8,paddingBottom:4,marginBottom:4}}>
+              <div className="no-print" style={{position:"sticky",top:0,zIndex:10,background:t.bodyBg,paddingTop:8,paddingBottom:4,marginBottom:4}}>
                 <div style={{height:2,borderRadius:1,background:t.topBar,overflow:"hidden"}}>
                   <div className="animate-progress-bar" style={{height:"100%",background:t.progressBar,borderRadius:1,animation:"progress-slide 1.4s ease-in-out infinite"}}/>
                 </div>
@@ -2204,7 +2204,7 @@ export default function BriefingPage() {
             )}
 
             {/* Top bar */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 0",borderBottom:`1px solid ${t.divider}`,marginBottom:24}}>
+            <div className="no-print" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 0",borderBottom:`1px solid ${t.divider}`,marginBottom:24}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
                 <span style={{fontSize:12,color:t.textMuted}}>{displayBriefing?.co}</span>
                 <span style={{color:t.textDim}}>·</span>
@@ -2223,7 +2223,7 @@ export default function BriefingPage() {
             </div>
 
             {/* Action buttons */}
-            <div style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
+            <div className="no-print" style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
               {[
                 {label:"← New Briefing",onClick:newBriefing,title:"Start a new briefing"},
                 {label:alreadySaved?"✓ Saved":"Save",onClick:saveBriefing,disabled:alreadySaved||generating,title:alreadySaved?"Already saved":"Save this briefing"},
