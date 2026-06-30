@@ -1177,6 +1177,25 @@ export default function BriefingPage() {
   const [prospectResult, setProspectResult] = useState<{companyName:string;websiteUrl:string;step1:string;step2:string;generatedAt:string}|null>(null);
   const [prospectError, setProspectError] = useState("");
   const [openRefs, setOpenRefs] = useState<Record<string, boolean>>({});
+  const [showMore, setShowMore] = useState(false);
+
+  // Smart Account field: detect a LinkedIn URL or bare domain and mirror it into the
+  // matching field — but only when that field is empty, so manual entry always wins.
+  // `company` always tracks the raw value the seller typed.
+  const handleAccountInput = (raw: string) => {
+    setCompany(raw);
+    const v = raw.trim();
+    if (/linkedin\.com\/in\//i.test(v)) {
+      if (!contact) setContact(v);
+      const slug = v.split(/in\//i)[1]?.replace(/\/.*$/, "") || "";
+      const name = slug.split("-").filter(p => p && !/^\d+$/.test(p))
+        .map(p => p.charAt(0).toUpperCase() + p.slice(1)).join(" ");
+      if (name && !contactName2) setContactName2(name);
+    } else if (/^[a-z0-9-]+\.[a-z]{2,}(\.[a-z]{2,})?$/i.test(v.replace(/^https?:\/\//, "").replace(/\/$/, ""))) {
+      if (!prospectUrl) setProspectUrl(v.startsWith("http") ? v : `https://${v}`);
+    }
+  };
+  const briefReady = company.trim().length >= 2;
   
   // Debounce contact input
   const debouncedContact = useDebounce(contact, 600);
@@ -1868,7 +1887,7 @@ export default function BriefingPage() {
             {/* Pinned footer */}
             <div style={{flexShrink:0,padding:"12px 18px",borderTop:`1px solid ${t.divider}`}}>
               <p style={{fontSize:11,color:t.textDim,lineHeight:1.6,margin:"0 0 6px"}}>
-                <span style={{fontWeight:500}}>Powered by</span> IBM Bob & watson<span style={{color:"#0f62fe"}}>x</span><br/>
+                <span style={{fontWeight:500}}>Powered by</span> watson<span style={{color:"#0f62fe"}}>x</span><br/>
                 <span style={{opacity:0.7}}>Built by Marco Sesay</span>
               </p>
               <img src="/ibm-logo.png" alt="IBM" style={{width:"60px",height:"auto",opacity:theme==="dark"?0.6:0.4,filter:theme==="dark"?"brightness(0) invert(1)":"brightness(0)"}}/>
@@ -1945,7 +1964,7 @@ export default function BriefingPage() {
               }}>
                 <div className="animate-pulse-dot" style={{width:7,height:7,borderRadius:"50%",background:t.accent,flexShrink:0,boxShadow:`0 0 8px ${t.accentGlow}`}} />
                 <span style={{fontSize:13,color:t.textSub,fontWeight:400}}>
-                  {greeting}, {userName && userName !== "Guest" ? <span style={{fontWeight:500}}>{userName.split(' ')[0]}</span> : <span style={{fontWeight:500}}>IBMer</span>} — ready when you are
+                  {greeting}, {userName && userName !== "Guest" ? <span style={{fontWeight:500}}>{userName.split(' ')[0]}</span> : <span style={{fontWeight:500}}>IBMer</span>} — who are we prepping for?
                 </span>
               </div>
               <button
@@ -2008,31 +2027,140 @@ export default function BriefingPage() {
               </div>
             </div>
 
-            <div style={{display:"flex",gap:7,flexWrap:"wrap",marginBottom:32}}>
-              {[{dot:true,label:"watsonx-powered"},{label:"Live account intel"},{label:"Discovery Questions"},{label:"BANT qualification"},{label:"PDF in one click"}].map(pill=>(
-                <div key={pill.label} style={{display:"flex",alignItems:"center",gap:5,padding:"5px 13px",borderRadius:100,background:t.chipBg,border:`1px solid ${t.chipBorder}`}}>
-                  {pill.dot && <div style={{width:5,height:5,borderRadius:"50%",background:t.accent,boxShadow:`0 0 5px ${t.accentGlow}`}}/>}
-                  <span style={{fontSize:11,color:t.textMuted,fontWeight:500}}>{pill.label}</span>
+            {/* ─── Guided Account-first input (canvas). Writes into the SAME state the sidebar uses. ─── */}
+            <div style={{maxWidth:560,marginBottom:36}}>
+              {/* 3-step cue rail (visual only — not gated) */}
+              <div style={{display:"flex",alignItems:"center",marginBottom:18}}>
+                {[
+                  {n:"1",label:"Account",done:company.trim().length>0},
+                  {n:"2",label:"Context",done:!!(prospectUrl||contact||contactName2||context)},
+                  {n:"3",label:"Generate",done:briefReady},
+                ].map((s,i)=>(
+                  <div key={s.n} style={{display:"flex",alignItems:"center",flex:i<2?1:"0 0 auto"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:8}}>
+                      <span style={{width:22,height:22,borderRadius:"50%",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",
+                        background:s.done?"#0f62fe":"transparent",color:s.done?"#fff":t.textDim,border:s.done?"none":`1px solid ${t.inputBorder}`}}>{s.n}</span>
+                      <span style={{fontSize:11.5,fontWeight:s.done?600:500,color:s.done?t.textSub:t.textDim}}>{s.label}</span>
+                    </div>
+                    {i<2 && <div style={{flex:1,height:1,background:t.divider,margin:"0 12px"}}/>}
+                  </div>
+                ))}
+              </div>
+
+              {/* Smart account field */}
+              <label style={{display:"block",fontSize:13,fontWeight:500,color:t.textSub,marginBottom:8}}>Which account are you prepping for?</label>
+              <input
+                value={company}
+                onChange={e=>handleAccountInput((e.target as HTMLInputElement).value)}
+                onKeyDown={e=>{ if(e.key==="Enter" && briefReady && !generating) generate(); }}
+                placeholder="Company name, website, or LinkedIn URL"
+                autoComplete="off"
+                style={{width:"100%",background:t.input,border:`1px solid ${company?"#0f62fe":t.inputBorder}`,
+                  borderRadius:11,fontSize:15,color:t.text,fontFamily:"var(--app-font-sans)",padding:"14px 16px",outline:"none",
+                  boxShadow:company?"0 0 0 3px rgba(15,98,254,0.16)":"inset 0 1px 0 rgba(255,255,255,0.06)",transition:"all 0.2s"}}
+              />
+
+              {/* Inline confidence feedback (IBM green = success) */}
+              {briefReady && (
+                <div style={{display:"flex",alignItems:"center",gap:8,marginTop:11,padding:"9px 12px",borderRadius:8,background:"rgba(36,161,72,0.12)"}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#42be65" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  <span style={{fontSize:12.5,color:"#42be65",fontWeight:500}}>That's enough — I can build a strong brief.</span>
                 </div>
-              ))}
+              )}
+
+              {/* Try a sample account */}
+              {!company && (
+                <button onClick={()=>{ setCompany("Celonis"); setMeetingType("Discovery"); }}
+                  style={{marginTop:11,background:"none",border:"none",color:t.accent,fontSize:12.5,fontWeight:500,cursor:"pointer",padding:0,fontFamily:"var(--app-font-sans)"}}>
+                  ↳ Try a sample account
+                </button>
+              )}
+
+              {/* Disclosure: website / LinkedIn / contact — collapsed by default */}
+              <div style={{marginTop:16}}>
+                <button onClick={()=>setShowMore(v=>!v)}
+                  style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"var(--app-font-sans)"}}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    style={{transform:showMore?"rotate(180deg)":"none",transition:"transform 0.2s"}}><path d="M6 9l6 6 6-6"/></svg>
+                  <span style={{fontSize:12.5,fontWeight:600,color:t.accent}}>Add website, LinkedIn &amp; contact details</span>
+                </button>
+                {!showMore && (
+                  <p style={{fontSize:11.5,color:t.textMuted,margin:"7px 0 0",lineHeight:1.5}}>
+                    Just the name works — add a website and LinkedIn below for a sharper, more personal briefing.
+                  </p>
+                )}
+                {showMore && (
+                  <div style={{marginTop:14}}>
+                    <GlassInput t={t} label="Website" value={prospectUrl} onChange={e=>setProspectUrl((e.target as HTMLInputElement).value)} placeholder="https://celonis.com" autoComplete="off"/>
+                    <GlassInput t={t} label="LinkedIn URL" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username" autoComplete="off"/>
+                    <GlassInput t={t} label="Contact name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last" autoComplete="off"/>
+                    <GlassInput t={t} label="Contact title" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics" autoComplete="off"/>
+                  </div>
+                )}
+              </div>
+
+              {/* Call type — smart default */}
+              <div style={{marginTop:16}}>
+                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:7,flexWrap:"wrap"}}>
+                  <span style={{fontSize:11,fontWeight:600,letterSpacing:"0.7px",textTransform:"uppercase",color:t.textDim}}>Call type</span>
+                  {(["Discovery","Renewal","Competitive"] as const).map(mt=>(
+                    <button key={mt} onClick={()=>setMeetingType(mt)}
+                      style={{fontSize:12.5,padding:"5px 13px",borderRadius:8,cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                        background:meetingType===mt?"rgba(15,98,254,0.18)":t.btnSm,
+                        border:`1px solid ${meetingType===mt?"rgba(15,98,254,0.6)":t.btnSmBorder}`,
+                        color:meetingType===mt?"#78a9ff":t.btnSmText,fontWeight:meetingType===mt?600:500}}>{mt}</button>
+                  ))}
+                </div>
+                <p style={{fontSize:11.5,color:t.textMuted,margin:0,fontStyle:"italic"}}>
+                  Defaulting to Discovery — I'll tailor questions to uncover pain. Change anytime.
+                </p>
+              </div>
+
+              {/* Dynamic CTA */}
+              <button
+                onClick={generate}
+                disabled={!briefReady||generating}
+                style={{width:"100%",marginTop:18,
+                  background:briefReady?"#0f62fe":t.btnSm,
+                  border:briefReady?"none":`1px solid ${t.btnSmBorder}`,
+                  color:briefReady?"#fff":t.textDim,fontSize:14.5,fontWeight:600,
+                  borderRadius:11,padding:"14px",cursor:briefReady&&!generating?"pointer":"default",
+                  fontFamily:"var(--app-font-sans)",opacity:generating?0.7:1,transition:"all 0.2s"}}>
+                {generating
+                  ? <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><span className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:"currentColor"}}/>Generating…</span>
+                  : (company.trim() ? `Brief me on ${company.trim()}  →` : "Brief me on this account  →")}
+              </button>
+
+              {/* Trust strip */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,marginTop:12,fontSize:11,color:t.textMuted,flexWrap:"wrap"}}>
+                <span style={{display:"flex",alignItems:"center",gap:5}}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>~30 Seconds</span>
+                <span>·</span><span>Grounded in Live Web Research</span><span>·</span><span>Built for IBM Sellers</span>
+              </div>
+            </div>
+
+            {/* Section divider */}
+            <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:16}}>
+              <span style={{fontSize:10,letterSpacing:"0.1em",textTransform:"uppercase",color:t.textDim}}>What Your Sales Brief Will Provide</span>
+              <span style={{flex:1,height:1,background:t.divider}}/>
             </div>
 
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:40}}>
               {[
-                { title:"Company Intelligence", sub:"Business model, AI maturity & competitive landscape",
+                { title:"Understand the account in depth", sub:"Business model, AI maturity, and where IBM displaces the incumbent",
                   icon:<path d="M4 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M14 10h5a1 1 0 0 1 1 1v10M4 21h17M8 8h2M8 12h2M8 16h2"/> },
-                { title:"Discovery Questions", sub:"8 targeted questions built for your call type",
+                { title:"Lead a sharper conversation", sub:"Eight questions tailored to your contact and the call type",
                   icon:<><circle cx="11" cy="11" r="6"/><path d="M20.5 20.5 16.5 16.5"/></> },
-                { title:"Opportunity Qualification", sub:"BANT + MEDDIC scoring with deal risk flags",
+                { title:"Qualify the opportunity with confidence", sub:"A BANT + MEDDIC read with deal risks flagged up front",
                   icon:<path d="M4 4v16h16M8 16v-4M12 16V9M16 16v-7"/> },
-                { title:"IBM Product Fit", sub:"Ranked recommendations with positioning rationale",
+                { title:"Position the right IBM solution", sub:"Ranked products mapped to their pain, with positioning rationale",
                   icon:<><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></> },
               ].map(f=>(
                 <div key={f.title} className="feature-card" style={{
                   borderRadius:12,padding:"14px 14px 12px",
                   background:t.card,backdropFilter:"blur(28px) saturate(160%)",
                   WebkitBackdropFilter:"blur(28px) saturate(160%)",
-                  border:`1px solid ${t.cardBorder}`,boxShadow:t.cardShadow,
+                  border:`1px solid ${t.cardBorder}`,borderLeft:"2px solid #0f62fe",boxShadow:t.cardShadow,
                   display:"flex",flexDirection:"column",gap:7,
                 }}>
                   <div style={{display:"flex",alignItems:"center",gap:8}}>
