@@ -90,5 +90,6 @@
   .pdf-capture strong { font-weight: 700 !important; color: #000 !important; }
   .pdf-capture table { border-collapse: collapse !important; width: 100% !important; }
   .pdf-capture th, .pdf-capture td { border: 1px solid #ccc !important; }
+  .pdf-capture .ref-body { display: block !important; }
   .pdf-capture > div { break-inside: avoid; page-break-inside: avoid; }
 }

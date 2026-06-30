@@ -419,7 +419,10 @@ IMPORTANT INSTRUCTIONS:
 - Focus on practical, actionable insights rather than assumptions about the contact's influence or authority
 - Be accurate and conservative in your assessments
 
-Write the following pre-call sales briefing. Use exactly these five ## section headers in this order, and write only the content for each — no commentary, no notes, no preamble:
+Write the following pre-call sales briefing. Use exactly these six ## section headers in this order, and write only the content for each — no commentary, no notes, no preamble:
+
+## Key Takeaways
+Exactly 3 bullets, no more. Each is the single most important thing the seller must know walking in — the kind of insight that changes how you open the call. <= 18 words each, starting with a **bolded key phrase**. No filler, no generic statements.
 
 ## Who is ${contactName || "the Contact"}?
 ## Company Background
