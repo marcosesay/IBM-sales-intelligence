@@ -71,7 +71,7 @@
 .feature-card:nth-child(2) { animation-delay: .08s; }
 .feature-card:nth-child(3) { animation-delay: .14s; }
 .feature-card:nth-child(4) { animation-delay: .20s; }
-.feature-card:hover { transform: translateY(-2px); }
+.feature-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(0,0,0,0.45), 0 0 0 1px rgba(69,137,255,0.35); border-color: rgba(69,137,255,0.4); cursor: default; }
 .dash-card { transition: border-color .18s ease, box-shadow .18s ease; }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible {

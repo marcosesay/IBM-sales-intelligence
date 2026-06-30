@@ -64,7 +64,7 @@ function detectIndustry(name: string): string {
 /* ─── Theme tokens ─── */
 const DARK = {
   // True IBM Carbon dark: near-black canvas, surfaces by elevation, high-contrast text.
-  bodyBg: "linear-gradient(160deg,#0d0d0d 0%,#161616 45%,#0a0a0a 100%)",
+  bodyBg: "radial-gradient(900px circle at 50% -8%, rgba(69,137,255,0.07), transparent 55%), linear-gradient(160deg,#0d0d0d 0%,#161616 45%,#0a0a0a 100%)",
   sidebar: "#161616", sidebarBorder: "rgba(255,255,255,0.08)",
   card: "#1c1c1c", cardBorder: "rgba(255,255,255,0.08)",
   cardShadow: "inset 0 1px 0 rgba(255,255,255,0.05),0 2px 16px rgba(0,0,0,0.4)",
@@ -1251,7 +1251,7 @@ export default function BriefingPage() {
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("theme") as Theme) || "dark");
   const t = theme === "dark" ? DARK : LIGHT;
 
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [company, setCompany]   = useState("");
   const [industry, setIndustry] = useState("");
   const [contact, setContact]   = useState("");
@@ -2178,6 +2178,14 @@ export default function BriefingPage() {
                 </div>
               )}
 
+              {/* Decision-moment cue — appears only once the account is ready */}
+              {briefReady && !generating && (
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:7,marginTop:18,marginBottom:-4}}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#42be65" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                  <span style={{fontSize:12.5,fontWeight:600,color:t.textSub}}>You're ready to generate</span>
+                </div>
+              )}
+
               {/* Primary CTA */}
               <button
                 onClick={generate}
@@ -2200,14 +2208,14 @@ export default function BriefingPage() {
               {/* trust line */}
               {!generating && (
                 <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginTop:14,fontSize:10.5,color:t.textMuted,flexWrap:"wrap"}}>
-                  <span>30-second briefing</span><span>·</span><span>Built for IBM sellers</span><span>·</span><span>watsonx-secured</span>
+                  <span>Takes ~30 seconds</span><span>·</span><span>No setup required</span><span>·</span><span>watsonx-secured</span>
                 </div>
               )}
 
               {/* what you'll get — compact, scannable (not a boxy panel) */}
               {!generating && (
                 <div style={{display:"flex",justifyContent:"center",gap:18,marginTop:22,flexWrap:"wrap"}}>
-                  {["Key company insights","6 discovery questions","IBM solution mapping"].map(it=>(
+                  {["Know the account fast","Ask smarter discovery questions","Lead with the right IBM solution"].map(it=>(
                     <span key={it} style={{display:"flex",alignItems:"center",gap:6,fontSize:11.5,color:t.textSub}}>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{it}
                     </span>
