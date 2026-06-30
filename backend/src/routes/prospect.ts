@@ -30,12 +30,12 @@ ${
     : `No website content was retrieved. Base the overview on what you reliably know and note uncertainty. Mark Contacts as "Not found on site."`
 }${ctx}
 
-FORMATTING — the structure must be identical in the web UI and the exported PDF; clarity comes from structure, not styling. EVERY section is bullet points ONLY — NO paragraphs. Each bullet is <= 20 words and starts with a **bolded key phrase**. Max 5 bullets per section; use short sub-bullets, not sentences. Keep Solution Mapping as a clean, minimal Markdown table. Every section must be readable in under 10 seconds. Executive, consultative tone; no fluff; no lead-in (no "Here's..." or "The final answer is").
+FORMATTING — the structure must be identical in the web UI and the exported PDF; clarity comes from structure, not styling. EVERY section is bullet points ONLY — NO paragraphs. Each bullet is <= 20 words and starts with a **bolded key phrase**. Max 5 bullets per section; use short sub-bullets, not sentences. Keep Solution Mapping as a clean, minimal Markdown table. Every section must be readable in under 10 seconds. Executive, consultative tone; no fluff; no lead-in (no "Here's..." or "The final answer is"). Write in a single confident pass: no hedging ("could/may/might"), no repetition, no self-revision, exactly one final version.
 
 Produce these sections in this order:
 
 ## Solution Mapping
-A Markdown table with columns: Line of Business | IBM Product | Use Case. Exactly 4 rows. Keep every cell under 6 words — no sentences, no wrapping. This table is the ONLY place to map products to lines of business — do not restate it as prose.
+A Markdown table with columns: Line of Business | IBM Product | Priority | Business Impact | Where to Start. Exactly 4 rows. Keep every cell under 6 words. Priority is High / Medium / Low. Business Impact is a one-phrase outcome. In Where to Start, mark ONLY the 1–2 highest-priority rows "Start here" and leave the others blank. This table is the ONLY place to map products to lines of business — do not restate it as prose.
 
 ## Contract Vehicle Alignment & Differentiators
 How IBM can be procured for this account and 2–3 differentiators that matter here.
@@ -58,7 +58,7 @@ Company: ${company}
 Website: ${url}
 ${scraped ? `Website content:\n"""\n${scraped}\n"""` : ""}${ctx}
 
-FORMATTING — the structure must be identical in the web UI and the exported PDF; clarity comes from structure, not styling. EVERY section is bullet points ONLY — NO paragraphs. Each bullet is <= 20 words and starts with a **bolded key phrase**. Max 5 bullets per section; use short sub-bullets, not sentences. Keep Solution Mapping as a clean, minimal Markdown table. Every section must be readable in under 10 seconds. Executive, consultative tone; no fluff; no lead-in (no "Here's..." or "The final answer is").
+FORMATTING — the structure must be identical in the web UI and the exported PDF; clarity comes from structure, not styling. EVERY section is bullet points ONLY — NO paragraphs. Each bullet is <= 20 words and starts with a **bolded key phrase**. Max 5 bullets per section; use short sub-bullets, not sentences. Keep Solution Mapping as a clean, minimal Markdown table. Every section must be readable in under 10 seconds. Executive, consultative tone; no fluff; no lead-in (no "Here's..." or "The final answer is"). Write in a single confident pass: no hedging ("could/may/might"), no repetition, no self-revision, exactly one final version.
 
 Produce these sections in this order:
 
@@ -66,7 +66,7 @@ Produce these sections in this order:
 2–3 use cases tied to THIS company's actual business. For each: the IBM product that delivers it and the business outcome.
 
 ## 6-Step Sales Play
-A numbered list from entry point through expansion: 1) entry wedge, 2) discovery, 3) technical proof/demo, 4) initial land, 5) value realization, 6) expansion. Make every step specific to this account.
+Six numbered steps from entry through expansion (entry wedge, discovery, technical proof/demo, initial land, value realization, expansion). Write it as a playbook — under each numbered step, three sub-bullets: **Do:** the action, **Say:** one line to say to the buyer, **Outcome:** the expected result. Every step specific to this account, never generic.
 
 ## Competitive Wedge
 How IBM wins vs. each, 1–2 sentences each: Microsoft Azure (OpenAI), AWS (Bedrock/SageMaker), and open-source/self-hosted stacks. Emphasize governance, data gravity, hybrid/on-prem, total cost.

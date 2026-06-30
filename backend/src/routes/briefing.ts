@@ -88,7 +88,7 @@ Follow with ONE bullet (<= 22 words) naming the data/AI vendors ${company} likel
 Keep the whole section tight and scannable in under 10 seconds.
 
 ## Discovery Questions
-List exactly 8 discovery questions as a simple numbered list. Each question on its own line. No sub-headers. No explanations after each question. Just the questions.
+List exactly 5 discovery questions as a numbered list — each question on ONE line. Every question ties to a specific business problem this account faces, is strategic (never generic), and uses confident, non-hedging language. After each question, on the SAME line, append: — **Why it matters:** <one short note connecting it to their priorities>.
 Questions must be specifically tailored to:
 - The contact's title and likely priorities as a ${title} at ${company}
 - The ${industry} industry context and its specific challenges
@@ -127,7 +127,7 @@ Provide a comprehensive account assessment covering:
 Write 4-5 bullets only — NO paragraphs. Each starts with a **bolded key phrase**, is <= 14 words, and carries one decision-useful fact. Scannable in under 10 seconds.
 
 ## Renewal & Expansion Questions
-List exactly 8 questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
+List exactly 5 questions as a numbered list — each on ONE line, tied to a specific business problem, strategic, and non-hedging. After each, on the SAME line, append: — **Why it matters:** <one short note>.
 
 ## Expansion Qualification
 Write exactly these 6 items in this exact format, no additional content before or after:
@@ -159,7 +159,7 @@ Provide a comprehensive competitive analysis covering:
 Write 4-5 bullets only — NO paragraphs. Each starts with a **bolded key phrase**, is <= 14 words, and carries one decision-useful fact. Scannable in under 10 seconds.
 
 ## Competitive Discovery Questions
-List exactly 8 questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
+List exactly 5 questions as a numbered list — each on ONE line, tied to a specific business problem, strategic, and non-hedging. After each, on the SAME line, append: — **Why it matters:** <one short note>.
 
 ## Win/Loss Qualification
 Write exactly these 6 items in this exact format, no additional content before or after:
@@ -191,7 +191,7 @@ Provide a comprehensive strategic overview covering:
 Write 4-5 bullets only — NO paragraphs. Each starts with a **bolded key phrase**, is <= 14 words, and carries one decision-useful fact. Scannable in under 10 seconds.
 
 ## Executive Engagement Questions
-List exactly 8 strategic C-suite questions as a simple numbered list. No sub-headers. No explanations. Just the questions.
+List exactly 5 strategic C-suite questions as a numbered list — each on ONE line, tied to a board-level priority, and non-hedging. After each, on the SAME line, append: — **Why it matters:** <one short note>.
 
 ## Business Case Qualification
 Write exactly these 6 items in this exact format, no additional content before or after:
@@ -415,6 +415,9 @@ IMPORTANT INSTRUCTIONS:
 - CLEANUP — never output raw URLs, system notes, placeholders, or any instruction/meta text (e.g. "STOP", "as an AI", "Note:"). Reference any source by name in plain words. Everything must read as polished, client-ready copy.
 - DENSITY — be ruthless: cut filler words, prefer sharp fragments over full sentences, and make every line carry a decision-useful fact. When in doubt, cut.
 - PURPOSE — each section answers a clear question: Company Background = "what matters about this account?"; Opportunity Qualification = "is this deal real?"; Product Recommendations = "where does IBM win?"; Discovery Questions = "what should I ask?". Deliver that answer.
+- SINGLE PASS — deliver one final briefing in a single confident pass. Never revise yourself mid-output, never produce multiple versions or variants of the same content, and never explain your reasoning. No phrases like "the correct response should be", "here is the revised", or "let me reconsider".
+- NO REPETITION — never repeat a sentence, bullet, or idea anywhere in the briefing. If two lines would say the same thing, keep one. When content feels repetitive, shorten it rather than expand.
+- CONFIDENT POV — write like a senior IBM seller with a clear point of view. Banish hedging ("could", "may", "might", "perhaps"). State it directly: "The biggest opportunity is…", never "The company may benefit from…".
 
 Write the following pre-call sales briefing. Use exactly these six ## section headers in this order, and write only the content for each — no commentary, no notes, no preamble:
 
