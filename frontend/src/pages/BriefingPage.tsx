@@ -1007,8 +1007,9 @@ function SectionCard({ title, content, industry, t, streaming }: {
   t: typeof DARK; streaming?: boolean;
 }) {
   const isDark = t === DARK;
-  const map = isDark ? SECTION_ACCENTS_DARK : SECTION_ACCENTS_LIGHT;
-  const { accent, bg } = map[title] ?? { accent: isDark ? "rgba(200,200,210,0.55)" : "#666", bg: isDark ? "rgba(200,200,210,0.06)" : "#f5f5f7" };
+  // Unified accent — one consistent treatment across every card, no per-section rainbow
+  const accent = t.accent;
+  const bg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
 
   const isProductRecs = ["Product Recommendations","Retention & Upsell Positioning","IBM Differentiation","Strategic Investment Themes"].includes(title);
 
@@ -1062,11 +1063,10 @@ function SectionCard({ title, content, industry, t, streaming }: {
     <div className="animate-fade-in dash-card" style={{
       background: t.sectionCard, backdropFilter:"blur(28px) saturate(150%)",
       WebkitBackdropFilter:"blur(28px) saturate(150%)",
-      border:`1px solid ${t.sectionCardBorder}`, borderRadius:14,
+      border:`1px solid ${t.sectionCardBorder}`, borderRadius:12,
       marginBottom:12, overflow:"hidden", boxShadow: t.cardShadow,
     }}>
-      <div style={{height:2,background:accent,width:"100%",opacity:0.6}} />
-      <div style={{display:"flex",alignItems:"center",gap:10,padding:"13px 20px 10px",borderBottom:`1px solid ${t.sectionHeaderBorder}`}}>
+      <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 20px 10px",borderBottom:`1px solid ${t.sectionHeaderBorder}`}}>
         <div style={{width:20,height:20,background:bg,borderRadius:5,flexShrink:0,border:`1px solid ${t.sectionCardBorder}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
           <div style={{width:6,height:6,borderRadius:"50%",background:accent,opacity:0.85}} />
         </div>
@@ -2019,44 +2019,27 @@ export default function BriefingPage() {
 
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:40}}>
               {[
-                {
-                  icon:"🏢",
-                  title:"Company Intelligence",
-                  sub:"Business model, AI maturity & competitive landscape",
-                  accent:"rgba(100,160,230,0.7)",
-                },
-                {
-                  icon:"🔍",
-                  title:"Discovery Questions",
-                  sub:"8 targeted questions built for your call type",
-                  accent:"rgba(110,231,183,0.7)",
-                },
-                {
-                  icon:"📊",
-                  title:"Opportunity Qualification",
-                  sub:"BANT + MEDDIC scoring with deal risk flags",
-                  accent:"rgba(200,170,120,0.7)",
-                },
-                {
-                  icon:"💡",
-                  title:"IBM Product Fit",
-                  sub:"Ranked recommendations with positioning rationale",
-                  accent:"rgba(180,140,220,0.7)",
-                },
+                { title:"Company Intelligence", sub:"Business model, AI maturity & competitive landscape",
+                  icon:<path d="M4 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M14 10h5a1 1 0 0 1 1 1v10M4 21h17M8 8h2M8 12h2M8 16h2"/> },
+                { title:"Discovery Questions", sub:"8 targeted questions built for your call type",
+                  icon:<><circle cx="11" cy="11" r="6"/><path d="M20.5 20.5 16.5 16.5"/></> },
+                { title:"Opportunity Qualification", sub:"BANT + MEDDIC scoring with deal risk flags",
+                  icon:<path d="M4 4v16h16M8 16v-4M12 16V9M16 16v-7"/> },
+                { title:"IBM Product Fit", sub:"Ranked recommendations with positioning rationale",
+                  icon:<><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></> },
               ].map(f=>(
-                <div key={f.title} style={{
+                <div key={f.title} className="feature-card" style={{
                   borderRadius:12,padding:"14px 14px 12px",
                   background:t.card,backdropFilter:"blur(28px) saturate(160%)",
                   WebkitBackdropFilter:"blur(28px) saturate(160%)",
                   border:`1px solid ${t.cardBorder}`,boxShadow:t.cardShadow,
-                  display:"flex",flexDirection:"column",gap:6,
+                  display:"flex",flexDirection:"column",gap:7,
                 }}>
-                  <div style={{display:"flex",alignItems:"center",gap:7}}>
-                    <span style={{fontSize:14,lineHeight:1}}>{f.icon}</span>
-                    <div style={{width:3,height:14,borderRadius:2,background:f.accent,flexShrink:0}}/>
+                  <div style={{display:"flex",alignItems:"center",gap:8}}>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>{f.icon}</svg>
                     <p style={{fontSize:11,fontWeight:600,color:t.text,margin:0,letterSpacing:"-0.2px",lineHeight:1.3}}>{f.title}</p>
                   </div>
-                  <p style={{fontSize:10,color:t.textMuted,margin:0,lineHeight:1.5,paddingLeft:2}}>{f.sub}</p>
+                  <p style={{fontSize:10,color:t.textMuted,margin:0,lineHeight:1.5,paddingLeft:1}}>{f.sub}</p>
                 </div>
               ))}
             </div>
