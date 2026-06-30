@@ -32,6 +32,35 @@ interface SavedBriefing {
 const MEETING_TYPES = ["Discovery", "Renewal", "Competitive"] as const;
 type MeetingType = typeof MEETING_TYPES[number];
 
+// Rotating placeholder examples for the account field (cycles while empty).
+const ACCOUNT_PLACEHOLDERS = [
+  'Try "JPMorgan Chase"',
+  'Try "Nike supply chain lead"',
+  'Try "Salesforce + CIO"',
+  'Try "Celonis"',
+];
+
+// Curated industry hints for well-known accounts. Only used to surface a real,
+// known value — unknown companies simply show no industry line (never guessed).
+const KNOWN_INDUSTRIES: [string, string][] = [
+  ["celonis", "Process Intelligence"],
+  ["jpmorgan", "Financial Services"], ["jp morgan", "Financial Services"], ["jpmc", "Financial Services"], ["chase", "Financial Services"],
+  ["goldman", "Financial Services"], ["citi", "Financial Services"], ["morgan stanley", "Financial Services"], ["capital one", "Financial Services"],
+  ["nike", "Retail & Apparel"], ["walmart", "Retail"], ["target", "Retail"], ["cvs", "Healthcare & Retail"],
+  ["salesforce", "CRM / SaaS"], ["snowflake", "Data Cloud"], ["databricks", "Data & AI Platform"],
+  ["microsoft", "Enterprise Software"], ["oracle", "Enterprise Software"], ["sap", "Enterprise Software"], ["servicenow", "Enterprise Software"],
+  ["aws", "Cloud Infrastructure"], ["amazon", "E-commerce & Cloud"], ["google", "Technology"], ["meta", "Technology"],
+  ["pfizer", "Pharmaceuticals"], ["merck", "Pharmaceuticals"], ["unitedhealth", "Healthcare"],
+  ["delta", "Airlines"], ["united airlines", "Airlines"], ["american airlines", "Airlines"],
+  ["exxon", "Oil & Gas"], ["chevron", "Oil & Gas"], ["shell", "Oil & Gas"],
+];
+function detectIndustry(name: string): string {
+  const n = name.trim().toLowerCase();
+  if (!n) return "";
+  for (const [k, v] of KNOWN_INDUSTRIES) if (n.includes(k)) return v;
+  return "";
+}
+
 /* ─── Theme tokens ─── */
 const DARK = {
   bodyBg: "linear-gradient(160deg,#2a2a2a 0%,#1e1e1e 35%,#252528 65%,#1a1a1c 100%)",
@@ -1196,6 +1225,15 @@ export default function BriefingPage() {
     }
   };
   const briefReady = company.trim().length >= 2;
+  const detectedIndustry = detectIndustry(company);
+
+  // Rotate the account-field placeholder while the field is empty.
+  const [phIdx, setPhIdx] = useState(0);
+  useEffect(() => {
+    if (company) return;
+    const id = setInterval(() => setPhIdx(i => (i + 1) % ACCOUNT_PLACEHOLDERS.length), 2800);
+    return () => clearInterval(id);
+  }, [company]);
   
   // Debounce contact input
   const debouncedContact = useDebounce(contact, 600);
@@ -1996,146 +2034,155 @@ export default function BriefingPage() {
 
             </div>
 
-            <div style={{display:"flex",alignItems:"center",gap:36,flexWrap:"wrap",marginBottom:4}}>
-              <div style={{flex:"1 1 360px",minWidth:280}}>
-              <h1 style={{fontSize:64,fontWeight:200,letterSpacing:"-2.6px",color:t.text,lineHeight:1.04,margin:"16px 0 12px"}}>
-                Know your account<br/>before the call
-              </h1>
-              <p style={{fontSize:16,fontWeight:300,color:t.textMuted,lineHeight:1.65,maxWidth:520,margin:"0 0 12px"}}>
-                Drop in a company name. Get a full IBM briefing — in under 30 seconds.
-              </p>
-              <a
-                href="/architecture"
-                style={{
-                  display:'inline-block',
-                  fontSize:13,
-                  color:t.accent,
-                  textDecoration:'none',
-                  opacity:0.8,
-                  transition:'opacity 0.2s',
-                  cursor:'pointer',
-                  marginBottom:16,
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
-                onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}
-              >
-                → How it works
-              </a>
-              </div>
-              <div style={{flex:"0 0 auto",marginLeft:"auto"}}>
-                <WireframeGlobe rgb={theme==="dark" ? "120,169,255" : "15,98,254"} size={300}/>
-              </div>
-            </div>
+            <div style={{display:"flex",gap:44,alignItems:"center",marginBottom:34,flexWrap:"wrap"}}>
+              {/* LEFT: heading + guided input */}
+              <div style={{flex:"1 1 520px",minWidth:300,maxWidth:560}}>
+                <h1 style={{fontSize:42,fontWeight:200,letterSpacing:"-1.6px",color:t.text,lineHeight:1.06,margin:"8px 0 10px"}}>
+                  Know your account before the call
+                </h1>
+                <p style={{fontSize:14,fontWeight:300,color:t.textMuted,lineHeight:1.6,margin:"0 0 16px"}}>
+                  Drop in a company name. Get a full IBM briefing — in under 30 seconds.
+                </p>
+                <a href="/architecture" style={{display:"inline-block",fontSize:12.5,color:t.accent,textDecoration:"none",opacity:0.85,cursor:"pointer",marginBottom:22}}
+                  onMouseEnter={(e)=>e.currentTarget.style.opacity="1"} onMouseLeave={(e)=>e.currentTarget.style.opacity="0.85"}>
+                  → How it works
+                </a>
 
-            {/* ─── Guided Account-first input (canvas). Writes into the SAME state the sidebar uses. ─── */}
-            <div style={{maxWidth:560,marginBottom:36}}>
-              {/* 3-step cue rail (visual only — not gated) */}
-              <div style={{display:"flex",alignItems:"center",marginBottom:18}}>
-                {[
-                  {n:"1",label:"Account",done:company.trim().length>0},
-                  {n:"2",label:"Context",done:!!(prospectUrl||contact||contactName2||context)},
-                  {n:"3",label:"Generate",done:briefReady},
-                ].map((s,i)=>(
-                  <div key={s.n} style={{display:"flex",alignItems:"center",flex:i<2?1:"0 0 auto"}}>
-                    <div style={{display:"flex",alignItems:"center",gap:8}}>
-                      <span style={{width:22,height:22,borderRadius:"50%",fontSize:11,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",
-                        background:s.done?"#0f62fe":"transparent",color:s.done?"#fff":t.textDim,border:s.done?"none":`1px solid ${t.inputBorder}`}}>{s.n}</span>
-                      <span style={{fontSize:11.5,fontWeight:s.done?600:500,color:s.done?t.textSub:t.textDim}}>{s.label}</span>
+                {/* ─── Guided Account-first input. Writes into the SAME state the sidebar uses. ─── */}
+                <div style={{display:"flex",alignItems:"center",marginBottom:18}}>
+                  {[
+                    {label:"Account",done:company.trim().length>0},
+                    {label:"Context",done:!!(prospectUrl||contact||contactName2||context)},
+                    {label:"Generate",done:briefReady},
+                  ].map((s,i)=>(
+                    <div key={s.label} style={{display:"flex",alignItems:"center",flex:i<2?1:"0 0 auto"}}>
+                      <div style={{display:"flex",alignItems:"center",gap:7}}>
+                        <span style={{width:21,height:21,borderRadius:"50%",fontSize:10.5,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",
+                          background:s.done?"#0f62fe":"transparent",color:s.done?"#fff":t.textDim,border:s.done?"none":`1px solid ${t.inputBorder}`,transition:"all 0.25s"}}>
+                          {s.done ? "✓" : (i+1)}
+                        </span>
+                        <span style={{fontSize:11.5,fontWeight:s.done?600:500,color:s.done?t.textSub:t.textDim}}>{s.label}</span>
+                      </div>
+                      {i<2 && <div style={{flex:1,height:1,background:s.done?"rgba(15,98,254,0.5)":t.divider,margin:"0 10px",transition:"background 0.25s"}}/>}
                     </div>
-                    {i<2 && <div style={{flex:1,height:1,background:t.divider,margin:"0 12px"}}/>}
-                  </div>
-                ))}
-              </div>
-
-              {/* Smart account field */}
-              <label style={{display:"block",fontSize:13,fontWeight:500,color:t.textSub,marginBottom:8}}>Which account are you prepping for?</label>
-              <input
-                value={company}
-                onChange={e=>handleAccountInput((e.target as HTMLInputElement).value)}
-                onKeyDown={e=>{ if(e.key==="Enter" && briefReady && !generating) generate(); }}
-                placeholder="Company name, website, or LinkedIn URL"
-                autoComplete="off"
-                style={{width:"100%",background:t.input,border:`1px solid ${company?"#0f62fe":t.inputBorder}`,
-                  borderRadius:11,fontSize:15,color:t.text,fontFamily:"var(--app-font-sans)",padding:"14px 16px",outline:"none",
-                  boxShadow:company?"0 0 0 3px rgba(15,98,254,0.16)":"inset 0 1px 0 rgba(255,255,255,0.06)",transition:"all 0.2s"}}
-              />
-
-              {/* Inline confidence feedback (IBM green = success) */}
-              {briefReady && (
-                <div style={{display:"flex",alignItems:"center",gap:8,marginTop:11,padding:"9px 12px",borderRadius:8,background:"rgba(36,161,72,0.12)"}}>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#42be65" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                  <span style={{fontSize:12.5,color:"#42be65",fontWeight:500}}>That's enough — I can build a strong brief.</span>
-                </div>
-              )}
-
-              {/* Try a sample account */}
-              {!company && (
-                <button onClick={()=>{ setCompany("Celonis"); setMeetingType("Discovery"); }}
-                  style={{marginTop:11,background:"none",border:"none",color:t.accent,fontSize:12.5,fontWeight:500,cursor:"pointer",padding:0,fontFamily:"var(--app-font-sans)"}}>
-                  ↳ Try a sample account
-                </button>
-              )}
-
-              {/* Disclosure: website / LinkedIn / contact — collapsed by default */}
-              <div style={{marginTop:16}}>
-                <button onClick={()=>setShowMore(v=>!v)}
-                  style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"var(--app-font-sans)"}}>
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                    style={{transform:showMore?"rotate(180deg)":"none",transition:"transform 0.2s"}}><path d="M6 9l6 6 6-6"/></svg>
-                  <span style={{fontSize:12.5,fontWeight:600,color:t.accent}}>Add website, LinkedIn &amp; contact details</span>
-                </button>
-                {!showMore && (
-                  <p style={{fontSize:11.5,color:t.textMuted,margin:"7px 0 0",lineHeight:1.5}}>
-                    Just the name works — add a website and LinkedIn below for a sharper, more personal briefing.
-                  </p>
-                )}
-                {showMore && (
-                  <div style={{marginTop:14}}>
-                    <GlassInput t={t} label="Website" value={prospectUrl} onChange={e=>setProspectUrl((e.target as HTMLInputElement).value)} placeholder="https://celonis.com" autoComplete="off"/>
-                    <GlassInput t={t} label="LinkedIn URL" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username" autoComplete="off"/>
-                    <GlassInput t={t} label="Contact name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last" autoComplete="off"/>
-                    <GlassInput t={t} label="Contact title" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics" autoComplete="off"/>
-                  </div>
-                )}
-              </div>
-
-              {/* Call type — smart default */}
-              <div style={{marginTop:16}}>
-                <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:7,flexWrap:"wrap"}}>
-                  <span style={{fontSize:11,fontWeight:600,letterSpacing:"0.7px",textTransform:"uppercase",color:t.textDim}}>Call type</span>
-                  {(["Discovery","Renewal","Competitive"] as const).map(mt=>(
-                    <button key={mt} onClick={()=>setMeetingType(mt)}
-                      style={{fontSize:12.5,padding:"5px 13px",borderRadius:8,cursor:"pointer",fontFamily:"var(--app-font-sans)",
-                        background:meetingType===mt?"rgba(15,98,254,0.18)":t.btnSm,
-                        border:`1px solid ${meetingType===mt?"rgba(15,98,254,0.6)":t.btnSmBorder}`,
-                        color:meetingType===mt?"#78a9ff":t.btnSmText,fontWeight:meetingType===mt?600:500}}>{mt}</button>
                   ))}
                 </div>
-                <p style={{fontSize:11.5,color:t.textMuted,margin:0,fontStyle:"italic"}}>
-                  Defaulting to Discovery — I'll tailor questions to uncover pain. Change anytime.
-                </p>
+
+                <label style={{display:"block",fontSize:12.5,fontWeight:500,color:t.textSub,marginBottom:8}}>Which account are you prepping for?</label>
+                <input
+                  value={company}
+                  onChange={e=>handleAccountInput((e.target as HTMLInputElement).value)}
+                  onKeyDown={e=>{ if(e.key==="Enter" && briefReady && !generating) generate(); }}
+                  placeholder={ACCOUNT_PLACEHOLDERS[phIdx]}
+                  autoComplete="off"
+                  style={{width:"100%",background:t.input,border:`1px solid ${company?"#0f62fe":t.inputBorder}`,
+                    borderRadius:11,fontSize:15,color:t.text,fontFamily:"var(--app-font-sans)",padding:"14px 16px",outline:"none",
+                    boxShadow:company?"0 0 0 3px rgba(15,98,254,0.16)":"inset 0 1px 0 rgba(255,255,255,0.06)",transition:"all 0.2s"}}
+                />
+
+                {/* Inline "already working" feedback — only states what we truly know */}
+                {company.trim() && (
+                  <div style={{display:"flex",flexDirection:"column",gap:5,marginTop:11}}>
+                    {[
+                      `Company detected: ${company.trim()}`,
+                      ...(prospectUrl ? ["Website added"] : []),
+                      ...(detectedIndustry ? [`Industry: ${detectedIndustry}`] : []),
+                    ].map((line,i)=>(
+                      <div key={i} style={{display:"flex",alignItems:"center",gap:7}}>
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#42be65" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                        <span style={{fontSize:12,color:t.textSub}}>{line}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {!company && (
+                  <button onClick={()=>{ setCompany("Celonis"); setMeetingType("Discovery"); }}
+                    style={{marginTop:11,background:"none",border:"none",color:t.accent,fontSize:12.5,fontWeight:500,cursor:"pointer",padding:0,fontFamily:"var(--app-font-sans)"}}>
+                    ↳ Try a sample account
+                  </button>
+                )}
+
+                {/* Disclosure — collapsed by default */}
+                <div style={{marginTop:16}}>
+                  <button onClick={()=>setShowMore(v=>!v)}
+                    style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"var(--app-font-sans)"}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                      style={{transform:showMore?"rotate(180deg)":"none",transition:"transform 0.2s"}}><path d="M6 9l6 6 6-6"/></svg>
+                    <span style={{fontSize:12.5,fontWeight:600,color:t.accent}}>Add website, LinkedIn &amp; contact details</span>
+                  </button>
+                  {!showMore && (
+                    <p style={{fontSize:11.5,color:t.textMuted,margin:"7px 0 0",lineHeight:1.5}}>
+                      Just the name works — add a website and LinkedIn below for a sharper, more personal briefing.
+                    </p>
+                  )}
+                  {showMore && (
+                    <div style={{marginTop:14}}>
+                      <GlassInput t={t} label="Website" value={prospectUrl} onChange={e=>setProspectUrl((e.target as HTMLInputElement).value)} placeholder="https://celonis.com" autoComplete="off"/>
+                      <GlassInput t={t} label="LinkedIn URL" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username" autoComplete="off"/>
+                      <GlassInput t={t} label="Contact name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last" autoComplete="off"/>
+                      <GlassInput t={t} label="Contact title" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics" autoComplete="off"/>
+                    </div>
+                  )}
+                </div>
+
+                {/* Call type — smart default */}
+                <div style={{marginTop:16}}>
+                  <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:7,flexWrap:"wrap"}}>
+                    <span style={{fontSize:11,fontWeight:600,letterSpacing:"0.7px",textTransform:"uppercase",color:t.textDim}}>Call type</span>
+                    {(["Discovery","Renewal","Competitive"] as const).map(mt=>(
+                      <button key={mt} onClick={()=>setMeetingType(mt)}
+                        style={{fontSize:12.5,padding:"5px 13px",borderRadius:8,cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                          background:meetingType===mt?"rgba(15,98,254,0.18)":t.btnSm,
+                          border:`1px solid ${meetingType===mt?"rgba(15,98,254,0.6)":t.btnSmBorder}`,
+                          color:meetingType===mt?"#78a9ff":t.btnSmText,fontWeight:meetingType===mt?600:500}}>{mt}</button>
+                    ))}
+                  </div>
+                  <p style={{fontSize:11.5,color:t.textMuted,margin:0,fontStyle:"italic"}}>
+                    Defaulting to Discovery — I'll tailor questions to uncover pain. Change anytime.
+                  </p>
+                </div>
+
+                {/* Preview tease + momentum nudge (when ready) */}
+                {briefReady && (
+                  <div style={{marginTop:16,padding:"10px 13px",borderRadius:9,background:"rgba(15,98,254,0.07)",border:"1px solid rgba(15,98,254,0.18)"}}>
+                    <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:t.accent,marginBottom:5}}>You'll get</div>
+                    <div style={{fontSize:12,color:t.textSub,lineHeight:1.5}}>Key company insights · 6 discovery questions · IBM solution mapping</div>
+                  </div>
+                )}
+                {briefReady && !generating && (
+                  <p style={{fontSize:11.5,color:t.textMuted,margin:"12px 0 0",textAlign:"center"}}>You can generate now — add more context anytime.</p>
+                )}
+
+                {/* CTA */}
+                <button
+                  onClick={generate}
+                  disabled={!briefReady||generating}
+                  style={{width:"100%",marginTop:briefReady?8:18,
+                    background:briefReady?"#0f62fe":t.btnSm,
+                    border:briefReady?"none":`1px solid ${t.btnSmBorder}`,
+                    color:briefReady?"#fff":t.textDim,fontSize:14.5,fontWeight:600,
+                    borderRadius:11,padding:"14px",cursor:briefReady&&!generating?"pointer":"default",
+                    fontFamily:"var(--app-font-sans)",opacity:generating?0.85:1,transition:"all 0.2s"}}>
+                  {generating
+                    ? <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><span className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:"currentColor"}}/>Analyzing account…</span>
+                    : "Generate My Call Brief  →"}
+                </button>
+                {generating && (
+                  <p style={{fontSize:11.5,color:t.textMuted,margin:"9px 0 0",textAlign:"center"}}>Mapping IBM solutions…</p>
+                )}
+
+                {/* Below-CTA trust line */}
+                {!generating && (
+                  <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginTop:11,fontSize:10.5,color:t.textMuted,flexWrap:"wrap"}}>
+                    <span>30-second briefing</span><span>·</span><span>Built for IBM sellers</span><span>·</span><span>Real-time company intelligence</span>
+                  </div>
+                )}
               </div>
 
-              {/* Dynamic CTA */}
-              <button
-                onClick={generate}
-                disabled={!briefReady||generating}
-                style={{width:"100%",marginTop:18,
-                  background:briefReady?"#0f62fe":t.btnSm,
-                  border:briefReady?"none":`1px solid ${t.btnSmBorder}`,
-                  color:briefReady?"#fff":t.textDim,fontSize:14.5,fontWeight:600,
-                  borderRadius:11,padding:"14px",cursor:briefReady&&!generating?"pointer":"default",
-                  fontFamily:"var(--app-font-sans)",opacity:generating?0.7:1,transition:"all 0.2s"}}>
-                {generating
-                  ? <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><span className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:"currentColor"}}/>Generating…</span>
-                  : (company.trim() ? `Brief me on ${company.trim()}  →` : "Brief me on this account  →")}
-              </button>
-
-              {/* Trust strip */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:12,marginTop:12,fontSize:11,color:t.textMuted,flexWrap:"wrap"}}>
-                <span style={{display:"flex",alignItems:"center",gap:5}}>
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>~30 Seconds</span>
-                <span>·</span><span>Grounded in Live Web Research</span><span>·</span><span>Built for IBM Sellers</span>
+              {/* RIGHT: globe, vertically centered — fills the space beside the form */}
+              <div style={{flex:"1 1 300px",minWidth:240,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <WireframeGlobe rgb={theme==="dark" ? "120,169,255" : "15,98,254"} size={300}/>
               </div>
             </div>
 
@@ -2147,13 +2194,13 @@ export default function BriefingPage() {
 
             <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:10,marginBottom:40}}>
               {[
-                { title:"Understand the account in depth", sub:"Business model, AI maturity, and where IBM displaces the incumbent",
+                { title:"Company Intelligence", sub:"Know exactly how this company makes money", sub2:"Key priorities, gaps, and where IBM fits",
                   icon:<path d="M4 21V5a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v16M14 10h5a1 1 0 0 1 1 1v10M4 21h17M8 8h2M8 12h2M8 16h2"/> },
-                { title:"Lead a sharper conversation", sub:"Eight questions tailored to your contact and the call type",
+                { title:"Discovery Questions", sub:"Walk into the call with the right questions", sub2:"Tailored to the contact and deal type",
                   icon:<><circle cx="11" cy="11" r="6"/><path d="M20.5 20.5 16.5 16.5"/></> },
-                { title:"Qualify the opportunity with confidence", sub:"A BANT + MEDDIC read with deal risks flagged up front",
+                { title:"Opportunity Qualification", sub:"Quickly assess if this deal is real", sub2:"BANT + MEDDIC signals upfront",
                   icon:<path d="M4 4v16h16M8 16v-4M12 16V9M16 16v-7"/> },
-                { title:"Position the right IBM solution", sub:"Ranked products mapped to their pain, with positioning rationale",
+                { title:"IBM Product Fit", sub:"Know what to sell before the call starts", sub2:"Mapped IBM solutions with talking points",
                   icon:<><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></> },
               ].map(f=>(
                 <div key={f.title} className="feature-card" style={{
@@ -2167,7 +2214,8 @@ export default function BriefingPage() {
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}>{f.icon}</svg>
                     <p style={{fontSize:11,fontWeight:600,color:t.text,margin:0,letterSpacing:"-0.2px",lineHeight:1.3}}>{f.title}</p>
                   </div>
-                  <p style={{fontSize:10,color:t.textMuted,margin:0,lineHeight:1.5,paddingLeft:1}}>{f.sub}</p>
+                  <p style={{fontSize:11,color:t.textSub,margin:0,lineHeight:1.45,fontWeight:500,paddingLeft:1}}>{f.sub}</p>
+                  <p style={{fontSize:10,color:t.textMuted,margin:0,lineHeight:1.45,paddingLeft:1}}>{f.sub2}</p>
                 </div>
               ))}
             </div>
