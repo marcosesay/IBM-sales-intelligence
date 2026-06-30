@@ -845,6 +845,8 @@ function MarkdownBody({ body, t, accent }: { body: string; t: typeof DARK; accen
   let i = 0;
   while (i < lines.length) {
     const l = lines[i].trim();
+    const lead = (lines[i].match(/^[ \t]+/)?.[0].length) || 0;
+    const indentPx = Math.min(Math.floor(lead / 2), 4) * 16;
 
     // Table block: consecutive lines that look like | a | b | c |
     if (l.includes("|") && l.split("|").length >= 3) {
@@ -874,7 +876,7 @@ function MarkdownBody({ body, t, accent }: { body: string; t: typeof DARK; accen
     if (!l) { out.push(<div key={i} style={{ height: 4 }} />); i++; continue; }
     if (/^[-*•]\s/.test(l)) {
       out.push(
-        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5, alignItems: "flex-start" }}>
+        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5, alignItems: "flex-start", marginLeft: indentPx }}>
           <span style={{ color: accent, flexShrink: 0, lineHeight: 1.6 }}>–</span>
           <span style={{ color: t.sectionBullet, lineHeight: 1.6 }}>{renderInline(l.replace(/^[-*•]\s/, ""))}</span>
         </div>
@@ -883,14 +885,14 @@ function MarkdownBody({ body, t, accent }: { body: string; t: typeof DARK; accen
     }
     if (/^\d[.)]\s/.test(l)) {
       out.push(
-        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5, alignItems: "flex-start" }}>
+        <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5, alignItems: "flex-start", marginLeft: indentPx }}>
           <span style={{ color: accent, fontWeight: 600, flexShrink: 0 }}>{l.match(/^\d+/)?.[0]}.</span>
           <span style={{ color: t.sectionBullet, lineHeight: 1.6 }}>{renderInline(l.replace(/^\d[.)]\s/, ""))}</span>
         </div>
       );
       i++; continue;
     }
-    out.push(<p key={i} style={{ margin: "0 0 6px", color: t.sectionText, lineHeight: 1.6 }}>{renderInline(l)}</p>);
+    out.push(<p key={i} style={{ margin: "0 0 6px", color: t.sectionText, lineHeight: 1.6, marginLeft: indentPx }}>{renderInline(l)}</p>);
     i++;
   }
   return <>{out}</>;
@@ -917,19 +919,21 @@ function SectionCard({ title, content, industry, t, streaming }: {
 
     lines.forEach((line, i) => {
       const l = line.trim();
+      const lead = (line.match(/^[ \t]+/)?.[0].length) || 0;
+      const indentPx = Math.min(Math.floor(lead / 2), 4) * 16;
       if (!l) { rows.push(<div key={i} style={{height:2}} />); return; }
       if (l.endsWith(":") && l.length < 60) {
         rows.push(<p key={i} style={{margin:"10px 0 4px",fontSize:10,fontWeight:600,letterSpacing:"0.7px",textTransform:"uppercase",color:accent}}>{l.slice(0,-1)}</p>);
       } else if (l.match(/^[-*•] /)) {
         rows.push(
-          <div key={i} style={{display:"flex",gap:10,marginBottom:6,alignItems:"flex-start"}}>
+          <div key={i} style={{display:"flex",gap:10,marginBottom:6,alignItems:"flex-start",marginLeft:indentPx}}>
             <span style={{color:accent,fontSize:13,lineHeight:"1.5",flexShrink:0}}>–</span>
             <span style={{color:t.sectionBullet,fontSize:bodyFontSize,lineHeight:1.65}}>{renderInline(l.slice(2))}</span>
           </div>
         );
       } else if (l.match(/^\d[.)]/)) {
         rows.push(
-          <div key={i} style={{display:"flex",gap:10,marginBottom:9,alignItems:"flex-start"}}>
+          <div key={i} style={{display:"flex",gap:10,marginBottom:9,alignItems:"flex-start",marginLeft:indentPx}}>
             <span style={{color:accent,fontSize:11,fontWeight:600,flexShrink:0,minWidth:16,paddingTop:2}}>{l[0]}.</span>
             <span style={{color:t.sectionBullet,fontSize:bodyFontSize,lineHeight:1.7}}>{renderInline(l.slice(2).trim())}</span>
           </div>
@@ -1241,8 +1245,11 @@ export default function BriefingPage() {
 
   // Hide the contact section when the user gave no contact name and no LinkedIn.
   const hasContact = Boolean(contactName2.trim() || contact.trim());
+  const PRODUCT_SECTION_TITLES = ["Product Recommendations","Retention & Upsell Positioning","IBM Differentiation","Strategic Investment Themes"];
   const visibleSections = streamingSections.filter(
-    (sec) => hasContact || !/^who is\b/i.test(sec.title.trim())
+    (sec) =>
+      (hasContact || !/^who is\b/i.test(sec.title.trim())) &&
+      !PRODUCT_SECTION_TITLES.includes(sec.title.trim())
   );
 
   const generate = useCallback(async () => {
@@ -1407,47 +1414,12 @@ export default function BriefingPage() {
     setPendingBriefing(null); setAlreadySaved(false); setGenerating(false); textRef.current = "";
     setProspectResult(null); setProspectError(""); setProspectGenerating(false); setProspectStep(null);
   };
-  const [exporting, setExporting] = useState(false);
-  // Export the PDF by snapshotting the rendered brief so the PDF and UI are
-  // byte-for-byte the same layout, order, and content (incl. the merged
-  // research + sales-play sections). No second renderer to drift out of sync.
-  const exportPDF = async () => {
-    const el = pdfRef.current;
-    if (!el || exporting) return;
-    setExporting(true);
-    try {
-      const html2canvas = (await import("html2canvas")).default;
-      const { jsPDF } = await import("jspdf");
-      const canvas = await html2canvas(el, {
-        scale: 2,
-        backgroundColor: t.bodyBg,
-        useCORS: true,
-        logging: false,
-        windowWidth: el.scrollWidth,
-      });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ unit: "mm", format: "a4" });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const imgW = pageW;
-      const imgH = (canvas.height * imgW) / canvas.width;
-      let heightLeft = imgH;
-      let position = 0;
-      pdf.addImage(imgData, "PNG", 0, position, imgW, imgH);
-      heightLeft -= pageH;
-      while (heightLeft > 0) {
-        position -= pageH;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 0, position, imgW, imgH);
-        heightLeft -= pageH;
-      }
-      const safeCo = (displayBriefing?.co || "briefing").replace(/[^a-z0-9]+/gi, "-");
-      pdf.save(`${safeCo}-IBM-brief.pdf`);
-    } catch (e) {
-      console.error("PDF export failed:", e);
-    } finally {
-      setExporting(false);
-    }
+  // Export to PDF via the browser's print engine. It renders the real DOM (so the
+  // PDF is identical to the UI), correctly handles modern CSS like oklch (which
+  // html2canvas cannot), produces selectable text, and the print stylesheet
+  // (index.css @media print) yields a clean white, client-ready document.
+  const exportPDF = () => {
+    window.print();
   };
 
   const generateProspect = async () => {
@@ -2068,7 +2040,7 @@ export default function BriefingPage() {
             </div>
 
             {/* PDF capture region — keeps UI and PDF identical */}
-            <div ref={pdfRef} style={{background:t.bodyBg,padding:"4px 0 8px"}}>
+            <div ref={pdfRef} className="pdf-capture" style={{background:t.bodyBg,padding:"4px 0 8px"}}>
             {/* Briefing header */}
             <div style={{marginBottom:24,display:"flex",alignItems:"center",gap:14}}>
               {/* Contact photo on the LEFT - only show if there's a contact name */}

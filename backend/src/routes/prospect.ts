@@ -34,20 +34,16 @@ FORMATTING — the structure must be identical in the web UI and the exported PD
 
 Produce these sections in this order:
 
-## Company Overview
-2–4 sentences: mission, the market segments they serve, and who their customers are.
-
-## IBM Product Recommendations by Line of Business
-For each major line of business, the best-fit IBM product(s) and one sentence on why.
-
 ## Solution Mapping
-A Markdown table with columns: Line of Business | IBM Product | Use Case. 4–6 rows.
+A Markdown table with columns: Line of Business | IBM Product | Use Case. 4–6 rows. This table is the ONLY place to map products to lines of business — do not restate it as prose.
 
 ## Contract Vehicle Alignment & Differentiators
 How IBM can be procured for this account and 2–3 differentiators that matter here.
 
 ## Contacts
-Names, titles, emails, or phone numbers ONLY if present in the website content above. Otherwise: "Not found on site."`;
+Names, titles, emails, or phone numbers ONLY if present in the website content above. Otherwise: "Not found on site."
+
+Do NOT include a company overview or a general product-recommendations section — those appear earlier in the brief. Avoid repeating anything already covered by Company Background or Product Recommendations.`;
 }
 
 function salesPlayPrompt(company: string, url: string, scraped: string, ctx: string): string {
@@ -77,7 +73,7 @@ How IBM wins vs. each, 1–2 sentences each: Microsoft Azure (OpenAI), AWS (Bedr
 4–5 lines: target buyer, primary pain, lead product, proof point.
 
 ## Elevator Pitch
-One sentence, under 40 words.`;
+3–4 sentences. Reference the specific IBM products recommended for this account and the concrete business outcome they drive. Make it sound natural spoken aloud, not a slogan.`;
 }
 
 // ---------------------------------------------------------------------------
