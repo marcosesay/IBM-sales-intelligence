@@ -961,6 +961,18 @@ function personNameFromLinkedIn(url: string): string {
     .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(" ");
 }
+/* Clean a company label for DISPLAY only. If the seller pasted a URL (often with
+   tracking query params), show just the hostname (crs.org) instead of the raw string.
+   The full input is still sent to the backend — the path/params help the model ID the
+   account (e.g. "save-lives" on crs.org → Catholic Relief Services). Plain typed names
+   pass through untouched. */
+function cleanCompanyLabel(input: string): string {
+  const v = (input || "").trim();
+  if (!v) return "";
+  const m = v.match(/^(?:https?:\/\/)?(?:www\.)?([^/?#\s]+)/i);
+  if (m && /\.[a-z]{2,}$/i.test(m[1])) return m[1].toLowerCase();
+  return v;
+}
 
 /* Sanitize a prospect markdown blob: keep only whitelisted sections, each once
    (first wins), strip any leaked model commentary. Returns clean markdown. */
@@ -1816,7 +1828,7 @@ export default function BriefingPage() {
   // For person (LinkedIn) inputs, never surface the raw URL as the "company" — show the name.
   const displayCo = isLinkedInProfileUrl(displayBriefing?.co || "")
     ? (personNameFromLinkedIn(displayBriefing?.co || "") || "this profile")
-    : displayBriefing?.co;
+    : cleanCompanyLabel(displayBriefing?.co || "");
   const logoUrl = displayBriefing?.logoUrl || (briefingReady ? undefined : logoData?.url);
 
   /* ─── Button styles ─── */
@@ -1839,8 +1851,8 @@ export default function BriefingPage() {
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
               <div>
                 <div style={{fontSize:11,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:"#0f62fe",marginBottom:4}}>Prospect Report</div>
-                <div style={{fontSize:20,fontWeight:600,color:t.text}}>{isLinkedInProfileUrl(prospectResult.companyName) ? (personNameFromLinkedIn(prospectResult.companyName) || "LinkedIn profile") : prospectResult.companyName}</div>
-                <div style={{fontSize:12,color:t.textMuted,marginTop:2}}>{isLinkedInProfileUrl(prospectResult.websiteUrl) ? "" : prospectResult.websiteUrl}</div>
+                <div style={{fontSize:20,fontWeight:600,color:t.text}}>{isLinkedInProfileUrl(prospectResult.companyName) ? (personNameFromLinkedIn(prospectResult.companyName) || "LinkedIn profile") : cleanCompanyLabel(prospectResult.companyName)}</div>
+                <div style={{fontSize:12,color:t.textMuted,marginTop:2}}>{(isLinkedInProfileUrl(prospectResult.websiteUrl) || /^https?:\/\//i.test(prospectResult.websiteUrl)) ? "" : prospectResult.websiteUrl}</div>
               </div>
               <button
                 onClick={async () => {
@@ -2019,7 +2031,7 @@ export default function BriefingPage() {
                   {[
                     isLinkedInProfileUrl(company)
                       ? `LinkedIn profile detected: ${personNameFromLinkedIn(company) || "profile"}`
-                      : `Company detected: ${company.trim()}`,
+                      : `Company detected: ${cleanCompanyLabel(company)}`,
                     ...(prospectUrl?["Website added"]:[]),
                     ...(detectedIndustry && !isLinkedInProfileUrl(company)?[`Industry: ${detectedIndustry}`]:[])
                   ].map((line,i)=>(
@@ -2034,6 +2046,19 @@ export default function BriefingPage() {
                     style={{background:"none",border:"none",color:t.accent,fontSize:12.5,fontWeight:500,cursor:"pointer",padding:0,fontFamily:"var(--app-font-sans)"}}>
                     ↳ Try a sample account
                   </button>
+                </div>
+              )}
+
+              {/* Person inputs: surface the parsed name as an editable field. We can't
+                  reliably split a concatenated slug ("julianavanlaanen"), so let the seller
+                  correct it in one click — this drives the header, PDF, and payload. */}
+              {company.trim() && isLinkedInProfileUrl(company) && (
+                <div style={{maxWidth:420,margin:"14px auto 0",textAlign:"left"}}>
+                  <GlassInput t={t} label="Name (edit if needed)"
+                    value={contactName2}
+                    onChange={e=>setContactName2((e.target as HTMLInputElement).value)}
+                    placeholder="First Last" autoComplete="off"/>
+                  <p style={{fontSize:11,color:t.textDim,margin:"5px 2px 0"}}>Parsed from the profile URL — adjust if the split isn't right (e.g. "Juliana van Laanen").</p>
                 </div>
               )}
 
@@ -2312,9 +2337,9 @@ export default function BriefingPage() {
                   </span>
                 </div>
                 <h1 style={{fontSize:24,fontWeight:500,letterSpacing:"-0.4px",color:t.nameLine,margin:"0 0 3px",lineHeight:1.15}}>
-                  {displayBriefing?.ct || (isLinkedInProfileUrl(displayBriefing?.co||"") ? "" : displayBriefing?.co) || "…"}
+                  {displayBriefing?.ct || displayCo || "…"}
                 </h1>
-                <p style={{fontSize:12,color:t.textMuted,margin:"0 0 2px"}}>{[isLinkedInProfileUrl(displayBriefing?.co||"") ? "" : displayBriefing?.co,displayBriefing?.ti,displayBriefing?.ind].filter(Boolean).join("  ·  ")}</p>
+                <p style={{fontSize:12,color:t.textMuted,margin:"0 0 2px"}}>{[displayBriefing?.ct ? (isLinkedInProfileUrl(displayBriefing?.co||"") ? "" : cleanCompanyLabel(displayBriefing?.co||"")) : "",displayBriefing?.ti,displayBriefing?.ind].filter(Boolean).join("  ·  ")}</p>
                 <p style={{fontSize:11,color:t.dateText,margin:0}}>Generated {displayBriefing?.date}</p>
               </div>
 
