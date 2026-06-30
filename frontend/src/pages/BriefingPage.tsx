@@ -854,7 +854,7 @@ function ProductRecsCard({ content, industry, t, accent, bg }: {
               <span style={{fontSize:12,fontWeight:600,color:t.text,letterSpacing:"-0.2px",lineHeight:1.3}}>{p.name}</span>
               <span style={{
                 fontSize:8.5,fontWeight:500,letterSpacing:"0.5px",textTransform:"uppercase",
-                color:accent,background:`${accent.replace(/[\d.]+\)$/, "0.12)")}`,
+                color:t.text,background:`${accent.replace(/[\d.]+\)$/, "0.12)")}`,
                 border:`1px solid ${accent.replace(/[\d.]+\)$/, "0.25)")}`,
                 borderRadius:4,padding:"2px 6px",flexShrink:0,
               }}>{p.tag}</span>
@@ -1556,6 +1556,7 @@ export default function BriefingPage() {
   const dashContract = getProspect("contract vehicle");
   const dashContacts = getProspect("contacts");
   const dashWhyNow = getProspect("why act now");
+  const dashNextSteps = getProspect("what to do next");
 
   const toggleRef = (k: string) => setOpenRefs((p) => ({ ...p, [k]: !p[k] }));
   const dashCardBase: React.CSSProperties = { background: t.sectionCard, border: `1px solid ${t.sectionCardBorder}`, borderRadius: 12, padding: "16px 18px" };
@@ -1811,226 +1812,6 @@ export default function BriefingPage() {
   return (
     <div style={{display:"flex",height:"100vh",overflow:"hidden",fontFamily:"var(--app-font-sans)",background:t.bodyBg,color:t.text}}>
 
-      {/* ─── Sidebar toggle ─── */}
-      <button onClick={() => setSidebarOpen(!sidebarOpen)} title="Toggle sidebar" style={{
-        position:"fixed",top:"50%",left:sidebarOpen?264:8,transform:"translateY(-50%)",zIndex:50,
-        width:28,height:28,
-        background:sidebarOpen?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.05)",
-        border:`1px solid ${sidebarOpen?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.12)"}`,
-        borderRadius:6,
-        display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",
-        color:t.textMuted, transition:"all 0.2s ease",
-        backdropFilter:"blur(8px)",
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.color = t.text;
-        e.currentTarget.style.background = "rgba(255,255,255,0.08)";
-        e.currentTarget.style.borderColor = "rgba(255,255,255,0.16)";
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.color = t.textMuted;
-        e.currentTarget.style.background = sidebarOpen?"rgba(255,255,255,0.03)":"rgba(255,255,255,0.05)";
-        e.currentTarget.style.borderColor = sidebarOpen?"rgba(255,255,255,0.08)":"rgba(255,255,255,0.12)";
-      }}
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          {sidebarOpen ? (
-            <path d="M15 18l-6-6 6-6"/>
-          ) : (
-            <path d="M9 18l6-6-6-6"/>
-          )}
-        </svg>
-      </button>
-
-      {/* ─── Sidebar ─── */}
-      <aside style={{
-        flexShrink:0, width:sidebarOpen?280:0, minWidth:sidebarOpen?280:0,
-        overflowY:"hidden", overflowX:"hidden",
-        transition:"width 0.2s,min-width 0.2s",
-        background:t.sidebar, backdropFilter:"blur(40px) saturate(160%)",
-        WebkitBackdropFilter:"blur(40px) saturate(160%)",
-        borderRight:`1px solid ${t.sidebarBorder}`,
-        display:"flex", flexDirection:"column", height:"100vh",
-      }}>
-        {sidebarOpen && (
-          <div style={{display:"flex",flexDirection:"column",height:"100%",paddingTop:56}}>
-            {/* Profile row */}
-            <div style={{padding:"0 18px",paddingBottom:14,marginBottom:12,borderBottom:`1px solid ${t.divider}`,flexShrink:0}}>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <>
-                  {userProfilePicture && (
-                    <div style={{width:34,height:34,borderRadius:"50%",overflow:"hidden",flexShrink:0,border:`1.5px solid ${t.toggleBorder}`}}>
-                      <img src={userProfilePicture} alt={userName} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                    </div>
-                  )}
-                  <div style={{flex:1,minWidth:0}}>
-                    <p style={{fontSize:12,fontWeight:500,color:t.text,margin:"0 0 1px"}}>
-                      {userName || "User"}
-                    </p>
-                    <p style={{fontSize:10,color:t.textMuted,margin:0,fontWeight:300}}>
-                      {userRole || "Sales Professional"}
-                    </p>
-                  </div>
-                </>
-                <div style={{display:"flex",alignItems:"center",gap:6}}>
-                  <div className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:t.accent,boxShadow:`0 0 7px ${t.accentGlow}`}} />
-                  <button onClick={toggleTheme} title={`Switch to ${theme==="dark"?"light":"dark"} mode`} style={{
-                    background:t.toggleBg, border:`1px solid ${t.toggleBorder}`, borderRadius:6,
-                    width:26,height:26,display:"flex",alignItems:"center",justifyContent:"center",
-                    cursor:"pointer",color:t.toggleIcon,flexShrink:0,
-                  }}>
-                    <ThemeIcon theme={theme}/>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Scrollable content area */}
-            <div style={{flex:1,overflowY:"auto",overflowX:"hidden",padding:"0 18px"}}>
-              {/* History */}
-              <div style={{marginBottom:12}}>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
-                  <button onClick={() => saved.length>0 && setShowHistory(!showHistory)} disabled={saved.length===0} style={{
-                    flex:1,textAlign:"left",background:"none",border:"none",
-                    color:t.textMuted,fontSize:12,cursor:saved.length>0?"pointer":"default",
-                    padding:"4px 0",fontFamily:"var(--app-font-sans)",
-                  }}>
-                    Pick up where you left off {saved.length>0?(showHistory?"▾":"▸"):""}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setContact("");
-                      setCompany("");
-                      setIndustry("");
-                      setTitle("");
-                      setContext("");
-                      setMeetingType("Discovery");
-                      setParsedContactName("");
-                      setContactPhotoUrl("");
-                      
-                      setSaved(loadSaved());
-                    }}
-                    title="Clear form and refresh"
-                    style={{
-                      background:t.toggleBg, border:`1px solid ${t.toggleBorder}`, borderRadius:6,
-                      width:24,height:24,display:"flex",alignItems:"center",justifyContent:"center",
-                      cursor:"pointer",color:t.toggleIcon,flexShrink:0,
-                    }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                    </svg>
-                  </button>
-                </div>
-                {showHistory && saved.length>0 && (
-                  <div style={{marginTop:6}}>
-                    {saved.map(b=>(
-                      <div key={b.ts} style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
-                        <button onClick={()=>loadBriefing(b)} style={{
-                          flex:1,textAlign:"left",background:t.btnSm,border:`1px solid ${t.btnSmBorder}`,
-                          borderRadius:8,color:t.btnSmText,fontSize:12,fontWeight:400,
-                          padding:"8px 10px",lineHeight:1.4,cursor:"pointer",fontFamily:"var(--app-font-sans)",
-                        }}>
-                          <span style={{display:"block",fontWeight:500}}>{b.co}</span>
-                          <span style={{display:"block",fontSize:11,color:t.textDim}}>{[b.ct,b.callType,b.date].filter(Boolean).join("  ·  ")}</span>
-                        </button>
-                        <button onClick={()=>deleteSaved(b.ts)} style={{background:"none",border:"none",color:t.textDim,fontSize:13,padding:"4px 6px",cursor:"pointer",fontFamily:"var(--app-font-sans)"}}>×</button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Inputs */}
-              <div>
-                <GlassInput t={t} label="Account" value={company} onChange={e=>setCompany((e.target as HTMLInputElement).value)} placeholder="Celonis, linkedin.com/in/..., or celonis.com" autoComplete="off"/>
-                <GlassInput t={t} label="Website" value={prospectUrl} onChange={e=>setProspectUrl((e.target as HTMLInputElement).value)} placeholder="https://jpmorgan.com" autoComplete="off"/>
-                <GlassInput t={t} label="Contact name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last" autoComplete="off"/>
-                <GlassInput t={t} label="LinkedIn URL" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username" autoComplete="off"/>
-                <GlassInput t={t} label="Contact title" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics" autoComplete="off"/>
-
-                {/* ── Call Type Radio Buttons ── */}
-                <div style={{marginBottom:12}}>
-                  <p style={{fontSize:11,fontWeight:500,color:t.textDim,letterSpacing:"0.7px",textTransform:"uppercase",marginBottom:8}}>Call Type</p>
-                  <div style={{display:"flex",gap:6}}>
-                    {(["Discovery","Renewal","Competitive"] as const).map(mt=>(
-                      <button
-                        key={mt}
-                        onClick={()=>setMeetingType(mt)}
-                        style={{
-                          flex:1,padding:"7px 4px",fontSize:11,fontWeight:500,
-                          borderRadius:8,cursor:"pointer",fontFamily:"var(--app-font-sans)",
-                          border:`1px solid ${meetingType===mt?t.mtActiveBorder:t.mtInactiveBorder}`,
-                          background:meetingType===mt?t.mtActive:t.mtInactive,
-                          color:meetingType===mt?t.mtActiveText:t.mtInactiveText,
-                          transition:"all 0.15s",
-                        }}
-                      >{mt}</button>
-                    ))}
-                  </div>
-                </div>
-
-                <button
-                  onClick={generate}
-                  disabled={generating}
-                  style={{
-                    ...glassBtn,
-                    opacity:generating?0.6:1,
-                    marginTop:8,
-                    position:"relative",
-                    overflow:"hidden",
-                    transform:"scale(1)",
-                    transition:"all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!generating) {
-                      e.currentTarget.style.transform = "scale(1.01)";
-                      e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.15),0 4px 16px rgba(0,0,0,0.15)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "scale(1)";
-                    e.currentTarget.style.boxShadow = "inset 0 1px 0 rgba(255,255,255,0.10),0 2px 10px rgba(0,0,0,0.1)";
-                  }}
-                >
-                  {generating ? (
-                    <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>
-                      <span className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:"currentColor"}}/>
-                      Generating…
-                    </span>
-                  ) : (
-                    "Prep my call"
-                  )}
-                </button>
-
-                {briefingReady && (
-                  <button onClick={exportPDF} style={{
-                    width:"100%",background:t.btnSm,color:t.btnSmText,border:`1px solid ${t.btnSmBorder}`,
-                    borderRadius:10,padding:"9px 14px",fontSize:12,fontWeight:400,cursor:"pointer",marginTop:4,fontFamily:"var(--app-font-sans)",
-                  }}>↓ Save PDF</button>
-                )}
-
-                {error && <p style={{fontSize:12,color:"rgba(255,100,100,0.9)",marginTop:8}}>{error}</p>}
-
-                {/* ── Context ── */}
-                <div style={{marginTop:12}}>
-                  <GlassInput t={t} label="Intel to include" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Evaluating Snowflake, budget unlocked Q3…" autoComplete="off"/>
-                </div>
-
-              </div>
-            </div>
-
-            {/* Pinned footer */}
-            <div style={{flexShrink:0,padding:"12px 18px",borderTop:`1px solid ${t.divider}`}}>
-              <p style={{fontSize:11,color:t.textDim,lineHeight:1.6,margin:"0 0 6px"}}>
-                <span style={{fontWeight:500}}>Powered by</span> watson<span style={{color:"#0f62fe"}}>x</span><br/>
-                <span style={{opacity:0.7}}>Built by Marco Sesay</span>
-              </p>
-              <img src="/ibm-logo.png" alt="IBM" style={{width:"60px",height:"auto",opacity:theme==="dark"?0.6:0.4,filter:theme==="dark"?"brightness(0) invert(1)":"brightness(0)"}}/>
-            </div>
-          </div>
-        )}
-      </aside>
 
       {/* ─── Main ─── */}
       <main style={{flex:1,overflowY:"auto",position:"relative"}}>
@@ -2103,39 +1884,92 @@ export default function BriefingPage() {
                   {greeting}, {userName && userName !== "Guest" ? <span style={{fontWeight:500}}>{userName.split(' ')[0]}</span> : <span style={{fontWeight:500}}>IBMer</span>} — who are we prepping for?
                 </span>
               </div>
-              <button
-                onClick={() => window.location.href = "/setup"}
-                style={{
-                  background:t.btnSm,
-                  border:`1px solid ${t.btnSmBorder}`,
-                  color:t.btnSmText,
-                  borderRadius:8,
-                  padding:"6px 12px",
-                  fontSize:11,
-                  fontWeight:500,
-                  cursor:"pointer",
-                  fontFamily:"var(--app-font-sans)",
-                  transition:"all 0.2s",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = t.btn;
-                  e.currentTarget.style.transform = "scale(1.02)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = t.btnSm;
-                  e.currentTarget.style.transform = "scale(1)";
-                }}
-                title="Update your name and role"
-              >
-                ⚙️ Settings
-              </button>
+              <div style={{display:"flex",alignItems:"center",gap:8,position:"relative"}}>
+                {saved.length > 0 && (
+                  <>
+                    <button
+                      onClick={() => setShowHistory(v=>!v)}
+                      style={{
+                        display:"inline-flex",alignItems:"center",gap:7,
+                        background:t.pill,backdropFilter:"blur(28px)",border:`1px solid ${t.pillBorder}`,
+                        color:t.textSub,borderRadius:100,padding:"9px 14px",fontSize:13,fontWeight:400,
+                        cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                        boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",transition:"all 0.2s",
+                      }}
+                      onMouseEnter={(e)=>{e.currentTarget.style.background=t.btn;}}
+                      onMouseLeave={(e)=>{e.currentTarget.style.background=t.pill;}}
+                      title="Recent briefings"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                      Recent
+                    </button>
+                    {showHistory && (
+                      <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,width:260,maxHeight:300,overflowY:"auto",zIndex:60,
+                        background:t.overlay,backdropFilter:"blur(28px)",border:`1px solid ${t.pillBorder}`,borderRadius:12,padding:8,
+                        boxShadow:"0 8px 28px rgba(0,0,0,0.45)"}}>
+                        {saved.map(b=>(
+                          <div key={b.ts} style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
+                            <button onClick={()=>{loadBriefing(b); setShowHistory(false);}} style={{
+                              flex:1,textAlign:"left",background:t.btnSm,border:`1px solid ${t.btnSmBorder}`,
+                              borderRadius:8,color:t.btnSmText,fontSize:12,fontWeight:400,
+                              padding:"8px 10px",lineHeight:1.4,cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                            }}>
+                              <span style={{display:"block",fontWeight:500}}>{b.co}</span>
+                              <span style={{display:"block",fontSize:11,color:t.textDim}}>{[b.ct,b.callType,b.date].filter(Boolean).join("  ·  ")}</span>
+                            </button>
+                            <button onClick={()=>deleteSaved(b.ts)} style={{background:"none",border:"none",color:t.textDim,fontSize:14,padding:"4px 6px",cursor:"pointer",fontFamily:"var(--app-font-sans)"}}>×</button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+                <button
+                  onClick={toggleTheme}
+                  title={`Switch to ${theme==="dark"?"light":"dark"} mode`}
+                  style={{
+                    display:"inline-flex",alignItems:"center",justifyContent:"center",
+                    background:t.pill,backdropFilter:"blur(28px)",border:`1px solid ${t.pillBorder}`,
+                    color:t.textSub,borderRadius:100,width:38,height:38,
+                    cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",transition:"all 0.2s",
+                  }}
+                  onMouseEnter={(e)=>{e.currentTarget.style.background=t.btn;}}
+                  onMouseLeave={(e)=>{e.currentTarget.style.background=t.pill;}}
+                >
+                  <ThemeIcon theme={theme}/>
+                </button>
+                <button
+                  onClick={() => window.location.href = "/setup"}
+                  style={{
+                    display:"inline-flex",alignItems:"center",gap:7,
+                    background:t.pill,backdropFilter:"blur(28px)",
+                    border:`1px solid ${t.pillBorder}`,
+                    color:t.textSub,
+                    borderRadius:100,
+                    padding:"9px 16px",
+                    fontSize:13,
+                    fontWeight:400,
+                    cursor:"pointer",
+                    fontFamily:"var(--app-font-sans)",
+                    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",
+                    transition:"all 0.2s",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = t.btn; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = t.pill; }}
+                  title="Update your name and role"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                  Settings
+                </button>
+              </div>
 
             </div>
 
             {/* ─── Centered, search-first hero (single column, no globe) ─── */}
             <div style={{maxWidth:600,margin:"12px auto 48px",width:"100%"}}>
               <h1 style={{fontSize:46,fontWeight:200,letterSpacing:"-2px",color:t.text,lineHeight:1.05,margin:"0 0 14px",textAlign:"center"}}>
-                Know your account<br/>before the call
+                Sales Intelligence<br/>Simplified
               </h1>
               <p style={{fontSize:15,fontWeight:300,color:t.textMuted,lineHeight:1.6,margin:"0 auto 28px",textAlign:"center",maxWidth:430}}>
                 Drop in a company name. Get a full IBM briefing in under 30 seconds.
@@ -2214,7 +2048,7 @@ export default function BriefingPage() {
               {/* trust line */}
               {!generating && (
                 <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginTop:14,fontSize:10.5,color:t.textMuted,flexWrap:"wrap"}}>
-                  <span>Takes ~30 seconds</span><span>·</span><span>No setup required</span><span>·</span><span>watsonx-secured</span>
+                  <span>Takes ~30 seconds</span><span>·</span><span>No setup required</span><span>·</span><span>Powered by watsonx</span>
                 </div>
               )}
 
@@ -2243,6 +2077,7 @@ export default function BriefingPage() {
                     <GlassInput t={t} label="LinkedIn URL" value={contact} onChange={e=>setContact((e.target as HTMLInputElement).value)} placeholder="linkedin.com/in/username" autoComplete="off"/>
                     <GlassInput t={t} label="Contact name" value={contactName2} onChange={e=>setContactName2((e.target as HTMLInputElement).value)} placeholder="First Last" autoComplete="off"/>
                     <GlassInput t={t} label="Contact title" value={title} onChange={e=>setTitle((e.target as HTMLInputElement).value)} placeholder="e.g. VP of Data & Analytics" autoComplete="off"/>
+                    <GlassInput t={t} label="Intel to include" textarea value={context} onChange={e=>setContext((e.target as HTMLTextAreaElement).value)} placeholder="Evaluating Snowflake, budget unlocked Q3…" autoComplete="off"/>
                   </div>
                 )}
               </div>
@@ -2465,7 +2300,7 @@ export default function BriefingPage() {
             {dashTier("Snapshot", "The 30-second read before you dial")}
             <div style={{display:"grid",gridTemplateColumns:"1.3fr 1fr",gap:12,marginBottom:12,alignItems:"stretch"}}>
               <div className="dash-card dash-primary" style={dashCardAccent}>
-                <div className="dash-label" style={dashLabel}>Key Takeaways</div>
+                <div className="dash-label" style={dashLabel}>Start Here</div>
                 {dashKeyTakeaways && dashKeyTakeaways.content
                   ? <div style={{fontSize:14,color:t.text,lineHeight:1.75}}><MarkdownBody body={dashKeyTakeaways.content} t={t} accent={t.accent}/></div>
                   : <div style={{fontSize:13,color:t.textDim}}>Generating…</div>}
@@ -2529,6 +2364,12 @@ export default function BriefingPage() {
               <div className="dash-card" style={dashCardBase}>
                 <div className="dash-label" style={dashLabel}>6-Step Sales Play</div>
                 <SalesPlayFlow body={dashPlay.body} t={t}/>
+              </div>
+            )}
+            {dashNextSteps && (
+              <div className="dash-card dash-primary" style={{...dashCardAccent,background:t.badgeBg,marginTop:12}}>
+                <div className="dash-label" style={dashLabel}>What To Do Next</div>
+                <div style={{fontSize:14,color:t.text,lineHeight:1.7}}><MarkdownBody body={dashNextSteps.body} t={t} accent={t.accent}/></div>
               </div>
             )}
 
