@@ -1555,6 +1555,7 @@ export default function BriefingPage() {
   const dashMapping = getProspect("solution mapping");
   const dashContract = getProspect("contract vehicle");
   const dashContacts = getProspect("contacts");
+  const dashWhyNow = getProspect("why act now");
 
   const toggleRef = (k: string) => setOpenRefs((p) => ({ ...p, [k]: !p[k] }));
   const dashCardBase: React.CSSProperties = { background: t.sectionCard, border: `1px solid ${t.sectionCardBorder}`, borderRadius: 12, padding: "16px 18px" };
@@ -2494,11 +2495,17 @@ export default function BriefingPage() {
             )}
 
             {/* ════════ TIER 2 · INSIGHTS ════════ */}
-            {(dashBackground || dashQual) && dashTier("Strategy", "Who they are → why now")}
+            {(dashBackground || dashQual || dashWhyNow) && dashTier("Strategy", "Who they are → why now")}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,alignItems:"stretch"}}>
               {dashBackground && <SectionCard key={dashBackground.title} title={dashBackground.title} content={dashBackground.content} industry={displayBriefing?.ind} t={t} streaming={dashBackground.isStreaming}/>}
               {dashQual && <SectionCard key={dashQual.title} title={dashQual.title} content={dashQual.content} industry={displayBriefing?.ind} t={t} streaming={dashQual.isStreaming}/>}
             </div>
+            {dashWhyNow && (
+              <div className="dash-card dash-primary" style={{...dashCardAccent,marginTop:12}}>
+                <div className="dash-label" style={dashLabel}>Why Act Now</div>
+                <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashWhyNow.body} t={t} accent={t.accent}/></div>
+              </div>
+            )}
 
             {(dashMapping || briefingReady || generating) && dashTier("Mapping", "Where IBM fits")}
             {dashMapping && (
