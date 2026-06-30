@@ -250,7 +250,7 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
   // Helper function to load image via proxy
   const loadImageViaProxy = async (url: string): Promise<string | null> => {
     try {
-      const proxyUrl = `http://localhost:3000/api/briefing/proxy-image?url=${encodeURIComponent(url)}`;
+      const proxyUrl = `${getBaseUrl()}/api/briefing/proxy-image?url=${encodeURIComponent(url)}`;
       const response = await fetch(proxyUrl);
       if (!response.ok) return null;
       
