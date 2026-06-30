@@ -946,6 +946,22 @@ function MarkdownBody({ body, t, accent }: { body: string; t: typeof DARK; accen
 const STEP1_KEYWORDS = ["solution mapping", "contract vehicle", "contacts"];
 const STEP2_KEYWORDS = ["best-fit use case", "best fit use case", "sales play", "competitive wedge", "why act now", "sales card", "elevator pitch", "what to do next"];
 
+/* Person-input helpers. We deliberately do NOT fetch LinkedIn (it blocks scraping),
+   so from a profile URL we can only derive a best-effort display name from the slug
+   and never a title/company. Concatenated slugs ("lornejones") can't be split into
+   first/last and stay single-token; delimited slugs ("lorne-jones-9b2") clean up. */
+const isLinkedInProfileUrl = (s: string): boolean => /linkedin\.com\/in\//i.test(s || "");
+function personNameFromLinkedIn(url: string): string {
+  const m = (url || "").match(/linkedin\.com\/in\/([^/?#]+)/i);
+  if (!m?.[1]) return "";
+  const slug = m[1].replace(/-[a-z0-9]*\d[a-z0-9]*$/i, ""); // drop trailing id hash
+  return slug
+    .replace(/[-_]/g, " ").replace(/\d+/g, "").replace(/\s+/g, " ").trim()
+    .split(" ").filter(w => w.length > 1)
+    .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+    .join(" ");
+}
+
 /* Sanitize a prospect markdown blob: keep only whitelisted sections, each once
    (first wins), strip any leaked model commentary. Returns clean markdown. */
 function cleanProspectMarkdown(raw: string, keywords: string[]): string {
@@ -1799,6 +1815,10 @@ export default function BriefingPage() {
 
   const showResult = generating || briefingReady;
   const displayBriefing = briefingReady ? currentBriefing : pendingBriefing;
+  // For person (LinkedIn) inputs, never surface the raw URL as the "company" — show the name.
+  const displayCo = isLinkedInProfileUrl(displayBriefing?.co || "")
+    ? (personNameFromLinkedIn(displayBriefing?.co || "") || "this profile")
+    : displayBriefing?.co;
   const logoUrl = displayBriefing?.logoUrl || (briefingReady ? undefined : logoData?.url);
 
   /* ─── Button styles ─── */
@@ -1821,8 +1841,8 @@ export default function BriefingPage() {
             <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:20}}>
               <div>
                 <div style={{fontSize:11,fontWeight:700,letterSpacing:"0.09em",textTransform:"uppercase",color:"#0f62fe",marginBottom:4}}>Prospect Report</div>
-                <div style={{fontSize:20,fontWeight:600,color:t.text}}>{prospectResult.companyName}</div>
-                <div style={{fontSize:12,color:t.textMuted,marginTop:2}}>{prospectResult.websiteUrl}</div>
+                <div style={{fontSize:20,fontWeight:600,color:t.text}}>{isLinkedInProfileUrl(prospectResult.companyName) ? (personNameFromLinkedIn(prospectResult.companyName) || "LinkedIn profile") : prospectResult.companyName}</div>
+                <div style={{fontSize:12,color:t.textMuted,marginTop:2}}>{isLinkedInProfileUrl(prospectResult.websiteUrl) ? "" : prospectResult.websiteUrl}</div>
               </div>
               <button
                 onClick={async () => {
@@ -1998,7 +2018,13 @@ export default function BriefingPage() {
               {/* inline feedback (left) or sample-account nudge */}
               {company.trim() ? (
                 <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",marginTop:13}}>
-                  {[`Company detected: ${company.trim()}`, ...(prospectUrl?["Website added"]:[]), ...(detectedIndustry?[`Industry: ${detectedIndustry}`]:[])].map((line,i)=>(
+                  {[
+                    isLinkedInProfileUrl(company)
+                      ? `LinkedIn profile detected: ${personNameFromLinkedIn(company) || "profile"}`
+                      : `Company detected: ${company.trim()}`,
+                    ...(prospectUrl?["Website added"]:[]),
+                    ...(detectedIndustry && !isLinkedInProfileUrl(company)?[`Industry: ${detectedIndustry}`]:[])
+                  ].map((line,i)=>(
                     <span key={i} style={{display:"flex",alignItems:"center",gap:6,fontSize:12,color:t.textSub}}>
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#42be65" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>{line}
                     </span>
@@ -2199,14 +2225,14 @@ export default function BriefingPage() {
                 <div style={{height:2,borderRadius:1,background:t.topBar,overflow:"hidden"}}>
                   <div className="animate-progress-bar" style={{height:"100%",background:t.progressBar,borderRadius:1,animation:"progress-slide 1.4s ease-in-out infinite"}}/>
                 </div>
-                <p style={{fontSize:11,color:t.textDim,margin:"6px 0 0",fontWeight:300}}>Generating briefing for {displayBriefing?.co}…</p>
+                <p style={{fontSize:11,color:t.textDim,margin:"6px 0 0",fontWeight:300}}>Generating briefing for {displayCo}…</p>
               </div>
             )}
 
             {/* Top bar */}
             <div className="no-print" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 0",borderBottom:`1px solid ${t.divider}`,marginBottom:24}}>
               <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontSize:12,color:t.textMuted}}>{displayBriefing?.co}</span>
+                <span style={{fontSize:12,color:t.textMuted}}>{displayCo}</span>
                 <span style={{color:t.textDim}}>·</span>
                 <span style={{fontSize:12,color:t.textMuted}}>{displayBriefing?.ind}</span>
               </div>
@@ -2288,9 +2314,9 @@ export default function BriefingPage() {
                   </span>
                 </div>
                 <h1 style={{fontSize:24,fontWeight:500,letterSpacing:"-0.4px",color:t.nameLine,margin:"0 0 3px",lineHeight:1.15}}>
-                  {displayBriefing?.ct || displayBriefing?.co || "…"}
+                  {displayBriefing?.ct || (isLinkedInProfileUrl(displayBriefing?.co||"") ? "" : displayBriefing?.co) || "…"}
                 </h1>
-                <p style={{fontSize:12,color:t.textMuted,margin:"0 0 2px"}}>{[displayBriefing?.co,displayBriefing?.ti,displayBriefing?.ind].filter(Boolean).join("  ·  ")}</p>
+                <p style={{fontSize:12,color:t.textMuted,margin:"0 0 2px"}}>{[isLinkedInProfileUrl(displayBriefing?.co||"") ? "" : displayBriefing?.co,displayBriefing?.ti,displayBriefing?.ind].filter(Boolean).join("  ·  ")}</p>
                 <p style={{fontSize:11,color:t.dateText,margin:0}}>Generated {displayBriefing?.date}</p>
               </div>
 
