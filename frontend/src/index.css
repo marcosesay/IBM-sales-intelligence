@@ -170,4 +170,19 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
   /* Bullet rhythm */
   .pdf-capture ul, .pdf-capture ol { margin: 2px 0 !important; padding-left: 18px !important; }
   .pdf-capture li { margin: 2px 0 !important; }
+
+  /* 6-Step Sales Play — on screen it scrolls horizontally; in print it must WRAP so
+     all six steps print (otherwise the page clips it at ~3). Arrows are dropped so
+     cards flow cleanly into rows; each step card is kept whole across page breaks. */
+  .pdf-capture .sales-play-flow {
+    display: flex !important; flex-wrap: wrap !important;
+    overflow: visible !important; gap: 8px !important; padding-bottom: 0 !important;
+  }
+  .pdf-capture .sales-play-step { flex-shrink: 0 !important; break-inside: avoid !important; page-break-inside: avoid !important; }
+  .pdf-capture .sales-play-step > div {
+    width: 168px !important; min-height: 0 !important;
+    border: 1px solid #c2cfe2 !important; border-top: 2px solid #0f62fe !important;
+    border-radius: 8px !important; break-inside: avoid !important;
+  }
+  .pdf-capture .sales-play-arrow { display: none !important; }
 }

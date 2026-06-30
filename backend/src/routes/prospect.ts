@@ -97,7 +97,7 @@ Exactly 2 sentences. Lead with the business value and outcome for this account, 
 ## What To Do Next
 Exactly 3 bullets, action-first — the seller's immediate next moves after this brief. Cover, one per bullet: **First move:** the single first action to take, **Who to engage:** the persona/role to reach and how, **Lead with:** the IBM product and angle to open on. Each <= 16 words, imperative voice (start with a verb). Specific to this account — no generic advice.
 
-OUTPUT RULES (critical): Produce each section above exactly once, in the given order, then end. Do not repeat any section, do not invent extra sections (no "Key Messages", "Next Steps", or duplicate tables), and do not add notes, commentary, questions, apologies, or any text about revising or following instructions. Return only the section content.`;
+OUTPUT RULES (critical): Produce all seven sections above exactly once, in the given order, then end. Why Act Now and What To Do Next are mandatory — never omit them ("What To Do Next" is a required section, not a forbidden "Next Steps" list). Do not repeat any section, do not invent extra sections (no "Key Messages" or duplicate tables), and do not add notes, commentary, questions, apologies, or any text about revising or following instructions. Return only the section content.`;
 }
 
 // ---------------------------------------------------------------------------
@@ -133,7 +133,7 @@ router.post("/generate", async (req, res) => {
       }),
       generateText(salesPlayPrompt(companyName, site, scraped, ctx), {
         model: MODEL,
-        maxTokens: 1300,
+        maxTokens: 1600,
         temperature: 0.3,
       }),
     ]);
