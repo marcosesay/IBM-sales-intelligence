@@ -61,3 +61,34 @@
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.22); }
+
+/* ── Print / Export to PDF ──────────────────────────────────────────────
+   Export uses window.print(). Isolate the brief capture region and reset it
+   to a clean white, client-ready document. Handles modern CSS (oklch) that
+   html2canvas cannot. */
+@media print {
+  @page { margin: 14mm; }
+  body { background: #fff !important; }
+  body * { visibility: hidden !important; }
+  .pdf-capture, .pdf-capture * { visibility: visible !important; }
+  .pdf-capture {
+    position: absolute !important;
+    left: 0; top: 0; width: 100% !important;
+    background: #fff !important;
+    color: #111 !important;
+    padding: 0 !important;
+  }
+  .pdf-capture * {
+    color: #111 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    border-color: #d9d9d9 !important;
+  }
+  .pdf-capture strong { font-weight: 700 !important; color: #000 !important; }
+  .pdf-capture table { border-collapse: collapse !important; width: 100% !important; }
+  .pdf-capture th, .pdf-capture td { border: 1px solid #ccc !important; }
+  .pdf-capture > div { break-inside: avoid; page-break-inside: avoid; }
+}
