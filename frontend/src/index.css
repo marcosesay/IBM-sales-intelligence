@@ -10,6 +10,8 @@
 
 :root {
   --app-font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* Render the whole app at 125% by default (matches preferred reading zoom). */
+  zoom: 1.25;
 }
 
 @layer base {
@@ -91,6 +93,8 @@ button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visib
    dividers, emphasized snapshot cards, shaded tables, page-break control. */
 @media print {
   @page { margin: 15mm 13mm; }
+  /* Cancel the app-wide 125% zoom for print so PDF pagination stays accurate. */
+  :root { zoom: 1 !important; }
   html, body { background: #fff !important; }
   body * { visibility: hidden !important; }
   .pdf-capture, .pdf-capture * { visibility: visible !important; }
