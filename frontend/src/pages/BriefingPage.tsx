@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import { useGetBriefingNews, useGetBriefingLogo, useGetBriefingIndustry, useGetPulseNews, getBaseUrl } from "@/lib/api-client";
+import { useGetBriefingLogo, useGetBriefingIndustry, getBaseUrl } from "@/lib/api-client";
 
 /* ─── User Info Hook ─── */
 function useUserInfo() {
-  const [userName, setUserName] = useState("");
-  const [userRole, setUserRole] = useState("");
-  const [userProfilePicture, setUserProfilePicture] = useState<string | null>(null);
+  const [userName, setUserName] = useState(() => localStorage.getItem("userName") || "");
+  const [userRole, setUserRole] = useState(() => localStorage.getItem("userRole") || "");
+  const [userProfilePicture, setUserProfilePicture] = useState<string | null>(() => localStorage.getItem("userProfilePicture"));
 
   useEffect(() => {
     const name = localStorage.getItem("userName") || "";
@@ -13,7 +13,7 @@ function useUserInfo() {
     const picture = localStorage.getItem("userProfilePicture");
     setUserName(name);
     setUserRole(role);
-    if (picture) setUserProfilePicture(picture);
+    setUserProfilePicture(picture);
   }, []);
 
   return { userName, userRole, userProfilePicture };
@@ -34,10 +34,17 @@ type MeetingType = typeof MEETING_TYPES[number];
 
 // Rotating placeholder examples for the account field (cycles while empty).
 const ACCOUNT_PLACEHOLDERS = [
-  'Try "JPMorgan Chase"',
-  'Try "Nike supply chain lead"',
-  'Try "Salesforce + CIO"',
-  'Try "Celonis"',
+  'Company name — try "JPMorgan Chase"',
+  'Company name — try "Nike"',
+  'Company name — try "HSBC"',
+  'Company name — try "Celonis"',
+];
+
+// One-click sample chips: company name + call type
+const SAMPLE_CHIPS: { label: string; company: string; type: "Discovery"|"Renewal"|"Competitive" }[] = [
+  { label: "Celonis", company: "Celonis", type: "Discovery" },
+  { label: "HSBC", company: "HSBC", type: "Discovery" },
+  { label: "Conduent", company: "Conduent", type: "Competitive" },
 ];
 
 // Curated industry hints for well-known accounts. Only used to surface a real,
@@ -117,43 +124,6 @@ const LIGHT = {
   topBar: "rgba(0,0,0,0.05)",
 };
 
-const SECTION_ACCENTS_DARK: Record<string, { accent: string; bg: string }> = {
-  "Company & Contact Background":       { accent: "rgba(160,180,210,0.65)", bg: "rgba(160,180,210,0.07)" },
-  "Account Health & Risk":              { accent: "rgba(160,180,210,0.65)", bg: "rgba(160,180,210,0.07)" },
-  "Competitive Landscape":              { accent: "rgba(160,180,210,0.65)", bg: "rgba(160,180,210,0.07)" },
-  "Executive Profile & Strategic Agenda": { accent: "rgba(160,180,210,0.65)", bg: "rgba(160,180,210,0.07)" },
-  "Discovery Questions":                { accent: "rgba(130,190,155,0.65)", bg: "rgba(130,190,155,0.07)" },
-  "Renewal & Expansion Questions":      { accent: "rgba(130,190,155,0.65)", bg: "rgba(130,190,155,0.07)" },
-  "Competitive Discovery Questions":    { accent: "rgba(130,190,155,0.65)", bg: "rgba(130,190,155,0.07)" },
-  "Executive Engagement Questions":     { accent: "rgba(130,190,155,0.65)", bg: "rgba(130,190,155,0.07)" },
-  "Opportunity Qualification":          { accent: "rgba(200,170,120,0.65)", bg: "rgba(200,170,120,0.07)" },
-  "Expansion Qualification":            { accent: "rgba(200,170,120,0.65)", bg: "rgba(200,170,120,0.07)" },
-  "Win/Loss Qualification":             { accent: "rgba(200,170,120,0.65)", bg: "rgba(200,170,120,0.07)" },
-  "Business Case Qualification":        { accent: "rgba(200,170,120,0.65)", bg: "rgba(200,170,120,0.07)" },
-  "Product Recommendations":            { accent: "rgba(100,160,230,0.70)", bg: "rgba(100,160,230,0.07)" },
-  "Retention & Upsell Positioning":     { accent: "rgba(100,160,230,0.70)", bg: "rgba(100,160,230,0.07)" },
-  "IBM Differentiation":                { accent: "rgba(100,160,230,0.70)", bg: "rgba(100,160,230,0.07)" },
-  "Strategic Investment Themes":        { accent: "rgba(100,160,230,0.70)", bg: "rgba(100,160,230,0.07)" },
-};
-
-const SECTION_ACCENTS_LIGHT: Record<string, { accent: string; bg: string }> = {
-  "Company & Contact Background":       { accent: "#3a5f9a", bg: "#eef3ff" },
-  "Account Health & Risk":              { accent: "#3a5f9a", bg: "#eef3ff" },
-  "Competitive Landscape":              { accent: "#3a5f9a", bg: "#eef3ff" },
-  "Executive Profile & Strategic Agenda": { accent: "#3a5f9a", bg: "#eef3ff" },
-  "Discovery Questions":                { accent: "#2d7a50", bg: "#edfaf3" },
-  "Renewal & Expansion Questions":      { accent: "#2d7a50", bg: "#edfaf3" },
-  "Competitive Discovery Questions":    { accent: "#2d7a50", bg: "#edfaf3" },
-  "Executive Engagement Questions":     { accent: "#2d7a50", bg: "#edfaf3" },
-  "Opportunity Qualification":          { accent: "#8a5a1a", bg: "#fdf5e8" },
-  "Expansion Qualification":            { accent: "#8a5a1a", bg: "#fdf5e8" },
-  "Win/Loss Qualification":             { accent: "#8a5a1a", bg: "#fdf5e8" },
-  "Business Case Qualification":        { accent: "#8a5a1a", bg: "#fdf5e8" },
-  "Product Recommendations":            { accent: "#0f62fe", bg: "#ebf2ff" },
-  "Retention & Upsell Positioning":     { accent: "#0f62fe", bg: "#ebf2ff" },
-  "IBM Differentiation":                { accent: "#0f62fe", bg: "#ebf2ff" },
-  "Strategic Investment Themes":        { accent: "#0f62fe", bg: "#ebf2ff" },
-};
 
 /* ─── Prospect Loading Screen ─── */
 function ProspectLoadingScreen({ t, companyName }: { t: any; companyName: string }) {
@@ -243,7 +213,8 @@ function fmtDate() {
   return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 
-/* ─── PDF Builder ─── */
+/* ─── PDF Builder (unused — export replaced by window.print) ─── */
+// @ts-ignore -- retained for git history; not called at runtime
 async function buildPDF(text: string, co: string, ct: string, ind: string, contactPhotoUrl?: string, logoUrl?: string) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "mm", format: "a4" });
@@ -618,7 +589,7 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
 
   // How much space remains for the product recommendations box
   const usedH = companyH + contactH + row3H + (gap * 4);
-  const productsH = Math.max(availableH - usedH, 30); // at least 30mm
+  void Math.max(availableH - usedH, 30); // productsH — kept for layout reference
   
   // Row 1 - Company Background (tight box, sized to text)
   renderParagraphBox(m, y, fullW, companyH, "Company Background", companyBackgroundParagraph);
@@ -1013,6 +984,7 @@ const GLOBE_NODES = [
   { lat: 0.92, lon: 5.0 }, { lat: -0.66, lon: 1.2 }, { lat: 0.08, lon: 4.4 },
   { lat: -0.5, lon: 5.7 }, { lat: 0.42, lon: 2.9 },
 ];
+// @ts-ignore -- retained for future globe visualisation; not rendered at runtime
 function WireframeGlobe({ rgb, size = 300 }: { rgb: string; size?: number }) {
   const ref = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
@@ -1122,15 +1094,15 @@ function SalesPlayFlow({ body, t }: { body: string; t: typeof DARK }) {
   // Fallback: if the model didn't produce parseable steps, render the original markdown.
   if (steps.length < 2) return <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={body} t={t} accent={t.accent}/></div>;
   return (
-    <div className="sales-play-flow" style={{display:"flex",alignItems:"stretch",overflowX:"auto",paddingBottom:6}}>
+    <div className="sales-play-flow" style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
       {steps.map((s, i) => {
         const stage = PLAY_STAGES[i] || PLAY_STAGES[PLAY_STAGES.length - 1];
         return (
-          <div key={i} className="sales-play-step" style={{display:"flex",alignItems:"center",flexShrink:0}}>
+          <div key={i} className="sales-play-step">
             <div style={{
-              width:212,flexShrink:0,background:t.input,border:`1px solid ${t.inputBorder}`,
-              borderTop:`2px solid ${t.accent}`,borderRadius:10,padding:"12px 13px",
-              display:"flex",flexDirection:"column",gap:7,minHeight:158,
+              background:t.input,border:`1px solid ${t.inputBorder}`,
+              borderTop:`2px solid ${t.accent}`,borderRadius:10,padding:"11px 12px",
+              display:"flex",flexDirection:"column",gap:6,
             }}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
                 <div style={{display:"flex",alignItems:"center",gap:7}}>
@@ -1144,14 +1116,62 @@ function SalesPlayFlow({ body, t }: { body: string; t: typeof DARK }) {
               {s.say && <div style={{fontSize:11,color:t.textSub,lineHeight:1.4,fontStyle:"italic"}}><span style={{fontWeight:700,color:t.text,fontStyle:"normal"}}>Say </span>“{s.say.replace(/^["“]|["”]$/g, "")}”</div>}
               {s.outcome && <div style={{fontSize:11,color:t.textSub,lineHeight:1.4,marginTop:"auto"}}><span style={{fontWeight:700,color:t.accent}}>→ </span>{s.outcome}</div>}
             </div>
-            {i < steps.length - 1 && (
-              <div className="sales-play-arrow" style={{flexShrink:0,padding:"0 6px",color:t.accent,opacity:0.55}}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-              </div>
-            )}
           </div>
         );
       })}
+    </div>
+  );
+}
+
+/* ─── Sales Card two-column grid ─── */
+// compact=true: stacked single-column layout for the header card widget
+function SalesCardGrid({ body, t, accent, compact }: { body: string; t: typeof DARK; accent: string; compact?: boolean }) {
+  // Parse "**Label:** value" lines from the markdown body
+  const lines = body.split("\n").map(l => l.trim()).filter(Boolean);
+  const fields: { label: string; value: string }[] = [];
+  for (const line of lines) {
+    const m = line.match(/^\*{1,2}([^*:]+):\*{0,2}\s*(.+)$/);
+    if (m) fields.push({ label: m[1].trim(), value: m[2].trim() });
+  }
+  // Fall back to plain markdown if we couldn't parse structured fields
+  if (fields.length < 3) {
+    return <div style={{fontSize:12,color:t.textSub,lineHeight:1.6}}><MarkdownBody body={body} t={t} accent={accent}/></div>;
+  }
+  if (compact) {
+    // Single-column stacked layout for the header widget
+    return (
+      <div>
+        {fields.map((f, i) => {
+          const isSayThis = /say this/i.test(f.label);
+          return (
+            <div key={i} style={{marginBottom:isSayThis?0:8,paddingTop:isSayThis?8:0,borderTop:isSayThis?`1px solid rgba(69,137,255,0.15)`:undefined}}>
+              <span style={{display:"block",fontSize:9,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:accent,marginBottom:2}}>{f.label}</span>
+              <div style={{
+                fontSize:12.5,lineHeight:1.5,marginTop:1,
+                color: isSayThis ? t.text : t.textSub,
+                fontStyle: isSayThis ? "italic" : "normal",
+                fontWeight: isSayThis ? 400 : 400,
+              }}>{isSayThis ? `"${f.value.replace(/^[""]|[""]$/g,"")}"` : f.value}</div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+  const left = fields.slice(0, Math.ceil(fields.length / 2));
+  const right = fields.slice(Math.ceil(fields.length / 2));
+  return (
+    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 24px",marginTop:4}}>
+      {[left, right].map((col, ci) => (
+        <div key={ci}>
+          {col.map((f, i) => (
+            <div key={i} style={{marginBottom:8}}>
+              <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",color:accent}}>{f.label}</span>
+              <div style={{fontSize:13,color:t.textSub,lineHeight:1.5,marginTop:2}}>{f.value}</div>
+            </div>
+          ))}
+        </div>
+      ))}
     </div>
   );
 }
@@ -1161,6 +1181,7 @@ function SectionCard({ title, content, industry, t, streaming }: {
   t: typeof DARK; streaming?: boolean;
 }) {
   const isDark = t === DARK;
+
   // Unified accent — one consistent treatment across every card, no per-section rainbow
   const accent = t.accent;
   const bg = isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.04)";
@@ -1218,7 +1239,7 @@ function SectionCard({ title, content, industry, t, streaming }: {
       background: t.sectionCard, backdropFilter:"blur(28px) saturate(150%)",
       WebkitBackdropFilter:"blur(28px) saturate(150%)",
       border:`1px solid ${t.sectionCardBorder}`, borderRadius:12,
-      marginBottom:12, overflow:"hidden", boxShadow: t.cardShadow,
+      marginBottom:12, boxShadow: t.cardShadow,
     }}>
       <div style={{display:"flex",alignItems:"center",gap:10,padding:"14px 20px 10px",borderBottom:`1px solid ${t.sectionHeaderBorder}`}}>
         <div style={{width:20,height:20,background:bg,borderRadius:5,flexShrink:0,border:`1px solid ${t.sectionCardBorder}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
@@ -1275,11 +1296,11 @@ function ThemeIcon({ theme }: { theme: Theme }) {
 /* ─── Main Page ─── */
 export default function BriefingPage() {
   const greeting = getGreeting();
-  const { userName, userRole, userProfilePicture } = useUserInfo();
+  const { userName } = useUserInfo();
+  const displayName = userName.trim() ? userName.trim().split(" ")[0] : "IBMer";
   const [theme, setTheme] = useState<Theme>(() => (localStorage.getItem("theme") as Theme) || "dark");
   const t = theme === "dark" ? DARK : LIGHT;
 
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [company, setCompany]   = useState("");
   const [industry, setIndustry] = useState("");
   const [contact, setContact]   = useState("");
@@ -1293,11 +1314,11 @@ export default function BriefingPage() {
   const [currentBriefing, setCurrentBriefing] = useState<SavedBriefing | null>(null);
   const [pendingBriefing, setPendingBriefing] = useState<Partial<SavedBriefing> | null>(null);
   const [saved, setSaved]       = useState<SavedBriefing[]>(() => loadSaved());
-  const [showHistory, setShowHistory] = useState(false);
   const [alreadySaved, setAlreadySaved] = useState(false);
-  const [error, setError]       = useState("");
+  const [_error, setError]       = useState("");
   const textRef = useRef("");
   const pdfRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const toggleTheme = () => {
     const next: Theme = theme === "dark" ? "light" : "dark";
@@ -1305,17 +1326,17 @@ export default function BriefingPage() {
     localStorage.setItem("theme", next);
   };
 
+  // Auto-focus the company input when the hero is visible
+  useEffect(() => {
+    if (!briefingReady && !generating) {
+      setTimeout(() => inputRef.current?.focus(), 80);
+    }
+  }, [briefingReady, generating]);
+
   const debouncedCompany = useDebounce(company, 600);
 
-  // Fetch general tech news for home page (only when on home page)
-  const shouldFetchGeneralNews = !briefingReady && !generating && !company;
-  const { data: generalNewsData } = useGetPulseNews(
-    { query: { enabled: shouldFetchGeneralNews } as any }
-  );
-  
-  const { data: newsData }     = useGetBriefingNews({ company: debouncedCompany }, { query: { enabled: debouncedCompany.length > 1 && !briefingReady && !generating } as any });
   const { data: logoData }     = useGetBriefingLogo({ company: debouncedCompany }, { query: { enabled: debouncedCompany.length > 1 } as any });
-  const { data: industryData } = useGetBriefingIndustry({ company: debouncedCompany }, { query: { enabled: debouncedCompany.length > 1 } as any });
+  useGetBriefingIndustry({ company: debouncedCompany }, { query: { enabled: debouncedCompany.length > 1 } as any });
 
   useEffect(() => { if (company !== debouncedCompany) return; if (!company) setIndustry(""); }, [company]);
 
@@ -1324,12 +1345,11 @@ export default function BriefingPage() {
   const [contactPhotoUrl, setContactPhotoUrl] = useState("");
 
   // Prospect state
-  const [prospectCompany, setProspectCompany] = useState("");
   const [prospectUrl, setProspectUrl] = useState("");
   const [prospectGenerating, setProspectGenerating] = useState(false);
-  const [prospectStep, setProspectStep] = useState<1|2|null>(null);
+  const [_prospectStep, setProspectStep] = useState<1|2|null>(null);
   const [prospectResult, setProspectResult] = useState<{companyName:string;websiteUrl:string;step1:string;step2:string;generatedAt:string}|null>(null);
-  const [prospectError, setProspectError] = useState("");
+  const [_prospectError, setProspectError] = useState("");
   const [openRefs, setOpenRefs] = useState<Record<string, boolean>>({});
   const [showMore, setShowMore] = useState(false);
 
@@ -1337,14 +1357,30 @@ export default function BriefingPage() {
   // matching field — but only when that field is empty, so manual entry always wins.
   // `company` always tracks the raw value the seller typed.
   const handleAccountInput = (raw: string) => {
-    setCompany(raw);
     const v = raw.trim();
     if (/linkedin\.com\/in\//i.test(v)) {
+      setCompany(raw);
       if (!contact) setContact(v);
       const name = personNameFromLinkedIn(v);
       if (name && !contactName2) setContactName2(name);
-    } else if (/^[a-z0-9-]+\.[a-z]{2,}(\.[a-z]{2,})?$/i.test(v.replace(/^https?:\/\//, "").replace(/\/$/, ""))) {
-      if (!prospectUrl) setProspectUrl(v.startsWith("http") ? v : `https://${v}`);
+    } else if (/^https?:\/\//i.test(v)) {
+      // Full URL pasted — extract hostname as company name and store as prospectUrl
+      try {
+        const hostname = new URL(v).hostname.replace(/^www\./, "");
+        const extracted = hostname.split(".")[0];
+        const name = extracted.charAt(0).toUpperCase() + extracted.slice(1);
+        setCompany(name);
+        if (!prospectUrl) setProspectUrl(v);
+      } catch {
+        setCompany(raw);
+      }
+    } else if (/^[a-z0-9-]+\.[a-z]{2,}(\.[a-z]{2,})?$/i.test(v.replace(/\/$/, ""))) {
+      // Bare domain (e.g. meta.com) — extract name and set URL
+      const name = v.split(".")[0];
+      setCompany(name.charAt(0).toUpperCase() + name.slice(1));
+      if (!prospectUrl) setProspectUrl(`https://${v}`);
+    } else {
+      setCompany(raw);
     }
   };
   const briefReady = company.trim().length >= 2;
@@ -1535,12 +1571,7 @@ export default function BriefingPage() {
 
   // Hide the contact section when the user gave no contact name and no LinkedIn.
   const hasContact = Boolean(contactName2.trim() || contact.trim());
-  const PRODUCT_SECTION_TITLES = ["Product Recommendations","Retention & Upsell Positioning","IBM Differentiation","Strategic Investment Themes"];
-  const visibleSections = streamingSections.filter(
-    (sec) =>
-      (hasContact || !/^who is\b/i.test(sec.title.trim())) &&
-      !PRODUCT_SECTION_TITLES.includes(sec.title.trim())
-  );
+  // visibleSections / PRODUCT_SECTION_TITLES removed — filtering moved to dashboard accessors
 
   // ── Dashboard accessors: pull named sections from the brief + sanitized prospect blobs ──
   const prospectMap = useMemo(() => {
@@ -1582,7 +1613,7 @@ export default function BriefingPage() {
   const dashContract = getProspect("contract vehicle");
   const dashContacts = getProspect("contacts");
   const dashWhyNow = getProspect("why act now");
-  const dashNextSteps = getProspect("what to do next");
+  // dashNextSteps removed — "What To Do Next" section deleted from UI and prompt
 
   const toggleRef = (k: string) => setOpenRefs((p) => ({ ...p, [k]: !p[k] }));
   const dashCardBase: React.CSSProperties = { background: t.sectionCard, border: `1px solid ${t.sectionCardBorder}`, borderRadius: 12, padding: "16px 18px" };
@@ -1728,7 +1759,8 @@ export default function BriefingPage() {
           const data = JSON.parse(event.slice(6));
           if (data.done) break;
           if (data.error) throw new Error(data.error);
-          if (data.content) { textRef.current += data.content; setBriefingText(textRef.current); }
+          if (data.replace) { textRef.current = data.replace; setBriefingText(data.replace); }
+          else if (data.content) { textRef.current += data.content; setBriefingText(textRef.current); }
         }
       }
       const entry: SavedBriefing = {
@@ -1762,7 +1794,7 @@ export default function BriefingPage() {
     setCompany(b.co); setIndustry(b.ind); setContact(b.ct); setTitle(b.ti);
     setMeetingType(b.callType as MeetingType); setBriefingText(b.text);
     setContactPhotoUrl(b.contactPhotoUrl || "");
-    setCurrentBriefing(b); setBriefingReady(true); setAlreadySaved(true); setShowHistory(false);
+    setCurrentBriefing(b); setBriefingReady(true); setAlreadySaved(true);
   };
   const newBriefing = () => {
     setBriefingReady(false); setBriefingText(""); setCurrentBriefing(null);
@@ -1777,68 +1809,12 @@ export default function BriefingPage() {
     window.print();
   };
 
-  const generateProspect = async () => {
-    console.log("generateProspect called", { company, prospectUrl });
-    if (!company.trim() || !prospectUrl.trim()) {
-      console.log("validation failed", { company: company.trim(), prospectUrl: prospectUrl.trim() });
-      setProspectError("Please enter a company name and website URL.");
-      return;
-    }
-    if (company.trim().startsWith("http")) {
-      setProspectError("Company Name should be the company's name (e.g. Celonis), not a URL.");
-      return;
-    }
-    setProspectError("");
-    setProspectGenerating(true);
-    setProspectStep(1);
-    setProspectResult(null);
-    // Clear briefing view so prospect output takes main area
-    setBriefingReady(false);
-    setBriefingText("");
-    setCurrentBriefing(null);
-    try {
-      const res = await fetch(`/api/prospect/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ companyName: company.trim(), websiteUrl: prospectUrl.trim(), context: context.trim() }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({})) as any;
-        throw new Error(data.detail || data.error || "Generation failed");
-      }
-      const data = await res.json();
-      setProspectResult({
-        companyName: data.companyName || company.trim(),
-        websiteUrl: data.websiteUrl || prospectUrl.trim(),
-        step1: cleanProspectMarkdown(data.step1 || "", STEP1_KEYWORDS),
-        step2: cleanProspectMarkdown(data.step2 || "", STEP2_KEYWORDS),
-        generatedAt: data.generatedAt || new Date().toISOString(),
-      });
-    } catch (err: any) {
-      console.error("prospect fetch error", err);
-      setProspectError(err.message || "Generation failed. Please try again.");
-    } finally {
-      setProspectGenerating(false);
-      setProspectStep(null);
-    }
-  };
-
   const showResult = generating || briefingReady;
   const displayBriefing = briefingReady ? currentBriefing : pendingBriefing;
   // For person (LinkedIn) inputs, never surface the raw URL as the "company" — show the name.
   const displayCo = isLinkedInProfileUrl(displayBriefing?.co || "")
     ? (personNameFromLinkedIn(displayBriefing?.co || "") || "this profile")
     : cleanCompanyLabel(displayBriefing?.co || "");
-  const logoUrl = displayBriefing?.logoUrl || (briefingReady ? undefined : logoData?.url);
-
-  /* ─── Button styles ─── */
-  const glassBtn: React.CSSProperties = {
-    width:"100%", background:t.btn, color:t.btnText, border:`1px solid ${t.btnBorder}`,
-    borderRadius:10, padding:"11px 16px", fontSize:13, fontWeight:500,
-    fontFamily:"var(--app-font-sans)", boxShadow:"inset 0 1px 0 rgba(255,255,255,0.10),0 2px 10px rgba(0,0,0,0.1)",
-    cursor:"pointer", marginTop:4,
-  };
-
   return (
     <div className="app-shell" style={{display:"flex",height:"100vh",overflow:"hidden",fontFamily:"var(--app-font-sans)",background:t.bodyBg,color:t.text}}>
 
@@ -1897,127 +1873,70 @@ export default function BriefingPage() {
               );
             })}
           </div>
-        ) : prospectGenerating && !showResult ? (
+        ) : prospectGenerating && !showResult && !generating ? (
           /* ─── Prospect Loading ─── */
           <ProspectLoadingScreen t={t} companyName={company.startsWith("http") ? prospectUrl : company} />
         ) : !showResult ? (
           /* ─── Hero ─── */
-          <div style={{padding:"24px 40px 48px",height:"100%",display:"flex",flexDirection:"column"}}>
-            <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:6}}>
-              <div style={{
-                display:"inline-flex",alignItems:"center",gap:8,margin:"24px 0 0",
-                background:t.pill,backdropFilter:"blur(28px)",border:`1px solid ${t.pillBorder}`,
-                borderRadius:100,padding:"9px 16px",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",
-              }}>
-                <div className="animate-pulse-dot" style={{width:7,height:7,borderRadius:"50%",background:t.accent,flexShrink:0,boxShadow:`0 0 8px ${t.accentGlow}`}} />
-                <span style={{fontSize:13,color:t.textSub,fontWeight:400}}>
-                  {greeting}, {userName && userName !== "Guest" ? <span style={{fontWeight:500}}>{userName.split(' ')[0]}</span> : <span style={{fontWeight:500}}>IBMer</span>} — who are we prepping for?
-                </span>
-              </div>
-              <div style={{display:"flex",alignItems:"center",gap:8,position:"relative"}}>
-                {saved.length > 0 && (
-                  <>
-                    <button
-                      onClick={() => setShowHistory(v=>!v)}
-                      style={{
-                        display:"inline-flex",alignItems:"center",gap:7,
-                        background:t.pill,backdropFilter:"blur(28px)",border:`1px solid ${t.pillBorder}`,
-                        color:t.textSub,borderRadius:100,padding:"9px 14px",fontSize:13,fontWeight:400,
-                        cursor:"pointer",fontFamily:"var(--app-font-sans)",
-                        boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",transition:"all 0.2s",
-                      }}
-                      onMouseEnter={(e)=>{e.currentTarget.style.background=t.btn;}}
-                      onMouseLeave={(e)=>{e.currentTarget.style.background=t.pill;}}
-                      title="Recent briefings"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-                      Recent
-                    </button>
-                    {showHistory && (
-                      <div style={{position:"absolute",top:"calc(100% + 8px)",right:0,width:260,maxHeight:300,overflowY:"auto",zIndex:60,
-                        background:t.overlay,backdropFilter:"blur(28px)",border:`1px solid ${t.pillBorder}`,borderRadius:12,padding:8,
-                        boxShadow:"0 8px 28px rgba(0,0,0,0.45)"}}>
-                        {saved.map(b=>(
-                          <div key={b.ts} style={{display:"flex",alignItems:"center",gap:4,marginBottom:4}}>
-                            <button onClick={()=>{loadBriefing(b); setShowHistory(false);}} style={{
-                              flex:1,textAlign:"left",background:t.btnSm,border:`1px solid ${t.btnSmBorder}`,
-                              borderRadius:8,color:t.btnSmText,fontSize:12,fontWeight:400,
-                              padding:"8px 10px",lineHeight:1.4,cursor:"pointer",fontFamily:"var(--app-font-sans)",
-                            }}>
-                              <span style={{display:"block",fontWeight:500}}>{b.co}</span>
-                              <span style={{display:"block",fontSize:11,color:t.textDim}}>{[b.ct,b.callType,b.date].filter(Boolean).join("  ·  ")}</span>
-                            </button>
-                            <button onClick={()=>deleteSaved(b.ts)} style={{background:"none",border:"none",color:t.textDim,fontSize:14,padding:"4px 6px",cursor:"pointer",fontFamily:"var(--app-font-sans)"}}>×</button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                )}
-                <button
-                  onClick={toggleTheme}
-                  title={`Switch to ${theme==="dark"?"light":"dark"} mode`}
-                  style={{
-                    display:"inline-flex",alignItems:"center",justifyContent:"center",
-                    background:t.pill,backdropFilter:"blur(28px)",border:`1px solid ${t.pillBorder}`,
-                    color:t.textSub,borderRadius:100,width:38,height:38,
-                    cursor:"pointer",fontFamily:"var(--app-font-sans)",
-                    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",transition:"all 0.2s",
-                  }}
-                  onMouseEnter={(e)=>{e.currentTarget.style.background=t.btn;}}
-                  onMouseLeave={(e)=>{e.currentTarget.style.background=t.pill;}}
-                >
-                  <ThemeIcon theme={theme}/>
-                </button>
-                <button
-                  onClick={() => window.location.href = "/setup"}
-                  style={{
-                    display:"inline-flex",alignItems:"center",gap:7,
-                    background:t.pill,backdropFilter:"blur(28px)",
-                    border:`1px solid ${t.pillBorder}`,
-                    color:t.textSub,
-                    borderRadius:100,
-                    padding:"9px 16px",
-                    fontSize:13,
-                    fontWeight:400,
-                    cursor:"pointer",
-                    fontFamily:"var(--app-font-sans)",
-                    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",
-                    transition:"all 0.2s",
-                  }}
-                  onMouseEnter={(e) => { e.currentTarget.style.background = t.btn; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.background = t.pill; }}
-                  title="Update your name and role"
-                >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                  Settings
-                </button>
-              </div>
+          <div style={{padding:"24px 40px 48px",height:"100%",display:"flex",flexDirection:"column",overflowY:"auto"}}>
 
+            {/* Top bar: theme toggle only — greeting moves into central column */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:6}}>
+              <button
+                onClick={toggleTheme}
+                title={`Switch to ${theme==="dark"?"light":"dark"} mode`}
+                style={{
+                  display:"inline-flex",alignItems:"center",justifyContent:"center",
+                  background:t.pill,backdropFilter:"blur(28px)",border:`1px solid ${t.pillBorder}`,
+                  color:t.textSub,borderRadius:100,width:38,height:38,
+                  cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                  boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",transition:"all 0.2s",
+                }}
+                onMouseEnter={(e)=>{e.currentTarget.style.background=t.btn;}}
+                onMouseLeave={(e)=>{e.currentTarget.style.background=t.pill;}}
+              >
+                <ThemeIcon theme={theme}/>
+              </button>
             </div>
 
-            {/* ─── Centered, search-first hero (single column, no globe) ─── */}
-            <div style={{maxWidth:600,margin:"12px auto 48px",width:"100%"}}>
-              <h1 style={{fontSize:46,fontWeight:200,letterSpacing:"-2px",color:t.text,lineHeight:1.05,margin:"0 0 14px",textAlign:"center"}}>
+            {/* ─── Central column ─── */}
+            <div style={{maxWidth:600,margin:"8px auto 0",width:"100%"}}>
+
+              {/* Greeting — integrated into the narrative */}
+              <div style={{display:"flex",justifyContent:"center",marginBottom:20}}>
+                <div style={{
+                  display:"inline-flex",alignItems:"center",gap:8,
+                  background:t.pill,backdropFilter:"blur(28px)",border:`1px solid ${t.pillBorder}`,
+                  borderRadius:100,padding:"8px 16px",boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",
+                }}>
+                  <div className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:t.accent,flexShrink:0,boxShadow:`0 0 8px ${t.accentGlow}`}} />
+                  <span style={{fontSize:12.5,color:t.textSub,fontWeight:400}}>
+                    {greeting}, <span style={{fontWeight:600,color:t.text}}>{displayName}</span> — who are we prepping for?
+                  </span>
+                </div>
+              </div>
+
+              <h1 style={{fontSize:44,fontWeight:200,letterSpacing:"-2px",color:t.text,lineHeight:1.05,margin:"0 0 10px",textAlign:"center"}}>
                 Sales Intelligence<br/>Simplified
               </h1>
-              <p style={{fontSize:15,fontWeight:300,color:t.textMuted,lineHeight:1.6,margin:"0 auto 28px",textAlign:"center",maxWidth:430}}>
+              <p style={{fontSize:14.5,fontWeight:300,color:t.textMuted,lineHeight:1.6,margin:"0 auto 24px",textAlign:"center",maxWidth:400}}>
                 Drop in a company name. Get a full IBM briefing in under 30 seconds.
               </p>
 
-              {/* Account input — the centerpiece, with leading search icon */}
+              {/* Account input */}
               <div style={{position:"relative"}}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={company?"#4589ff":t.textMuted} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"
                   style={{position:"absolute",left:18,top:"50%",transform:"translateY(-50%)",pointerEvents:"none",transition:"stroke 0.2s"}}>
                   <circle cx="11" cy="11" r="6"/><path d="M20.5 20.5 16.5 16.5"/>
                 </svg>
                 <input
+                  ref={inputRef}
                   value={company}
                   onChange={e=>handleAccountInput((e.target as HTMLInputElement).value)}
-                  onKeyDown={e=>{ if(e.key==="Enter" && briefReady && !generating) generate(); }}
+                  onKeyDown={e=>{ if(e.key==="Enter" && !generating) generate(); }}
                   placeholder={ACCOUNT_PLACEHOLDERS[phIdx]}
                   autoComplete="off"
-                  onFocus={e=>{ if(!company) e.currentTarget.style.boxShadow="0 0 0 3px rgba(69,137,255,0.18)"; }}
+                  onFocus={e=>{ e.currentTarget.style.boxShadow="0 0 0 3px rgba(69,137,255,0.18)"; }}
                   onBlur={e=>{ if(!company) e.currentTarget.style.boxShadow="inset 0 1px 0 rgba(255,255,255,0.06)"; }}
                   style={{width:"100%",background:t.input,border:`1px solid ${company?"#0f62fe":t.inputBorder}`,
                     borderRadius:13,fontSize:16,color:t.text,fontFamily:"var(--app-font-sans)",padding:"17px 18px 17px 46px",outline:"none",
@@ -2025,9 +1944,9 @@ export default function BriefingPage() {
                 />
               </div>
 
-              {/* inline feedback (left) or sample-account nudge */}
+              {/* Detection indicators or sample chips */}
               {company.trim() ? (
-                <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",marginTop:13}}>
+                <div style={{display:"flex",flexWrap:"wrap",gap:"6px 16px",marginTop:12,justifyContent:"center"}}>
                   {[
                     isLinkedInProfileUrl(company)
                       ? `LinkedIn profile detected: ${personNameFromLinkedIn(company) || "profile"}`
@@ -2041,84 +1960,55 @@ export default function BriefingPage() {
                   ))}
                 </div>
               ) : (
-                <div style={{textAlign:"center",marginTop:13}}>
-                  <button onClick={()=>{ setCompany("Celonis"); setMeetingType("Discovery"); }}
-                    style={{background:"none",border:"none",color:t.accent,fontSize:12.5,fontWeight:500,cursor:"pointer",padding:0,fontFamily:"var(--app-font-sans)"}}>
-                    ↳ Try a sample account
-                  </button>
+                /* Sample chips — one click populates + generates */
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:12,flexWrap:"wrap"}}>
+                  <span style={{fontSize:11,color:t.textDim}}>Try:</span>
+                  {SAMPLE_CHIPS.map(chip=>(
+                    <button
+                      key={chip.label}
+                      onClick={()=>{ setCompany(chip.company); setMeetingType(chip.type); setTimeout(()=>generate(),0); }}
+                      style={{
+                        fontSize:12,fontWeight:500,padding:"5px 13px",borderRadius:20,cursor:"pointer",
+                        fontFamily:"var(--app-font-sans)",transition:"all 0.15s",
+                        background:t.btnSm,border:`1px solid ${t.btnSmBorder}`,color:t.textSub,
+                      }}
+                      onMouseEnter={e=>{e.currentTarget.style.background=t.btn;e.currentTarget.style.color=t.text;e.currentTarget.style.borderColor=t.accent;}}
+                      onMouseLeave={e=>{e.currentTarget.style.background=t.btnSm;e.currentTarget.style.color=t.textSub;e.currentTarget.style.borderColor=t.btnSmBorder;}}
+                    >{chip.label}</button>
+                  ))}
                 </div>
               )}
 
-              {/* Person inputs: surface the parsed name as an editable field. We can't
-                  reliably split a concatenated slug ("julianavanlaanen"), so let the seller
-                  correct it in one click — this drives the header, PDF, and payload. */}
+              {/* LinkedIn name field */}
               {company.trim() && isLinkedInProfileUrl(company) && (
                 <div style={{maxWidth:420,margin:"14px auto 0",textAlign:"left"}}>
                   <GlassInput t={t} label="Name (edit if needed)"
                     value={contactName2}
                     onChange={e=>setContactName2((e.target as HTMLInputElement).value)}
                     placeholder="First Last" autoComplete="off"/>
-                  <p style={{fontSize:11,color:t.textDim,margin:"5px 2px 0"}}>Parsed from the profile URL — adjust if the split isn't right (e.g. "Juliana van Laanen").</p>
+                  <p style={{fontSize:11,color:t.textDim,margin:"5px 2px 0"}}>Parsed from the profile URL — adjust if the split isn't right.</p>
                 </div>
               )}
 
-              {/* Decision-moment cue — confidence signal: you have enough, just go */}
-              {briefReady && !generating && (
-                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:3,marginTop:18,marginBottom:-2}}>
-                  <div style={{display:"flex",alignItems:"center",gap:7}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#42be65" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
-                    <span style={{fontSize:12.5,fontWeight:600,color:t.textSub}}>You're ready to generate</span>
-                  </div>
-                  <span style={{fontSize:11,color:t.textMuted}}>That's enough — add details only if you want a sharper brief.</span>
-                </div>
-              )}
-
-              {/* Primary CTA */}
-              <button
-                onClick={generate}
-                disabled={!briefReady||generating}
-                onMouseEnter={e=>{ if(briefReady&&!generating){ e.currentTarget.style.background="#1f6dff"; e.currentTarget.style.transform="translateY(-1px)"; e.currentTarget.style.boxShadow="0 10px 30px rgba(15,98,254,0.55)"; } }}
-                onMouseLeave={e=>{ if(briefReady&&!generating){ e.currentTarget.style.background="#0f62fe"; e.currentTarget.style.transform="none"; e.currentTarget.style.boxShadow="0 6px 24px rgba(15,98,254,0.45)"; } }}
-                style={{width:"100%",marginTop:18,
-                  background:briefReady?"#0f62fe":t.btnSm,
-                  border:briefReady?"none":`1px solid ${t.btnSmBorder}`,
-                  color:briefReady?"#fff":t.textDim,fontSize:15.5,fontWeight:700,
-                  borderRadius:13,padding:"17px",cursor:briefReady&&!generating?"pointer":"default",
-                  fontFamily:"var(--app-font-sans)",opacity:generating?0.85:1,transition:"all 0.2s",
-                  boxShadow:briefReady?"0 6px 24px rgba(15,98,254,0.45)":"none"}}>
-                {generating
-                  ? <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><span className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:"currentColor"}}/>Analyzing account…</span>
-                  : "Generate My Call Brief  →"}
-              </button>
-              {generating && (
-                <p style={{fontSize:11.5,color:t.textMuted,margin:"10px 0 0",textAlign:"center"}}>Mapping IBM solutions…</p>
-              )}
-
-              {/* trust line */}
-              {!generating && (
-                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:10,marginTop:14,fontSize:10.5,color:t.textMuted,flexWrap:"wrap"}}>
-                  <span>Takes ~30 seconds</span><span>·</span><span>No setup required</span><span>·</span><span>Powered by watsonx</span>
-                </div>
-              )}
-
-              {/* Secondary controls — understated below the primary path */}
-              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:26,flexWrap:"wrap"}}>
+              {/* Call type — ABOVE the generate button */}
+              <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:20,flexWrap:"wrap"}}>
                 <span style={{fontSize:10.5,fontWeight:600,letterSpacing:"0.06em",textTransform:"uppercase",color:t.textDim}}>Call type</span>
                 {(["Discovery","Renewal","Competitive"] as const).map(mt=>(
                   <button key={mt} onClick={()=>setMeetingType(mt)}
-                    style={{fontSize:12,padding:"4px 12px",borderRadius:8,cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                    style={{fontSize:12,padding:"5px 13px",borderRadius:8,cursor:"pointer",fontFamily:"var(--app-font-sans)",transition:"all 0.15s",
                       background:meetingType===mt?"rgba(15,98,254,0.18)":t.btnSm,
                       border:`1px solid ${meetingType===mt?"rgba(15,98,254,0.6)":t.btnSmBorder}`,
                       color:meetingType===mt?"#78a9ff":t.btnSmText,fontWeight:meetingType===mt?600:500}}>{mt}</button>
                 ))}
               </div>
 
-              <div style={{marginTop:14,textAlign:"center"}}>
+              {/* "Add details" link — benefit copy, ABOVE generate */}
+              <div style={{marginTop:12,textAlign:"center"}}>
                 <button onClick={()=>setShowMore(v=>!v)}
                   style={{display:"inline-flex",alignItems:"center",gap:7,background:"none",border:"none",cursor:"pointer",padding:0,fontFamily:"var(--app-font-sans)"}}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke={t.accent} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
                     style={{transform:showMore?"rotate(180deg)":"none",transition:"transform 0.2s"}}><path d="M6 9l6 6 6-6"/></svg>
-                  <span style={{fontSize:12,fontWeight:500,color:t.accent}}>Add website, LinkedIn &amp; contact details</span>
+                  <span style={{fontSize:12,fontWeight:500,color:t.accent}}>Add a LinkedIn URL to get named contacts in your brief</span>
                 </button>
                 {showMore && (
                   <div style={{marginTop:14,textAlign:"left"}}>
@@ -2130,121 +2020,105 @@ export default function BriefingPage() {
                   </div>
                 )}
               </div>
+
+              {/* Primary CTA — vivid blue when active, intentional even when empty */}
+              <button
+                onClick={generate}
+                disabled={generating}
+                onMouseEnter={e=>{ if(!generating){ e.currentTarget.style.background=briefReady?"#1f6dff":"rgba(15,98,254,0.22)"; e.currentTarget.style.transform="translateY(-1px)"; } }}
+                onMouseLeave={e=>{ if(!generating){ e.currentTarget.style.background=briefReady?"#0f62fe":"rgba(15,98,254,0.13)"; e.currentTarget.style.transform="none"; } }}
+                style={{
+                  width:"100%",marginTop:18,
+                  background: briefReady ? "#0f62fe" : "rgba(15,98,254,0.13)",
+                  border: briefReady ? "none" : "1px solid rgba(15,98,254,0.35)",
+                  color: briefReady ? "#fff" : "rgba(69,137,255,0.75)",
+                  fontSize:15.5,fontWeight:700,
+                  borderRadius:13,padding:"17px",
+                  cursor: generating ? "default" : "pointer",
+                  fontFamily:"var(--app-font-sans)",
+                  opacity: generating ? 0.85 : 1,
+                  transition:"all 0.2s",
+                  boxShadow: briefReady ? "0 6px 24px rgba(15,98,254,0.45)" : "none",
+                  transform:"translateY(0)",
+                }}>
+                {generating
+                  ? <span style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><span className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:"currentColor"}}/>Analyzing account…</span>
+                  : "Generate My Call Brief  →"}
+              </button>
+
+              {/* Trust line with watsonx badge */}
+              {!generating && (
+                <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,marginTop:13,flexWrap:"wrap"}}>
+                  <span style={{fontSize:11,color:t.textMuted}}>Takes ~30 seconds</span>
+                  <span style={{color:t.textDim}}>·</span>
+                  <span style={{fontSize:11,color:t.textMuted}}>No setup required</span>
+                  <span style={{color:t.textDim}}>·</span>
+                  <span style={{
+                    display:"inline-flex",alignItems:"center",gap:4,
+                    fontSize:10.5,fontWeight:600,letterSpacing:"0.04em",
+                    color:t.accent,background:t.badgeBg,
+                    border:`1px solid ${t.badgeBorder}`,
+                    borderRadius:6,padding:"2px 7px",
+                  }}>
+                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                    watsonx
+                  </span>
+                </div>
+              )}
+              {generating && (
+                <p style={{fontSize:11.5,color:t.textMuted,margin:"10px 0 0",textAlign:"center"}}>Mapping IBM solutions…</p>
+              )}
             </div>
 
-            {/* ─── Outcome strip — single scannable value preview, reinforces the CTA without competing ─── */}
-            <div style={{maxWidth:640,margin:"4px auto 40px",textAlign:"center"}}>
-              <div style={{fontSize:10.5,letterSpacing:"0.12em",textTransform:"uppercase",color:t.textDim,marginBottom:16}}>What you'll get in 30 seconds</div>
-              <div style={{display:"flex",justifyContent:"center",gap:"12px 30px",flexWrap:"wrap"}}>
-                {[
-                  "Know the account instantly",
-                  "Ask smarter questions",
-                  "Qualify the deal quickly",
-                  "Lead with the right IBM solution",
-                ].map(it=>(
-                  <span key={it} style={{display:"flex",alignItems:"center",gap:8,fontSize:13,fontWeight:500,color:t.textSub}}>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#42be65" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M20 6 9 17l-5-5"/></svg>{it}
+            {/* ─── Recent Briefings — returning user workspace ─── */}
+            {saved.length > 0 && (
+              <div style={{maxWidth:600,margin:"32px auto 0",width:"100%"}}>
+                <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:t.textDim,marginBottom:12}}>Recent Briefings</div>
+                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:8}}>
+                  {saved.slice(0,4).map(b=>(
+                    <button
+                      key={b.ts}
+                      onClick={()=>loadBriefing(b)}
+                      style={{
+                        textAlign:"left",background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,
+                        borderRadius:10,padding:"12px 14px",cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                        transition:"all 0.15s",
+                      }}
+                      onMouseEnter={e=>{e.currentTarget.style.border=`1px solid ${t.accent}`;e.currentTarget.style.background=t.card;}}
+                      onMouseLeave={e=>{e.currentTarget.style.border=`1px solid ${t.sectionCardBorder}`;e.currentTarget.style.background=t.sectionCard;}}
+                    >
+                      <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}>
+                        <span style={{fontSize:13,fontWeight:600,color:t.text,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.co}</span>
+                        <span style={{flexShrink:0,fontSize:9.5,fontWeight:700,letterSpacing:"0.05em",textTransform:"uppercase",
+                          color:t.badgeText,background:t.badgeBg,border:`1px solid ${t.badgeBorder}`,borderRadius:4,padding:"1px 5px"}}>
+                          {b.callType}
+                        </span>
+                      </div>
+                      <div style={{fontSize:11,color:t.textDim}}>{b.date}{b.ct ? ` · ${b.ct}` : ""}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ─── Value strip ─── */}
+            <div style={{maxWidth:600,margin:"32px auto 40px",textAlign:"center",width:"100%"}}>
+              <div style={{fontSize:10,letterSpacing:"0.12em",textTransform:"uppercase",color:t.textDim,marginBottom:14}}>What you'll get in 30 seconds</div>
+              <div style={{display:"flex",justifyContent:"center",gap:"10px 28px",flexWrap:"wrap"}}>
+                {["Know the account instantly","Ask smarter questions","Qualify the deal quickly","Lead with the right IBM solution"].map(it=>(
+                  <span key={it} style={{display:"flex",alignItems:"center",gap:7,fontSize:12.5,fontWeight:500,color:t.textSub}}>
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#42be65" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" style={{flexShrink:0}}><path d="M20 6 9 17l-5-5"/></svg>{it}
                   </span>
                 ))}
               </div>
             </div>
-            {/* Industry News Section - Dynamic from last 24 hours */}
-            {generalNewsData && generalNewsData.length > 0 && (
-              <div style={{maxWidth:760,marginBottom:40}}>
-                <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
-                  <p className="animate-heartbeat" style={{fontSize:13,fontWeight:600,letterSpacing:"0.5px",textTransform:"uppercase",color:"#ef4444",margin:0}}>Intelligence Pulse</p>
-<div style={{height:1,flex:1,background:"#ef4444",opacity:0.3,marginLeft:8}}/>
-                </div>
-                {generalNewsData.map((item,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"13px 0",borderBottom:`1px solid ${t.divider}`}}>
-                    <span style={{color:t.textDim,fontSize:15,flexShrink:0,lineHeight:1.4}}>+</span>
-                    <div style={{flex:1}}>
-                      {item.url ? (
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            margin:0,
-                            fontSize:15,
-                            fontWeight:500,
-                            color:t.textSub,
-                            lineHeight:1.5,
-                            textDecoration:"none",
-                            display:"block",
-                            cursor:"pointer",
-                            transition:"color 0.2s"
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.color = t.accent}
-                          onMouseLeave={(e) => e.currentTarget.style.color = t.textSub}
-                        >
-                          {item.title}
-                        </a>
-                      ) : (
-                        <p style={{margin:0,fontSize:15,fontWeight:500,color:t.textSub,lineHeight:1.5}}>{item.title}</p>
-                      )}
-                      <div style={{display:"flex",alignItems:"center",gap:8,marginTop:4}}>
-                        <span style={{fontSize:12,color:t.textDim}}>{item.source}</span>
-                        {item.date && (
-                          <>
-                            <span style={{fontSize:12,color:t.textDim}}>•</span>
-                            <span style={{fontSize:12,color:t.textDim}}>{item.date}</span>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-
-            {newsData && newsData.length>0 && (
-              <div style={{maxWidth:760,marginTop:32}}>
-                <div style={{marginBottom:14,display:"flex",alignItems:"center",gap:8}}>
-                  <p style={{fontSize:13,fontWeight:600,letterSpacing:"0.5px",textTransform:"uppercase",color:t.textSub,margin:0}}>Recent News — {company}</p>
-                  <div style={{height:1,flex:1,background:t.divider,opacity:0.5}}/>
-                </div>
-                {newsData.map((item,i)=>(
-                  <div key={i} style={{display:"flex",alignItems:"flex-start",gap:12,padding:"11px 0",borderBottom:`1px solid ${t.divider}`}}>
-                    <span style={{color:t.textDim,fontSize:13,flexShrink:0,lineHeight:1.4}}>+</span>
-                    <div style={{flex:1}}>
-                      {item.url ? (
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          style={{
-                            margin:0,
-                            fontSize:13,
-                            color:t.textSub,
-                            lineHeight:1.5,
-                            textDecoration:"none",
-                            display:"block",
-                            cursor:"pointer",
-                            transition:"color 0.2s"
-                          }}
-                          onMouseEnter={(e) => e.currentTarget.style.color = t.accent}
-                          onMouseLeave={(e) => e.currentTarget.style.color = t.textSub}
-                        >
-                          {item.title}
-                        </a>
-                      ) : (
-                        <p style={{margin:0,fontSize:13,color:t.textSub,lineHeight:1.5}}>{item.title}</p>
-                      )}
-                      <p style={{margin:"3px 0 0",fontSize:11,color:t.textDim}}>{item.source}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         ) : (
           /* ─── Briefing Result (also shown during streaming) ─── */
           <div style={{padding:"0 32px 64px",maxWidth:1400,margin:"0 auto"}}>
             {/* Progress bar while generating */}
             {generating && (
-              <div className="no-print" style={{position:"sticky",top:0,zIndex:10,background:t.bodyBg,paddingTop:8,paddingBottom:4,marginBottom:4}}>
+              <div className="no-print" style={{position:"sticky",top:0,zIndex:10,background:"transparent",paddingTop:8,paddingBottom:4,marginBottom:4}}>
                 <div style={{height:2,borderRadius:1,background:t.topBar,overflow:"hidden"}}>
                   <div className="animate-progress-bar" style={{height:"100%",background:t.progressBar,borderRadius:1,animation:"progress-slide 1.4s ease-in-out infinite"}}/>
                 </div>
@@ -2252,61 +2126,65 @@ export default function BriefingPage() {
               </div>
             )}
 
-            {/* Top bar */}
-            <div className="no-print" style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"20px 0",borderBottom:`1px solid ${t.divider}`,marginBottom:24}}>
-              <div style={{display:"flex",alignItems:"center",gap:8}}>
-                <span style={{fontSize:12,color:t.textMuted}}>{displayCo}</span>
-                <span style={{color:t.textDim}}>·</span>
-                <span style={{fontSize:12,color:t.textMuted}}>{displayBriefing?.ind}</span>
+            {/* Action bar: buttons left, Sales Card right */}
+            <div className="no-print" style={{display:"flex",alignItems:"flex-start",gap:16,marginBottom:24,paddingTop:40,flexWrap:"wrap"}}>
+              {/* Left: action buttons */}
+              <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
+                {[
+                  {label:"← New Briefing",onClick:newBriefing,title:"Start a new briefing"},
+                  {label:alreadySaved?"✓ Saved":"Save",onClick:saveBriefing,disabled:alreadySaved||generating,title:alreadySaved?"Already saved":"Save this briefing"},
+                  {label:"↓ Export PDF",onClick:exportPDF,disabled:generating,title:"Download as PDF"},
+                ].map(btn=>(
+                  <button
+                    key={btn.label}
+                    onClick={btn.onClick}
+                    disabled={btn.disabled}
+                    title={btn.title}
+                    style={{
+                      padding:"9px 18px",fontSize:12,fontWeight:500,
+                      background:t.btnSm, border:`1px solid ${t.btnSmBorder}`, borderRadius:8,
+                      color:t.btnSmText, cursor:btn.disabled?"default":"pointer",
+                      opacity:btn.disabled?0.45:1, fontFamily:"var(--app-font-sans)",
+                      transition:"all 0.2s",
+                      transform:"scale(1)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!btn.disabled) {
+                        e.currentTarget.style.transform = "scale(1.02)";
+                        e.currentTarget.style.background = t.btn;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "scale(1)";
+                      e.currentTarget.style.background = t.btnSm;
+                    }}
+                  >{btn.label}</button>
+                ))}
               </div>
-              <div style={{display:"flex",alignItems:"center",gap:10}}>
-                <>
-                  <span style={{fontSize:12,color:t.textSub,fontWeight:400}}>{userName || "User"}</span>
-                  {userProfilePicture && (
-                    <div style={{width:30,height:30,borderRadius:"50%",overflow:"hidden",border:`1.5px solid ${t.toggleBorder}`,flexShrink:0}}>
-                      <img src={userProfilePicture} alt={userName} style={{width:"100%",height:"100%",objectFit:"cover"}}/>
-                    </div>
-                  )}
-                </>
-              </div>
+
+              {/* Right: Sales Card — reference card aligned to content grid */}
+              {dashCard && (
+                <div style={{
+                  marginLeft:"auto",
+                  minWidth:260, maxWidth:340,
+                  background: theme==="dark" ? "rgba(10,48,100,0.60)" : "rgba(10,60,160,0.06)",
+                  border: `1.5px solid ${theme==="dark" ? "rgba(69,137,255,0.30)" : "rgba(15,98,254,0.20)"}`,
+                  borderRadius:12,
+                  padding:"14px 18px",
+                  boxShadow: theme==="dark"
+                    ? "0 0 0 1px rgba(69,137,255,0.08) inset, 0 6px 24px rgba(0,0,0,0.45)"
+                    : "0 2px 12px rgba(15,98,254,0.10)",
+                  flexShrink:0,
+                  wordBreak:"break-word",
+                }}>
+                  <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:t.accent,marginBottom:10}}>Sales Card</div>
+                  <SalesCardGrid body={dashCard.body} t={t} accent={t.accent} compact/>
+                </div>
+              )}
             </div>
 
-            {/* Action buttons */}
-            <div className="no-print" style={{display:"flex",gap:8,marginBottom:24,flexWrap:"wrap"}}>
-              {[
-                {label:"← New Briefing",onClick:newBriefing,title:"Start a new briefing"},
-                {label:alreadySaved?"✓ Saved":"Save",onClick:saveBriefing,disabled:alreadySaved||generating,title:alreadySaved?"Already saved":"Save this briefing"},
-                {label:"↓ Export PDF",onClick:exportPDF,disabled:generating,title:"Download as PDF"},
-              ].map(btn=>(
-                <button
-                  key={btn.label}
-                  onClick={btn.onClick}
-                  disabled={btn.disabled}
-                  title={btn.title}
-                  style={{
-                    padding:"9px 18px",fontSize:12,fontWeight:500,
-                    background:t.btnSm, border:`1px solid ${t.btnSmBorder}`, borderRadius:8,
-                    color:t.btnSmText, cursor:btn.disabled?"default":"pointer",
-                    opacity:btn.disabled?0.45:1, fontFamily:"var(--app-font-sans)",
-                    transition:"all 0.2s",
-                    transform:"scale(1)",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!btn.disabled) {
-                      e.currentTarget.style.transform = "scale(1.02)";
-                      e.currentTarget.style.background = t.btn;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "scale(1)";
-                    e.currentTarget.style.background = t.btnSm;
-                  }}
-                >{btn.label}</button>
-              ))}
-            </div>
-
-            {/* PDF capture region — keeps UI and PDF identical */}
-            <div ref={pdfRef} className="pdf-capture" style={{background:t.bodyBg,padding:"4px 0 8px"}}>
+            {/* PDF capture region — seamless: background matches page */}
+            <div ref={pdfRef} className="pdf-capture" style={{background:"transparent",padding:"4px 0 8px"}}>
             <div className="print-brand">IBM · Pre-Call Intelligence Briefing</div>
             {/* Briefing header */}
             <div style={{marginBottom:24,display:"flex",alignItems:"center",gap:14}}>
@@ -2345,8 +2223,16 @@ export default function BriefingPage() {
 
             </div>
 
+            {/* ════════ ELEVATOR PITCH — first card, full width ════════ */}
+            {dashPitch && (
+              <div className="dash-card dash-primary" style={{...dashCardAccent,background:t.badgeBg,marginBottom:16}}>
+                <div className="dash-label" style={dashLabel}>Elevator Pitch</div>
+                <div style={{fontSize:14,color:t.text,lineHeight:1.65,fontStyle:"italic"}}><MarkdownBody body={dashPitch.body} t={t} accent={t.accent}/></div>
+              </div>
+            )}
+
             {/* ════════ TIER 1 · SNAPSHOT — above the fold ════════ */}
-            {dashTier("Snapshot", "The 30-second read before you dial")}
+            {dashTier("Snapshot", "The 30-second read before your meeting")}
             <div style={{display:"grid",gridTemplateColumns:"1.3fr 1fr",gap:12,marginBottom:12,alignItems:"stretch"}}>
               <div className="dash-card dash-primary" style={dashCardAccent}>
                 <div className="dash-label" style={dashLabel}>Start Here</div>
@@ -2361,23 +2247,6 @@ export default function BriefingPage() {
                   </div>
                 : <div className="dash-card" style={{...dashCardBase,display:"flex",alignItems:"center",justifyContent:"center",color:t.textDim,fontSize:12}}>Why IBM wins — loading…</div>}
             </div>
-            {(dashPitch || dashCard) && (
-              <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:12,alignItems:"stretch"}}>
-                {dashPitch && (
-                  <div className="dash-card dash-primary" style={{...dashCardAccent,background:t.badgeBg}}>
-                    <div className="dash-label" style={dashLabel}>Elevator Pitch</div>
-                    <div style={{fontSize:14,color:t.text,lineHeight:1.65,fontStyle:"italic"}}><MarkdownBody body={dashPitch.body} t={t} accent={t.accent}/></div>
-                  </div>
-                )}
-                {dashCard && (
-                  <div className="dash-card" style={dashCardBase}>
-                    <div className="dash-label" style={dashLabel}>Sales Card</div>
-                    <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashCard.body} t={t} accent={t.accent}/></div>
-                  </div>
-                )}
-              </div>
-            )}
-
             {/* ════════ TIER 2 · INSIGHTS ════════ */}
             {(dashBackground || dashQual || dashWhyNow) && dashTier("Strategy", "Who they are → why now")}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,alignItems:"stretch"}}>
@@ -2415,13 +2284,6 @@ export default function BriefingPage() {
                 <SalesPlayFlow body={dashPlay.body} t={t}/>
               </div>
             )}
-            {dashNextSteps && (
-              <div className="dash-card dash-primary" style={{...dashCardAccent,background:t.badgeBg,marginTop:12}}>
-                <div className="dash-label" style={dashLabel}>What To Do Next</div>
-                <div style={{fontSize:14,color:t.text,lineHeight:1.7}}><MarkdownBody body={dashNextSteps.body} t={t} accent={t.accent}/></div>
-              </div>
-            )}
-
             {prospectGenerating && !prospectResult && (
               <div style={{display:"flex",alignItems:"center",gap:10,padding:"16px 0",color:t.textDim}}>
                 <div className="animate-pulse-dot" style={{width:6,height:6,borderRadius:"50%",background:t.accent,boxShadow:`0 0 6px ${t.accentGlow}`}}/>
@@ -2429,10 +2291,16 @@ export default function BriefingPage() {
               </div>
             )}
 
-            {/* ════════ TIER 3 · REFERENCE — collapsible ════════ */}
+            {/* ════════ TIER 3 · REFERENCE ════════ */}
+            {/* Discovery Questions always expanded — no accordion */}
             {((hasContact && dashWhoIs) || dashDiscovery || dashContract || dashContacts) && dashTier("Reference", "Detail on demand")}
             {hasContact && dashWhoIs && dashRefRow("whois", dashWhoIs.title, <MarkdownBody body={dashWhoIs.content} t={t} accent={t.accent}/>)}
-            {dashDiscovery && dashRefRow("discovery", dashDiscovery.title, <MarkdownBody body={dashDiscovery.content} t={t} accent={t.accent}/>)}
+            {dashDiscovery && (
+              <div className="dash-card" style={{...dashCardBase,marginBottom:8}}>
+                <div className="dash-label" style={dashLabel}>{dashDiscovery.title}</div>
+                <div style={{fontSize:13,color:t.textSub,lineHeight:1.8}}><MarkdownBody body={dashDiscovery.content} t={t} accent={t.accent}/></div>
+              </div>
+            )}
             {dashContract && dashRefRow("contract", dashContract.title, <MarkdownBody body={dashContract.body} t={t} accent={t.accent}/>)}
             {dashContacts && dashRefRow("contacts", "Contacts", <MarkdownBody body={dashContacts.body} t={t} accent={t.accent}/>)}
 
@@ -2470,4 +2338,6 @@ function useDebounce<T>(value: T, delay: number): T {
   }, [value, delay]);
   return debounced;
 }
-// cache-bust Wed Jun 24 16:37:13 UTC 2026
+// Made with Bob
+
+// Made with Bob
