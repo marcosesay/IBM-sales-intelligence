@@ -1125,7 +1125,7 @@ function SalesPlayFlow({ body, t }: { body: string; t: typeof DARK }) {
 
 /* ─── Sales Card ─── */
 function SalesCard({ body, t, accent }: { body: string; t: typeof DARK; accent: string }) {
-  const [copied, setCopied] = React.useState(false);
+  const [copied, setCopied] = useState(false);
 
   // Parse "**Label:** value" lines
   const lines = body.split("\n").map(l => l.trim()).filter(Boolean);
