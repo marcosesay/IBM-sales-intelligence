@@ -1123,55 +1123,112 @@ function SalesPlayFlow({ body, t }: { body: string; t: typeof DARK }) {
   );
 }
 
-/* ─── Sales Card two-column grid ─── */
-// compact=true: stacked single-column layout for the header card widget
-function SalesCardGrid({ body, t, accent, compact }: { body: string; t: typeof DARK; accent: string; compact?: boolean }) {
-  // Parse "**Label:** value" lines from the markdown body
+/* ─── Sales Card ─── */
+function SalesCard({ body, t, accent }: { body: string; t: typeof DARK; accent: string }) {
+  const [copied, setCopied] = React.useState(false);
+
+  // Parse "**Label:** value" lines
   const lines = body.split("\n").map(l => l.trim()).filter(Boolean);
   const fields: { label: string; value: string }[] = [];
   for (const line of lines) {
     const m = line.match(/^\*{1,2}([^*:]+):\*{0,2}\s*(.+)$/);
     if (m) fields.push({ label: m[1].trim(), value: m[2].trim() });
   }
-  // Fall back to plain markdown if we couldn't parse structured fields
+
+  // Fall back to plain markdown if parsing fails
   if (fields.length < 3) {
-    return <div style={{fontSize:12,color:t.textSub,lineHeight:1.6}}><MarkdownBody body={body} t={t} accent={accent}/></div>;
-  }
-  if (compact) {
-    // Single-column stacked layout for the header widget
     return (
-      <div>
-        {fields.map((f, i) => {
-          const isSayThis = /say this/i.test(f.label);
-          return (
-            <div key={i} style={{marginBottom:isSayThis?0:8,paddingTop:isSayThis?8:0,borderTop:isSayThis?`1px solid rgba(69,137,255,0.15)`:undefined}}>
-              <span style={{display:"block",fontSize:9,fontWeight:700,letterSpacing:"0.08em",textTransform:"uppercase",color:accent,marginBottom:2}}>{f.label}</span>
-              <div style={{
-                fontSize:12.5,lineHeight:1.5,marginTop:1,
-                color: isSayThis ? t.text : t.textSub,
-                fontStyle: isSayThis ? "italic" : "normal",
-                fontWeight: isSayThis ? 400 : 400,
-              }}>{isSayThis ? `"${f.value.replace(/^[""]|[""]$/g,"")}"` : f.value}</div>
-            </div>
-          );
-        })}
+      <div style={{background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,borderRadius:12,padding:"14px 18px",marginBottom:12}}>
+        <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:accent,marginBottom:10}}>Sales Card</div>
+        <div style={{fontSize:12,color:t.textSub,lineHeight:1.6}}><MarkdownBody body={body} t={t} accent={accent}/></div>
       </div>
     );
   }
-  const left = fields.slice(0, Math.ceil(fields.length / 2));
-  const right = fields.slice(Math.ceil(fields.length / 2));
+
+  const sayThis = fields.find(f => /say this/i.test(f.label));
+  const metaFields = fields.filter(f => !/say this/i.test(f.label));
+  const isProofPoint = (label: string) => /proof point/i.test(label);
+
+  const handleCopy = () => {
+    if (sayThis) {
+      navigator.clipboard.writeText(sayThis.value.replace(/^[""]|[""]$/g, ""));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  // Split meta fields into two columns
+  const mid = Math.ceil(metaFields.length / 2);
+  const leftCol = metaFields.slice(0, mid);
+  const rightCol = metaFields.slice(mid);
+
   return (
-    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 24px",marginTop:4}}>
-      {[left, right].map((col, ci) => (
-        <div key={ci}>
-          {col.map((f, i) => (
-            <div key={i} style={{marginBottom:8}}>
-              <span style={{fontSize:10,fontWeight:700,letterSpacing:"0.07em",textTransform:"uppercase",color:accent}}>{f.label}</span>
-              <div style={{fontSize:13,color:t.textSub,lineHeight:1.5,marginTop:2}}>{f.value}</div>
-            </div>
-          ))}
+    <div className="dash-card" style={{
+      background: t.sectionCard,
+      border: `1px solid ${t.sectionCardBorder}`,
+      borderRadius: 12,
+      padding: "14px 18px 16px",
+      marginBottom: 12,
+    }}>
+      {/* Header */}
+      <div style={{display:"flex",alignItems:"center",gap:10,marginBottom:12,paddingBottom:10,borderBottom:`1px solid ${t.sectionHeaderBorder}`}}>
+        <div style={{width:20,height:20,background:"rgba(255,255,255,0.05)",borderRadius:5,flexShrink:0,border:`1px solid ${t.sectionCardBorder}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+          <div style={{width:6,height:6,borderRadius:"50%",background:accent,opacity:0.85}}/>
         </div>
-      ))}
+        <span style={{fontSize:9,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:accent}}>Sales Card</span>
+      </div>
+
+      {/* Key-value grid — 2 columns on wide, stacked on narrow */}
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))",gap:"8px 20px",marginBottom:sayThis?14:0}}>
+        {[leftCol, rightCol].map((col, ci) => (
+          <div key={ci}>
+            {col.map((f, i) => (
+              <div key={i} style={{marginBottom:8}}>
+                <span style={{display:"block",fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:t.textMuted,marginBottom:2}}>{f.label}</span>
+                <span style={{fontSize:12.5,color:isProofPoint(f.label)?accent:t.text,lineHeight:1.5,fontWeight:isProofPoint(f.label)?500:400}}>{f.value}</span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Say This — hero quote block */}
+      {sayThis && (
+        <div style={{
+          borderLeft:`3px solid ${accent}`,
+          paddingLeft:12,
+          paddingTop:2,
+          paddingBottom:2,
+          display:"flex",
+          alignItems:"flex-start",
+          justifyContent:"space-between",
+          gap:10,
+        }}>
+          <div>
+            <span style={{display:"block",fontSize:9,fontWeight:600,letterSpacing:"0.08em",textTransform:"uppercase",color:t.textMuted,marginBottom:4}}>Say This</span>
+            <span style={{fontSize:13.5,color:t.text,lineHeight:1.6,fontStyle:"italic"}}>
+              "{sayThis.value.replace(/^[""]|[""]$/g,"")}"
+            </span>
+          </div>
+          {/* Copy button */}
+          <button
+            onClick={handleCopy}
+            title="Copy to clipboard"
+            style={{
+              flexShrink:0,marginTop:18,background:"transparent",border:"none",
+              cursor:"pointer",padding:4,borderRadius:6,color:copied?accent:t.textMuted,
+              transition:"color 0.15s, background 0.15s",
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.07)";e.currentTarget.style.color=accent;}}
+            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=copied?accent:t.textMuted;}}
+          >
+            {copied
+              ? <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+              : <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            }
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -2162,25 +2219,6 @@ export default function BriefingPage() {
                 ))}
               </div>
 
-              {/* Right: Sales Card — reference card aligned to content grid */}
-              {dashCard && (
-                <div style={{
-                  marginLeft:"auto",
-                  minWidth:260, maxWidth:340,
-                  background: theme==="dark" ? "rgba(10,48,100,0.60)" : "rgba(10,60,160,0.06)",
-                  border: `1.5px solid ${theme==="dark" ? "rgba(69,137,255,0.30)" : "rgba(15,98,254,0.20)"}`,
-                  borderRadius:12,
-                  padding:"14px 18px",
-                  boxShadow: theme==="dark"
-                    ? "0 0 0 1px rgba(69,137,255,0.08) inset, 0 6px 24px rgba(0,0,0,0.45)"
-                    : "0 2px 12px rgba(15,98,254,0.10)",
-                  flexShrink:0,
-                  wordBreak:"break-word",
-                }}>
-                  <div style={{fontSize:9,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:t.accent,marginBottom:10}}>Sales Card</div>
-                  <SalesCardGrid body={dashCard.body} t={t} accent={t.accent} compact/>
-                </div>
-              )}
             </div>
 
             {/* PDF capture region — seamless: background matches page */}
@@ -2222,6 +2260,9 @@ export default function BriefingPage() {
               </div>
 
             </div>
+
+            {/* ════════ SALES CARD — first in content column, above Elevator Pitch ════════ */}
+            {dashCard && <SalesCard body={dashCard.body} t={t} accent={t.accent}/>}
 
             {/* ════════ ELEVATOR PITCH — first card, full width ════════ */}
             {dashPitch && (
