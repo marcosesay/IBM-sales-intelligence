@@ -13,7 +13,7 @@ COPY src ./src
 # /api proxy path fails: internal svc address won't resolve and proxying to the
 # public HTTPS upstream throws SSL handshake errors). Direct calls + backend CORS
 # is the path that works.
-RUN echo 'VITE_BACKEND_URL=https://ibm-sales-intelligence.23ij0n2ztu5p.ca-tor.codeengine.appdomain.cloud' > .env.production
+RUN echo 'VITE_BACKEND_URL=https://sales-intelligence-data-ai-backend.23ij0n2ztu5p.ca-tor.codeengine.appdomain.cloud' > .env.production
 
 RUN npm run build
 
