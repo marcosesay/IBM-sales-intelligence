@@ -1,6 +1,10 @@
 import { Router, type IRouter } from "express";
-import { generateTextStream, generateTextStreamTrue } from "../lib/watsonx-client";
+import { generateTextStreamTrue as generateTextStream } from "../lib/watsonx-client";
+import { streamAnthropicChat } from "../lib/anthropic-client";
 import { fetchSiteText } from "../lib/scrape";
+import { perplexitySearch } from "../lib/perplexity-client";
+import { db } from "../lib/db";
+import { briefings } from "../lib/schema";
 
 const router: IRouter = Router();
 
@@ -444,18 +448,43 @@ ${buildSections(ct, company, ind, title, contactName)}`;
   res.setHeader("Connection", "keep-alive");
 
   try {
-    const stream = generateTextStream(prompt, {
-      model: "meta-llama/llama-3-3-70b-instruct",
-      maxTokens: 3500,
-      temperature: 0.6,
-    });
+    const stream = streamAnthropicChat(
+      [{ role: "user", content: prompt }],
+      {
+        model: "claude-sonnet-4-5",
+        maxTokens: 6000,
+        temperature: 0.5,
+      }
+    );
 
+    let fullText = "";
     for await (const chunk of stream) {
+      fullText += chunk;
       res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
     }
 
-    req.log.info({ company, callType: ct }, "Briefing generation completed successfully");
-    res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+    // Persist briefing to SQLite before closing the stream so we can
+    // return the new row id in the done event.
+    let savedBriefingId: number | undefined;
+    try {
+      const saved = db.insert(briefings).values({
+        company,
+        contactName:  contactName  ?? "",
+        contactTitle: title,
+        industry:     ind,
+        callType:     ct,
+        text:         fullText,
+        logoUrl:      "",
+        contactPhotoUrl: "",
+        createdAt:    new Date(),
+      }).returning().get();
+      savedBriefingId = saved.id;
+      req.log.info({ company, id: savedBriefingId }, "Briefing auto-saved to DB");
+    } catch (dbErr) {
+      req.log.warn({ dbErr }, "Failed to auto-save briefing to DB (non-fatal)");
+    }
+
+    res.write(`data: ${JSON.stringify({ done: true, briefingId: savedBriefingId ?? null })}\n\n`);
     res.end();
   } catch (err) {
     req.log.error({ err, company, callType: ct }, "Briefing generation failed");
@@ -636,6 +665,7 @@ router.get("/logo", async (req, res) => {
 
   req.log.info({ company, domain, source: "favicon" }, "Using favicon fallback");
   res.json({ url: `https://www.google.com/s2/favicons?domain=${domain}&sz=128` });
+});
 
 router.get("/proxy-image", async (req, res) => {
   const url = String(req.query["url"] || "");
@@ -691,7 +721,6 @@ router.get("/proxy-image", async (req, res) => {
     res.status(500).json({ error: "Failed to proxy image" });
   }
 });
-});
 
 router.get("/industry", (req, res) => {
   const company = String(req.query["company"] || "").toLowerCase().trim();
@@ -723,9 +752,10 @@ router.get("/industry", (req, res) => {
   res.json({ industry: "" });
 });
 
-// ─── Company Research ────────────────────────────────────────────────────────
-// Searches the web for real company background and returns a structured
-// research summary to be injected into the briefing prompt as `context`.
+// ─── Company Research (Perplexity) ──────────────────────────────────────────
+// Uses Perplexity sonar-pro for grounded, citation-backed company research.
+// Falls back to "" gracefully when PERPLEXITY_API_KEY is not set.
+// Response shape is unchanged: { summary: string }
 router.get("/company-research", async (req, res) => {
   const company = String(req.query["company"] || "").trim();
   const industry = String(req.query["industry"] || "").trim();
@@ -737,80 +767,33 @@ router.get("/company-research", async (req, res) => {
   }
 
   try {
-    // Run two searches in parallel: company overview + recent AI/tech initiatives
-    const queries = [
-      `${company} company overview business model ${industry}`,
-      `${company} AI digital transformation technology strategy 2024 2025`,
-    ];
+    const industryHint = industry ? ` in the ${industry} industry` : "";
+    const titleHint = contactTitle ? ` The IBM seller's contact is a ${contactTitle}.` : "";
 
-    const fetchSearch = async (query: string): Promise<string> => {
-      await new Promise(resolve => setTimeout(resolve, Math.random() * 300));
-      const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
-      const response = await fetch(url, {
-        headers: {
-          "User-Agent": getRandomUserAgent(),
-          "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          "Accept-Language": "en-US,en;q=0.5",
-          "DNT": "1",
-          "Connection": "keep-alive",
-          "Upgrade-Insecure-Requests": "1",
-        },
-        signal: AbortSignal.timeout(8000),
-      });
-      if (!response.ok) return "";
-      return response.text();
-    };
+    const system = `You are a senior enterprise sales intelligence analyst. Your job is to give an IBM seller the richest possible factual briefing on an account before a call. Write in dense, specific prose — no bullet templates, no word limits per section. Include every relevant number, name, date, product name, and deal you can find. The seller will use this to sound like they've done weeks of research in 30 seconds.`;
 
-    const [overviewHtml, techHtml] = await Promise.all(queries.map(fetchSearch));
+    const user = `Give me everything I need to know about ${company}${industryHint} before an IBM Data & AI sales call.${titleHint}
 
-    // Extract meaningful text snippets from DDG result snippets
-    const extractSnippets = (html: string, maxSnippets = 5): string[] => {
-      const snippets: string[] = [];
-      // DDG result snippets live in <a class="result__snippet"> or .result__body
-      const snippetRegex = /<a[^>]+class="[^"]*result__snippet[^"]*"[^>]*>([\s\S]*?)<\/a>/gi;
-      let match;
-      while ((match = snippetRegex.exec(html)) !== null && snippets.length < maxSnippets) {
-        const text = match[1]
-          .replace(/<[^>]+>/g, " ")
-          .replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">")
-          .replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, " ")
-          .replace(/\s+/g, " ").trim();
-        if (text.length > 60) snippets.push(text);
-      }
-      // Also grab result__body paragraphs as fallback
-      if (snippets.length < 2) {
-        const bodyRegex = /<div[^>]+class="[^"]*result__body[^"]*"[^>]*>([\s\S]*?)<\/div>/gi;
-        while ((match = bodyRegex.exec(html)) !== null && snippets.length < maxSnippets) {
-          const text = match[1]
-            .replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-          if (text.length > 60) snippets.push(text);
-        }
-      }
-      return snippets;
-    };
+Cover all of the following in as much depth as the sources allow:
+1. What does the company actually do, who are their customers, what markets do they serve, and what is their revenue / scale?
+2. What is their current competitive position — who are they competing against and how are they differentiated?
+3. What is their known technology stack — cloud providers, data platforms, analytics tools, ERP, and any AI/ML investments or vendor relationships (especially Microsoft, AWS, Snowflake, Databricks, Google, SAP, Palantir, or open-source)?
+4. What are the most important recent developments in the last 12–18 months — earnings surprises, CEO/CTO changes, major acquisitions or divestitures, layoffs, regulatory actions, or strategic pivots?
+5. What specific business pressures, cost or compliance challenges, or transformation initiatives create an opening for IBM's Data & AI portfolio right now?
 
-    const overviewSnippets = extractSnippets(overviewHtml, 5);
-    const techSnippets = extractSnippets(techHtml, 4);
+Be as specific as possible. Include dollar figures, percentages, executive names, product names, and dates. Do not summarise — give the full picture.`;
 
-    // Build a structured research block to inject into the LLM prompt
-    const researchText = [
-      overviewSnippets.length ? `Company Overview (from web):\n${overviewSnippets.join("\n")}` : "",
-      techSnippets.length ? `Technology & AI Initiatives (from web):\n${techSnippets.join("\n")}` : "",
-    ].filter(Boolean).join("\n\n");
+    const summary = await perplexitySearch(system, user, 1500);
 
-    if (!researchText) {
-      req.log.warn({ company }, "Company research: no snippets extracted");
+    if (!summary) {
+      req.log.warn({ company }, "Company research: Perplexity returned empty (key missing or failed)");
       res.json({ summary: "" });
       return;
     }
 
-    req.log.info(
-      { company, overviewCount: overviewSnippets.length, techCount: techSnippets.length },
-      "Company research fetched successfully"
-    );
-
+    req.log.info({ company, source: "perplexity" }, "Company research fetched successfully");
     res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.json({ summary: researchText });
+    res.json({ summary });
   } catch (err) {
     req.log.error({ err, company }, "Company research failed");
     res.json({ summary: "" });

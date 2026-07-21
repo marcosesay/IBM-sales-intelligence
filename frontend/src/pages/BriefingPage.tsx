@@ -26,6 +26,9 @@ interface SavedBriefing {
   co: string; ct: string; ti: string; ind: string;
   callType: string; text: string; logoUrl: string;
   contactPhotoUrl?: string;
+  prospectStep1?: string;
+  prospectStep2?: string;
+  architectureDiagram?: string;
   date: string; ts: number;
 }
 
@@ -203,11 +206,39 @@ function getGreeting() {
   if (h < 17) return "Good afternoon";
   return "Good evening";
 }
-function loadSaved(): SavedBriefing[] {
-  try { return JSON.parse(localStorage.getItem("briefings") || "[]"); } catch { return []; }
+// Map a DB row (snake_case) to the frontend SavedBriefing shape
+function dbRowToBriefing(row: any): SavedBriefing {
+  // Drizzle returns camelCase keys; accept both for safety.
+  return {
+    co:   row.company                                    ?? "",
+    ct:   (row.contactName   ?? row.contact_name)        ?? "",
+    ti:   (row.contactTitle  ?? row.contact_title)       ?? "",
+    ind:  row.industry                                   ?? "",
+    callType:            (row.callType    ?? row.call_type)              ?? "Discovery",
+    text:                row.text                                        ?? "",
+    logoUrl:             (row.logoUrl     ?? row.logo_url)               ?? "",
+    contactPhotoUrl:     (row.contactPhotoUrl ?? row.contact_photo_url)  ?? "",
+    prospectStep1:       (row.prospectStep1   ?? row.prospect_step1)     ?? "",
+    prospectStep2:       (row.prospectStep2   ?? row.prospect_step2)     ?? "",
+    architectureDiagram: (row.architectureDiagram ?? row.architecture_diagram) ?? "",
+    date: row.createdAt ?? row.created_at
+      ? new Date(typeof (row.createdAt ?? row.created_at) === "number"
+          ? (row.createdAt ?? row.created_at) * 1000
+          : (row.createdAt ?? row.created_at))
+          .toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+      : "",
+    ts: (() => { const v = row.createdAt ?? row.created_at; return typeof v === "number" ? v * 1000 : Date.parse(v); })(),
+    _id: row.id,
+  } as SavedBriefing & { _id?: number };
 }
-function persistSaved(list: SavedBriefing[]) {
-  localStorage.setItem("briefings", JSON.stringify(list));
+
+async function loadSavedFromApi(): Promise<SavedBriefing[]> {
+  try {
+    const r = await fetch("/api/history/briefings");
+    if (!r.ok) return [];
+    const rows = await r.json();
+    return (rows as any[]).map(dbRowToBriefing);
+  } catch { return []; }
 }
 function fmtDate() {
   return new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -887,6 +918,17 @@ function MarkdownBody({ body, t, accent }: { body: string; t: typeof DARK; accen
     }
 
     if (!l) { out.push(<div key={i} style={{ height: 4 }} />); i++; continue; }
+    if (/^#{1,3}\s/.test(l)) {
+      const level = (l.match(/^(#{1,3})/)?.[1].length) ?? 2;
+      const text = l.replace(/^#{1,3}\s*/, "");
+      const fs = level === 1 ? 15 : level === 2 ? 13.5 : 12.5;
+      out.push(
+        <p key={i} style={{ margin: "10px 0 4px", fontSize: fs, fontWeight: 700, color: t.textSub, letterSpacing: level >= 3 ? "0.06em" : "0.02em", textTransform: level >= 3 ? "uppercase" : "none" as any }}>
+          {renderInline(text)}
+        </p>
+      );
+      i++; continue;
+    }
     if (/^[-*•]\s/.test(l)) {
       out.push(
         <div key={i} style={{ display: "flex", gap: 8, marginBottom: 5, alignItems: "flex-start", marginLeft: indentPx }}>
@@ -916,6 +958,9 @@ function MarkdownBody({ body, t, accent }: { body: string; t: typeof DARK; accen
    "Next Steps", or stray tables. */
 const STEP1_KEYWORDS = ["solution mapping", "contract vehicle", "contacts"];
 const STEP2_KEYWORDS = ["best-fit use case", "best fit use case", "sales play", "competitive wedge", "why act now", "sales card", "elevator pitch", "what to do next"];
+
+// Briefing product section titles — hoisted here so JSX outside useMemo can reference them
+const PRODUCT_TITLES = ["Product Recommendations","Retention & Upsell Positioning","IBM Differentiation","Strategic Investment Themes"];
 
 /* Person-input helpers. We deliberately do NOT fetch LinkedIn (it blocks scraping),
    so from a profile URL we can only derive a best-effort display name from the slug
@@ -1369,8 +1414,26 @@ export default function BriefingPage() {
   const [briefingText, setBriefingText] = useState("");
   const [briefingReady, setBriefingReady] = useState(false);
   const [currentBriefing, setCurrentBriefing] = useState<SavedBriefing | null>(null);
+  // Ref mirrors currentBriefing so async closures always read the latest _id synchronously.
+  // useEffect syncs too late (after commit) so we update both via this helper everywhere.
+  const currentBriefingRef = useRef<(SavedBriefing & { _id?: number }) | null>(null);
+  const setCurrentBriefingAndRef = (
+    next: ((SavedBriefing & { _id?: number }) | null) |
+          ((prev: (SavedBriefing & { _id?: number }) | null) => (SavedBriefing & { _id?: number }) | null)
+  ) => {
+    if (typeof next === "function") {
+      setCurrentBriefing((prev) => {
+        const result = next(prev as any);
+        currentBriefingRef.current = result;
+        return result as SavedBriefing | null;
+      });
+    } else {
+      currentBriefingRef.current = next;
+      setCurrentBriefing(next as SavedBriefing | null);
+    }
+  };
   const [pendingBriefing, setPendingBriefing] = useState<Partial<SavedBriefing> | null>(null);
-  const [saved, setSaved]       = useState<SavedBriefing[]>(() => loadSaved());
+  const [saved, setSaved]       = useState<SavedBriefing[]>([]);
   const [alreadySaved, setAlreadySaved] = useState(false);
   const [_error, setError]       = useState("");
   const textRef = useRef("");
@@ -1382,6 +1445,11 @@ export default function BriefingPage() {
     setTheme(next);
     localStorage.setItem("theme", next);
   };
+
+  // Load briefing history from the API on mount
+  useEffect(() => {
+    loadSavedFromApi().then(setSaved);
+  }, []);
 
   // Auto-focus the company input when the hero is visible
   useEffect(() => {
@@ -1406,6 +1474,9 @@ export default function BriefingPage() {
   const [prospectGenerating, setProspectGenerating] = useState(false);
   const [_prospectStep, setProspectStep] = useState<1|2|null>(null);
   const [prospectResult, setProspectResult] = useState<{companyName:string;websiteUrl:string;step1:string;step2:string;generatedAt:string}|null>(null);
+  // Ref mirrors prospectResult so the generate callback (useCallback) always reads the latest value
+  const prospectResultRef = useRef<{companyName:string;websiteUrl:string;step1:string;step2:string;generatedAt:string}|null>(null);
+  useEffect(() => { prospectResultRef.current = prospectResult; }, [prospectResult]);
   const [_prospectError, setProspectError] = useState("");
   const [openRefs, setOpenRefs] = useState<Record<string, boolean>>({});
   const [showMore, setShowMore] = useState(false);
@@ -1527,7 +1598,6 @@ export default function BriefingPage() {
   const streamingSections = useMemo(() => {
     if (!briefingText) return [];
 
-    const PRODUCT_TITLES = ["Product Recommendations","Retention & Upsell Positioning","IBM Differentiation","Strategic Investment Themes"];
     const IBM_PRODUCT_NAMES = ["watsonx.ai","watsonx.data","watsonx.governance","IBM OpenPages","IBM DataStage","IBM Knowledge Catalog"];
     const QUAL_TITLES = ["Opportunity Qualification","Expansion Qualification","Win/Loss Qualification","Business Case Qualification"];
     const BANT_LABELS = ["Budget","Authority","Need","Timeline","Champion","Political Blockers"];
@@ -1612,16 +1682,6 @@ export default function BriefingPage() {
         return true;
       })
       .slice(0, 6);
-
-    // Always ensure a Product Recommendations section exists
-    const hasProductSec = sections.some(s => PRODUCT_TITLES.includes(s.title));
-    if (!hasProductSec) {
-      // Use products extracted from other sections if available, else catalogue fallback
-      const content = extractedProducts.length > 0
-        ? extractedProducts.slice(0, 3).map(p => `- ${p}`).join("\n")
-        : "use-catalogue-fallback";
-      sections.push({ title: "Product Recommendations", content, isStreaming: false });
-    }
 
     return sections;
   }, [briefingText, generating]);
@@ -1728,13 +1788,26 @@ export default function BriefingPage() {
         });
         if (pr.ok) {
           const pdata = await pr.json();
+          const step1 = cleanProspectMarkdown(pdata.step1 || "", STEP1_KEYWORDS);
+          const step2 = cleanProspectMarkdown(pdata.step2 || "", STEP2_KEYWORDS);
           setProspectResult({
             companyName: pdata.companyName || effectiveCompany,
             websiteUrl: pdata.websiteUrl || prospectUrl.trim(),
-            step1: cleanProspectMarkdown(pdata.step1 || "", STEP1_KEYWORDS),
-            step2: cleanProspectMarkdown(pdata.step2 || "", STEP2_KEYWORDS),
+            step1,
+            step2,
             generatedAt: pdata.generatedAt || new Date().toISOString(),
           });
+          // Merge prospect data into currentBriefing so Save / PATCH always has latest values
+          setCurrentBriefingAndRef(prev => prev ? { ...prev, prospectStep1: step1, prospectStep2: step2 } : prev);
+          // Persist to DB if the briefing was already auto-saved
+          const dbId = currentBriefingRef.current?._id;
+          if (dbId) {
+            fetch(`/api/history/briefings/${dbId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ prospectStep1: step1, prospectStep2: step2 }),
+            }).catch(() => { /* non-fatal */ });
+          }
         }
       } catch {
         /* non-fatal — brief still renders */
@@ -1751,16 +1824,21 @@ export default function BriefingPage() {
       date: fmtDate(), ts: Date.now(),
     });
 
-    // ── Fetch live company research with a hard timeout — don't block generation ──
+    // ── Fetch live company research via Perplexity (backend) + news in parallel ──
+    // Hard timeout keeps generation from being blocked if Perplexity is slow.
     let companyContext = "";
     try {
-      const RESEARCH_TIMEOUT = 1500; // max 1.5s wait before we just start generating
+      const RESEARCH_TIMEOUT = 25000; // sonar-pro grounded search takes 10-20s; give it room
       const withTimeout = <T,>(p: Promise<T>, ms: number): Promise<T | null> =>
         Promise.race([p, new Promise<null>(res => setTimeout(() => res(null), ms))]);
 
-      const [wikiRes, newsRes] = await Promise.all([
+      const params = new URLSearchParams({ company: effectiveCompany });
+      if (industry.trim()) params.set("industry", industry.trim());
+      if (title.trim()) params.set("contactTitle", title.trim());
+
+      const [perplexityRes, newsRes] = await Promise.all([
         withTimeout(
-          fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(effectiveCompany)}`)
+          fetch(`${getBaseUrl()}/api/briefing/company-research?${params.toString()}`)
             .then(r => r.ok ? r.json() : null).catch(() => null),
           RESEARCH_TIMEOUT
         ),
@@ -1772,8 +1850,8 @@ export default function BriefingPage() {
       ]);
 
       const parts: string[] = [];
-      if (wikiRes && (wikiRes as any)?.extract) {
-        parts.push(`Wikipedia: ${(wikiRes as any).extract}`);
+      if (perplexityRes && (perplexityRes as any)?.summary) {
+        parts.push((perplexityRes as any).summary as string);
       }
       if (Array.isArray(newsRes) && newsRes.length > 0) {
         const headlines = (newsRes as { title: string; source?: string; date?: string }[])
@@ -1807,14 +1885,16 @@ export default function BriefingPage() {
       const reader = res.body?.getReader();
       if (!reader) throw new Error("No stream available");
       const decoder = new TextDecoder();
-      while (true) {
+      let streamDone = false;
+      let savedDbId: number | null = null;
+      while (!streamDone) {
         const { done, value } = await reader.read();
         if (done) break;
         const events = decoder.decode(value).split("\n\n").filter(Boolean);
         for (const event of events) {
           if (!event.startsWith("data: ")) continue;
           const data = JSON.parse(event.slice(6));
-          if (data.done) break;
+          if (data.done) { savedDbId = data.briefingId ?? null; streamDone = true; break; }
           if (data.error) throw new Error(data.error);
           if (data.replace) { textRef.current = data.replace; setBriefingText(data.replace); }
           else if (data.content) { textRef.current += data.content; setBriefingText(textRef.current); }
@@ -1826,8 +1906,15 @@ export default function BriefingPage() {
         text: textRef.current, logoUrl: logoData?.url || "",
         contactPhotoUrl: contactPhotoUrl || "",
         date: fmtDate(), ts: Date.now(),
-      };
-      setCurrentBriefing(entry);
+        // Snapshot prospect data so it persists with the saved briefing
+        prospectStep1: prospectResultRef.current?.step1 || "",
+        prospectStep2: prospectResultRef.current?.step2 || "",
+        _id: savedDbId ?? undefined,
+      } as SavedBriefing & { _id?: number };
+      // Update the ref immediately so any concurrent async closures (prospect, architecture)
+      // can read the correct _id without waiting for React to process the state update.
+      currentBriefingRef.current = entry;
+      setCurrentBriefingAndRef(entry);
       setBriefingReady(true);
     } catch (err) {
       console.error("Briefing generation error:", err);
@@ -1840,21 +1927,92 @@ export default function BriefingPage() {
     }
   }, [company, industry, contactName, title, context, meetingType, logoData, contactPhotoUrl, prospectUrl]);
 
-  const saveBriefing = () => {
+  const saveBriefing = async () => {
     if (!currentBriefing) return;
-    const filtered = saved.filter(b => !(b.co === currentBriefing.co && b.ct === currentBriefing.ct));
-    const updated = [currentBriefing, ...filtered].slice(0, 20);
-    setSaved(updated); persistSaved(updated); setAlreadySaved(true);
+    try {
+      const existingId = (currentBriefing as any)._id as number | undefined;
+      const r = existingId
+        // Already auto-saved — just patch the fields that may have updated since
+        ? await fetch(`/api/history/briefings/${existingId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              logoUrl:            currentBriefing.logoUrl,
+              contactPhotoUrl:    currentBriefing.contactPhotoUrl,
+              prospectStep1:      currentBriefing.prospectStep1      || "",
+              prospectStep2:      currentBriefing.prospectStep2      || "",
+              architectureDiagram:currentBriefing.architectureDiagram|| "",
+            }),
+          })
+        // No auto-save id — insert a fresh row (fallback / edge case)
+        : await fetch("/api/history/briefings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              company:            currentBriefing.co,
+              contactName:        currentBriefing.ct,
+              contactTitle:       currentBriefing.ti,
+              industry:           currentBriefing.ind,
+              callType:           currentBriefing.callType,
+              text:               currentBriefing.text,
+              logoUrl:            currentBriefing.logoUrl,
+              contactPhotoUrl:    currentBriefing.contactPhotoUrl,
+              prospectStep1:      currentBriefing.prospectStep1      || "",
+              prospectStep2:      currentBriefing.prospectStep2      || "",
+              architectureDiagram:currentBriefing.architectureDiagram|| "",
+            }),
+          });
+      if (!r.ok) {
+        const body = await r.text();
+        console.error("Save failed:", r.status, body);
+        return;
+      }
+      const updated = await loadSavedFromApi();
+      setSaved(updated);
+      setAlreadySaved(true);
+    } catch (err) { console.error("Save error:", err); }
   };
-  const deleteSaved = (ts: number) => { const u = saved.filter(b => b.ts !== ts); setSaved(u); persistSaved(u); };
+
+  const deleteSaved = async (ts: number) => {
+    const target = saved.find(b => b.ts === ts) as any;
+    if (target?._id) {
+      try {
+        await fetch(`/api/history/briefings/${target._id}`, { method: "DELETE" });
+      } catch { /* non-fatal */ }
+    }
+    setSaved(prev => prev.filter(b => b.ts !== ts));
+  };
   const loadBriefing = (b: SavedBriefing) => {
+    // Reset all in-progress state first so nothing bleeds in from a prior run
+    setGenerating(false);
+    setProspectGenerating(false);
+    setPendingBriefing(null);
+    textRef.current = b.text;
+    // Populate fields
     setCompany(b.co); setIndustry(b.ind); setContact(b.ct); setTitle(b.ti);
-    setMeetingType(b.callType as MeetingType); setBriefingText(b.text);
+    setContactName2(b.ct);
+    setMeetingType(b.callType as MeetingType);
+    setBriefingText(b.text);
     setContactPhotoUrl(b.contactPhotoUrl || "");
-    setCurrentBriefing(b); setBriefingReady(true); setAlreadySaved(true);
+    setCurrentBriefingAndRef(b as any);
+    setBriefingReady(true);
+    setAlreadySaved(true);
+    // Restore prospect data so dashboard cards (Why IBM Wins, Elevator Pitch, etc.) re-render
+    if (b.prospectStep1 || b.prospectStep2) {
+      setProspectResult({
+        companyName: b.co,
+        websiteUrl: "",
+        step1: b.prospectStep1 || "",
+        step2: b.prospectStep2 || "",
+        generatedAt: "",
+      });
+    } else {
+      setProspectResult(null);
+    }
+    // architectureDiagram is passed directly via currentBriefing into ArchitectureDiagram
   };
   const newBriefing = () => {
-    setBriefingReady(false); setBriefingText(""); setCurrentBriefing(null);
+    setBriefingReady(false); setBriefingText(""); setCurrentBriefingAndRef(null);
     setPendingBriefing(null); setAlreadySaved(false); setGenerating(false); textRef.current = "";
     setProspectResult(null); setProspectError(""); setProspectGenerating(false); setProspectStep(null);
   };
@@ -1866,6 +2024,7 @@ export default function BriefingPage() {
     window.print();
   };
 
+  const [historyOpen, setHistoryOpen] = useState(false);
   const showResult = generating || briefingReady;
   const displayBriefing = briefingReady ? currentBriefing : pendingBriefing;
   // For person (LinkedIn) inputs, never surface the raw URL as the "company" — show the name.
@@ -1875,6 +2034,64 @@ export default function BriefingPage() {
   return (
     <div className="app-shell" style={{display:"flex",height:"100vh",overflow:"hidden",fontFamily:"var(--app-font-sans)",background:t.bodyBg,color:t.text}}>
 
+      {/* ─── History Sidebar ─── */}
+      {saved.length > 0 && (
+        <>
+          {/* Backdrop — click to close */}
+          {historyOpen && (
+            <div
+              className="no-print"
+              onClick={() => setHistoryOpen(false)}
+              style={{position:"fixed",inset:0,zIndex:40,background:"rgba(0,0,0,0.35)"}}
+            />
+          )}
+          <div
+            className="no-print"
+            style={{
+              position:"fixed",top:0,right:0,bottom:0,zIndex:50,
+              width: historyOpen ? 280 : 0,
+              overflow:"hidden",
+              transition:"width 0.22s ease",
+              background: t.topBar,
+              borderLeft: `1px solid ${t.sectionCardBorder}`,
+              display:"flex",flexDirection:"column",
+            }}
+          >
+            {historyOpen && (
+              <>
+                <div style={{padding:"16px 16px 10px",display:"flex",alignItems:"center",justifyContent:"space-between",borderBottom:`1px solid ${t.sectionCardBorder}`}}>
+                  <span style={{fontSize:11,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:t.textDim}}>Recent Briefings</span>
+                  <button onClick={()=>setHistoryOpen(false)} style={{background:"none",border:"none",cursor:"pointer",color:t.textMuted,fontSize:18,lineHeight:1,padding:2}}>×</button>
+                </div>
+                <div style={{flex:1,overflowY:"auto",padding:"10px 12px",display:"flex",flexDirection:"column",gap:6}}>
+                  {saved.map(b=>(
+                    <button
+                      key={b.ts}
+                      onClick={()=>{ loadBriefing(b); setHistoryOpen(false); }}
+                      style={{
+                        textAlign:"left",background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,
+                        borderRadius:8,padding:"10px 12px",cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                        transition:"all 0.15s",width:"100%",
+                      }}
+                      onMouseEnter={e=>{e.currentTarget.style.borderColor=t.accent;}}
+                      onMouseLeave={e=>{e.currentTarget.style.borderColor=t.sectionCardBorder;}}
+                    >
+                      <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}>
+                        <span style={{fontSize:12,fontWeight:600,color:t.text,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.co}</span>
+                        <span style={{flexShrink:0,fontSize:9,fontWeight:700,letterSpacing:"0.05em",textTransform:"uppercase",
+                          color:t.badgeText,background:t.badgeBg,border:`1px solid ${t.badgeBorder}`,borderRadius:3,padding:"1px 4px"}}>
+                          {b.callType}
+                        </span>
+                      </div>
+                      <div style={{fontSize:10.5,color:t.textDim}}>{b.date}{b.ct ? ` · ${b.ct}` : ""}</div>
+                    </button>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </>
+      )}
 
       {/* ─── Main ─── */}
       <main className="app-main" style={{flex:1,overflowY:"auto",position:"relative"}}>
@@ -1937,8 +2154,32 @@ export default function BriefingPage() {
           /* ─── Hero ─── */
           <div style={{padding:"24px 40px 48px",height:"100%",display:"flex",flexDirection:"column",overflowY:"auto"}}>
 
-            {/* Top bar: theme toggle only — greeting moves into central column */}
-            <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",marginBottom:6}}>
+            {/* Top bar: theme toggle + history hamburger */}
+            <div style={{display:"flex",alignItems:"center",justifyContent:"flex-end",gap:8,marginBottom:6}}>
+              {saved.length > 0 && (
+                <button
+                  onClick={() => setHistoryOpen(v => !v)}
+                  title="Recent briefings"
+                  style={{
+                    display:"inline-flex",alignItems:"center",gap:6,
+                    background: historyOpen ? t.btn : t.pill,
+                    backdropFilter:"blur(28px)",
+                    border:`1px solid ${historyOpen ? t.accent : t.pillBorder}`,
+                    color: historyOpen ? t.accent : t.textSub,
+                    borderRadius:100,height:38,padding:"0 14px",
+                    cursor:"pointer",fontFamily:"var(--app-font-sans)",
+                    boxShadow:"inset 0 1px 0 rgba(255,255,255,0.12)",transition:"all 0.2s",
+                    fontSize:12,fontWeight:500,
+                  }}
+                  onMouseEnter={(e)=>{e.currentTarget.style.background=t.btn;e.currentTarget.style.borderColor=t.accent;e.currentTarget.style.color=t.accent;}}
+                  onMouseLeave={(e)=>{e.currentTarget.style.background=historyOpen?t.btn:t.pill;e.currentTarget.style.borderColor=historyOpen?t.accent:t.pillBorder;e.currentTarget.style.color=historyOpen?t.accent:t.textSub;}}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                  </svg>
+                  History
+                </button>
+              )}
               <button
                 onClick={toggleTheme}
                 title={`Switch to ${theme==="dark"?"light":"dark"} mode`}
@@ -2127,36 +2368,7 @@ export default function BriefingPage() {
               )}
             </div>
 
-            {/* ─── Recent Briefings — returning user workspace ─── */}
-            {saved.length > 0 && (
-              <div style={{maxWidth:600,margin:"32px auto 0",width:"100%"}}>
-                <div style={{fontSize:10,fontWeight:700,letterSpacing:"0.1em",textTransform:"uppercase",color:t.textDim,marginBottom:12}}>Recent Briefings</div>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:8}}>
-                  {saved.slice(0,4).map(b=>(
-                    <button
-                      key={b.ts}
-                      onClick={()=>loadBriefing(b)}
-                      style={{
-                        textAlign:"left",background:t.sectionCard,border:`1px solid ${t.sectionCardBorder}`,
-                        borderRadius:10,padding:"12px 14px",cursor:"pointer",fontFamily:"var(--app-font-sans)",
-                        transition:"all 0.15s",
-                      }}
-                      onMouseEnter={e=>{e.currentTarget.style.border=`1px solid ${t.accent}`;e.currentTarget.style.background=t.card;}}
-                      onMouseLeave={e=>{e.currentTarget.style.border=`1px solid ${t.sectionCardBorder}`;e.currentTarget.style.background=t.sectionCard;}}
-                    >
-                      <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:4}}>
-                        <span style={{fontSize:13,fontWeight:600,color:t.text,flex:1,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{b.co}</span>
-                        <span style={{flexShrink:0,fontSize:9.5,fontWeight:700,letterSpacing:"0.05em",textTransform:"uppercase",
-                          color:t.badgeText,background:t.badgeBg,border:`1px solid ${t.badgeBorder}`,borderRadius:4,padding:"1px 5px"}}>
-                          {b.callType}
-                        </span>
-                      </div>
-                      <div style={{fontSize:11,color:t.textDim}}>{b.date}{b.ct ? ` · ${b.ct}` : ""}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            {/* Recent Briefings moved to sidebar — accessible via History button in action bar */}
 
             {/* ─── Value strip ─── */}
             <div style={{maxWidth:600,margin:"32px auto 40px",textAlign:"center",width:"100%"}}>
@@ -2183,8 +2395,8 @@ export default function BriefingPage() {
               </div>
             )}
 
-            {/* Action bar: buttons left, Sales Card right */}
-            <div className="no-print" style={{display:"flex",alignItems:"flex-start",gap:16,marginBottom:24,paddingTop:40,flexWrap:"wrap"}}>
+            {/* Action bar */}
+            <div className="no-print" style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:24,paddingTop:40,flexWrap:"wrap",gap:8}}>
               {/* Left: action buttons */}
               <div style={{display:"flex",gap:8,flexWrap:"wrap",alignItems:"center"}}>
                 {[
@@ -2202,23 +2414,34 @@ export default function BriefingPage() {
                       background:t.btnSm, border:`1px solid ${t.btnSmBorder}`, borderRadius:8,
                       color:t.btnSmText, cursor:btn.disabled?"default":"pointer",
                       opacity:btn.disabled?0.45:1, fontFamily:"var(--app-font-sans)",
-                      transition:"all 0.2s",
-                      transform:"scale(1)",
+                      transition:"all 0.2s", transform:"scale(1)",
                     }}
-                    onMouseEnter={(e) => {
-                      if (!btn.disabled) {
-                        e.currentTarget.style.transform = "scale(1.02)";
-                        e.currentTarget.style.background = t.btn;
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.transform = "scale(1)";
-                      e.currentTarget.style.background = t.btnSm;
-                    }}
+                    onMouseEnter={(e) => { if (!btn.disabled) { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.background = t.btn; } }}
+                    onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.background = t.btnSm; }}
                   >{btn.label}</button>
                 ))}
               </div>
-
+              {/* Right: history toggle */}
+              {saved.length > 0 && (
+                <button
+                  onClick={() => setHistoryOpen(v => !v)}
+                  title="Recent briefings"
+                  style={{
+                    display:"flex",alignItems:"center",gap:7,
+                    padding:"9px 14px",fontSize:12,fontWeight:500,
+                    background: historyOpen ? t.btn : t.btnSm,
+                    border:`1px solid ${historyOpen ? t.accent : t.btnSmBorder}`,
+                    borderRadius:8, color: historyOpen ? t.accent : t.btnSmText,
+                    cursor:"pointer", fontFamily:"var(--app-font-sans)", transition:"all 0.2s",
+                  }}
+                >
+                  {/* Hamburger icon */}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+                  </svg>
+                  History ({saved.length})
+                </button>
+              )}
             </div>
 
             {/* PDF capture region — seamless: background matches page */}
@@ -2308,9 +2531,9 @@ export default function BriefingPage() {
                 <div style={{fontSize:13,color:t.textSub,lineHeight:1.7}}><MarkdownBody body={dashMapping.body} t={t} accent={t.accent}/></div>
               </div>
             )}
-            {(briefingReady || generating) && (
-              <SectionCard key="Product Recommendations" title="Product Recommendations" content={briefingText || "use-catalogue-fallback"} industry={displayBriefing?.ind || ""} t={t} streaming={false}/>
-            )}
+            {streamingSections.filter(s => PRODUCT_TITLES.includes(s.title)).map(s => (
+              <SectionCard key={s.title} title={s.title} content={s.content} industry={displayBriefing?.ind || ""} t={t} streaming={s.isStreaming}/>
+            ))}
 
             {(dashUseCase || dashPlay) && dashTier("Execution", "How to win the deal")}
             {dashUseCase && (
@@ -2348,6 +2571,38 @@ export default function BriefingPage() {
             </div>
             {/* /PDF capture region */}
 
+            {/* ════════ CHAT ════════ */}
+            {briefingReady && (
+              <BriefingChat
+                briefingText={currentBriefing?.text || briefingText}
+                companyName={displayCo}
+                t={t}
+              />
+            )}
+
+            {/* ════════ ARCHITECTURE DIAGRAM ════════ */}
+            {briefingReady && (
+              <ArchitectureDiagram
+                companyName={displayCo}
+                briefingText={currentBriefing?.text || briefingText}
+                prospectStep1={currentBriefing?.prospectStep1 || prospectResult?.step1 || ""}
+                prospectStep2={currentBriefing?.prospectStep2 || prospectResult?.step2 || ""}
+                initialDiagram={currentBriefing?.architectureDiagram || ""}
+                onGenerated={(raw) => {
+                  setCurrentBriefingAndRef(prev => prev ? { ...prev, architectureDiagram: raw } : prev);
+                  const dbId = currentBriefingRef.current?._id;
+                  if (dbId) {
+                    fetch(`/api/history/briefings/${dbId}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ architectureDiagram: raw }),
+                    }).catch(() => { /* non-fatal */ });
+                  }
+                }}
+                t={t}
+              />
+            )}
+
             {/* Waiting for first chunk */}
             {generating && streamingSections.length===0 && (
               <div style={{display:"flex",alignItems:"center",gap:10,padding:"20px 0",color:t.textDim}}>
@@ -2366,6 +2621,460 @@ export default function BriefingPage() {
           100% { transform: translateX(200%); width: 40%; }
         }
       `}</style>
+    </div>
+  );
+}
+
+/* ─── Briefing Chat ──────────────────────────────────────────────────────────
+   Contextual Q&A panel shown below a completed briefing.
+   Sends the full briefing markdown as context so every answer is account-specific.
+*/
+interface ChatMessage { role: "user" | "assistant"; content: string; }
+
+function BriefingChat({ briefingText, companyName, t }: {
+  briefingText: string;
+  companyName: string;
+  t: typeof DARK;
+}) {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [streaming, setStreaming] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const accent = t.accent;
+
+  const SUGGESTIONS = [
+    "What's the strongest IBM opening for this account?",
+    "Draft a follow-up email after the discovery call",
+    "What objections should I prepare for?",
+    "Summarise the top 3 risks if we don't act this quarter",
+  ];
+
+  const send = async (text?: string) => {
+    const userText = (text ?? input).trim();
+    if (!userText || streaming) return;
+    setInput("");
+    const newMessages: ChatMessage[] = [...messages, { role: "user", content: userText }];
+    setMessages(newMessages);
+    setStreaming(true);
+
+    // Placeholder assistant message we'll fill in via streaming
+    setMessages(m => [...m, { role: "assistant", content: "" }]);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: newMessages,
+          briefingContext: briefingText,
+          companyName,
+        }),
+      });
+      if (!res.ok || !res.body) throw new Error("Stream failed");
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let assembled = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        for (const line of decoder.decode(value).split("\n\n")) {
+          if (!line.startsWith("data: ")) continue;
+          const data = JSON.parse(line.slice(6));
+          if (data.done) break;
+          if (data.content) {
+            assembled += data.content;
+            setMessages(m => {
+              const copy = [...m];
+              copy[copy.length - 1] = { role: "assistant", content: assembled };
+              return copy;
+            });
+          }
+        }
+      }
+    } catch {
+      setMessages(m => {
+        const copy = [...m];
+        copy[copy.length - 1] = { role: "assistant", content: "Sorry, something went wrong. Please try again." };
+        return copy;
+      });
+    } finally {
+      setStreaming(false);
+      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+    }
+  };
+
+  return (
+    <div className="no-print" style={{
+      borderTop: `1px solid ${t.sectionCardBorder}`,
+      marginTop: 32,
+      paddingTop: 24,
+    }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16 }}>
+        <div style={{ width: 6, height: 6, borderRadius: "50%", background: accent }} />
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.textDim }}>
+          Ask about {companyName || "this account"}
+        </span>
+      </div>
+
+      {/* Suggestion chips — only when no messages yet */}
+      {messages.length === 0 && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16 }}>
+          {SUGGESTIONS.map(s => (
+            <button
+              key={s}
+              onClick={() => send(s)}
+              style={{
+                fontSize: 12, padding: "6px 13px", borderRadius: 20, cursor: "pointer",
+                background: t.btnSm, border: `1px solid ${t.btnSmBorder}`, color: t.textSub,
+                fontFamily: "var(--app-font-sans)", transition: "all 0.15s",
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = accent; e.currentTarget.style.color = t.text; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = t.btnSmBorder; e.currentTarget.style.color = t.textSub; }}
+            >{s}</button>
+          ))}
+        </div>
+      )}
+
+      {/* Message history */}
+      {messages.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16, maxHeight: 480, overflowY: "auto" }}>
+          {messages.map((m, i) => (
+            <div key={i} style={{
+              display: "flex",
+              justifyContent: m.role === "user" ? "flex-end" : "flex-start",
+            }}>
+              <div style={{
+                maxWidth: "82%",
+                padding: "10px 14px",
+                borderRadius: m.role === "user" ? "12px 12px 4px 12px" : "12px 12px 12px 4px",
+                background: m.role === "user"
+                  ? "rgba(15,98,254,0.18)"
+                  : t.sectionCard,
+                border: `1px solid ${m.role === "user" ? "rgba(15,98,254,0.35)" : t.sectionCardBorder}`,
+                fontSize: 13,
+                lineHeight: 1.65,
+                color: t.text,
+              }}>
+                {m.content
+                  ? <MarkdownBody body={m.content} t={t} accent={accent} />
+                  : <span className="animate-pulse-dot" style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: accent }} />
+                }
+              </div>
+            </div>
+          ))}
+          <div ref={bottomRef} />
+        </div>
+      )}
+
+      {/* Input */}
+      <div style={{ display: "flex", gap: 8, alignItems: "flex-end" }}>
+        <textarea
+          value={input}
+          onChange={e => setInput(e.currentTarget.value)}
+          onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); send(); } }}
+          placeholder="Ask a follow-up question about this account…"
+          rows={2}
+          style={{
+            flex: 1, background: t.input, border: `1px solid ${t.inputBorder}`,
+            borderRadius: 10, padding: "10px 14px", fontSize: 13, color: t.text,
+            fontFamily: "var(--app-font-sans)", resize: "none", outline: "none",
+            lineHeight: 1.5,
+          }}
+          onFocus={e => { e.currentTarget.style.borderColor = accent; }}
+          onBlur={e => { e.currentTarget.style.borderColor = t.inputBorder; }}
+        />
+        <button
+          onClick={() => send()}
+          disabled={!input.trim() || streaming}
+          style={{
+            padding: "10px 18px", borderRadius: 10, fontSize: 13, fontWeight: 600,
+            background: input.trim() && !streaming ? "#0f62fe" : t.btnSm,
+            color: input.trim() && !streaming ? "#fff" : t.textDim,
+            border: "none", cursor: input.trim() && !streaming ? "pointer" : "default",
+            fontFamily: "var(--app-font-sans)", transition: "all 0.15s", flexShrink: 0,
+          }}
+        >
+          {streaming ? "…" : "Send"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Mermaid sanitizer ───────────────────────────────────────────────────────
+   Fixes the most common LLM mistakes before handing source to Mermaid:
+   - strips %% inline comments (break the parser in most positions)
+   - removes edges that were placed inside a subgraph block
+   - collapses multi-line node labels into single lines
+   - ensures the diagram type line is "graph TD"
+*/
+function sanitizeMermaid(src: string): string {
+  const lines = src.split("\n");
+  const out: string[] = [];
+  let inSubgraph = false;
+  // Collect edges found inside subgraphs so we can re-append them after
+  const hoistedEdges: string[] = [];
+  // Edge pattern: anything with --> or --- between identifiers
+  const EDGE_RE = /^\s*\w[\w-]*\s*(-->|---|-\.-?>?|==?>?)/;
+  // Subgraph open/close
+  const SUB_OPEN = /^\s*subgraph\s/;
+  const SUB_CLOSE = /^\s*end\b/;
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+
+    // Strip %% comments (keep line if content remains before the %%)
+    line = line.replace(/%%.*$/, "").trimEnd();
+
+    // Collapse multi-line label continuations: a label line that has an
+    // unmatched opening quote but no closing bracket — skip (the next line
+    // is usually a continuation, already handled by stripping newlines in labels)
+    // Simpler: remove literal \n inside quoted strings
+    line = line.replace(/"([^"]*?)\\n([^"]*?)"/g, (_, a, b) => `"${a} ${b}"`);
+
+    // Ensure first content line is "graph TD"
+    if (i === 0 || (i <= 2 && /^\s*(graph|flowchart)\s/i.test(line))) {
+      out.push("graph TD");
+      continue;
+    }
+
+    if (SUB_OPEN.test(line)) { inSubgraph = true; out.push(line); continue; }
+    if (SUB_CLOSE.test(line)) { inSubgraph = false; out.push(line); continue; }
+
+    if (inSubgraph && EDGE_RE.test(line)) {
+      // Edge inside subgraph — hoist it to after the last end
+      hoistedEdges.push(line.trim());
+      continue;
+    }
+
+    if (line.trim()) out.push(line);
+  }
+
+  // Re-append hoisted edges (deduped)
+  const seen = new Set<string>();
+  for (const e of hoistedEdges) {
+    if (!seen.has(e)) { seen.add(e); out.push("    " + e); }
+  }
+
+  return out.join("\n");
+}
+
+/* ─── Architecture Diagram ────────────────────────────────────────────────────
+   Optionally triggered panel at the bottom of a completed briefing.
+   Streams a Mermaid flowchart from Claude Sonnet + IBM upgrade path.
+*/
+function ArchitectureDiagram({
+  companyName, briefingText, prospectStep1, prospectStep2, initialDiagram, onGenerated, t,
+}: {
+  companyName: string;
+  briefingText: string;
+  prospectStep1: string;
+  prospectStep2: string;
+  initialDiagram?: string;
+  onGenerated?: (raw: string) => void;
+  t: typeof DARK;
+}) {
+  const [triggered, setTriggered] = useState(Boolean(initialDiagram));
+  const [streaming, setStreaming] = useState(false);
+  const [raw, setRaw] = useState(initialDiagram || "");
+  const [error, setError] = useState("");
+  const diagramRef = useRef<HTMLDivElement>(null);
+  const accent = t.accent;
+
+  // Parse raw output into mermaid source + upgrade path prose.
+  // Only extract when streaming is done so we render exactly once.
+  const parsed = useMemo(() => {
+    const fenceMatch = raw.match(/```mermaid\s*([\s\S]*?)```/);
+    const rawSrc = fenceMatch ? fenceMatch[1].trim() : "";
+    const mermaidSrc = rawSrc ? sanitizeMermaid(rawSrc) : "";
+    const afterFence = fenceMatch
+      ? raw.slice(raw.indexOf("```", raw.indexOf(fenceMatch[1]) + fenceMatch[1].length) + 3)
+      : raw;
+    const upgradeMatch = afterFence.match(/###\s*IBM Upgrade Path([\s\S]*)/i);
+    const upgradePath = upgradeMatch ? upgradeMatch[1].trim() : "";
+    return { mermaidSrc, upgradePath, hasDiagram: Boolean(mermaidSrc) };
+  }, [raw]);
+
+  // Render Mermaid only once — when streaming finishes and we have complete source.
+  const renderedSrc = useRef("");
+  useEffect(() => {
+    // Only render after stream done, and only if source changed
+    if (streaming || !parsed.mermaidSrc || parsed.mermaidSrc === renderedSrc.current || !diagramRef.current) return;
+    renderedSrc.current = parsed.mermaidSrc;
+    let cancelled = false;
+    (async () => {
+      try {
+        const mermaid = (await import("mermaid")).default;
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: t === DARK ? "dark" : "default",
+          themeVariables: t === DARK ? {
+            primaryColor: "#1c1c1c",
+            primaryTextColor: "#f4f4f4",
+            primaryBorderColor: "rgba(255,255,255,0.12)",
+            lineColor: "#4589ff",
+            background: "#161616",
+            nodeBorder: "rgba(255,255,255,0.12)",
+            clusterBkg: "#1c1c1c",
+            titleColor: "#f4f4f4",
+            edgeLabelBackground: "#1c1c1c",
+          } : {},
+        });
+        // Unique ID so Mermaid's internal cache doesn't collide on regenerate
+        const id = `arch-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
+        const { svg } = await mermaid.render(id, parsed.mermaidSrc);
+        if (!cancelled && diagramRef.current) {
+          diagramRef.current.innerHTML = svg;
+          const svgEl = diagramRef.current.querySelector("svg");
+          if (svgEl) { svgEl.style.maxWidth = "100%"; svgEl.style.height = "auto"; }
+        }
+      } catch {
+        if (!cancelled && diagramRef.current) {
+          diagramRef.current.innerHTML = `<pre style="font-size:11px;color:${t.textDim};overflow:auto;white-space:pre-wrap">${parsed.mermaidSrc}</pre>`;
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [streaming, parsed.mermaidSrc, t]);
+
+  const generate = async () => {
+    setTriggered(true);
+    setStreaming(true);
+    setRaw("");
+    setError("");
+    renderedSrc.current = "";
+    if (diagramRef.current) diagramRef.current.innerHTML = "";
+    try {
+      const res = await fetch("/api/architecture/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ companyName, briefingText, prospectStep1, prospectStep2 }),
+      });
+      if (!res.ok || !res.body) throw new Error("Stream failed");
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let assembled = "";
+      let streamDone = false;
+      while (!streamDone) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        for (const line of decoder.decode(value).split("\n\n")) {
+          if (!line.startsWith("data: ")) continue;
+          const data = JSON.parse(line.slice(6));
+          if (data.done) { streamDone = true; break; }
+          if (data.content) { assembled += data.content; setRaw(assembled); }
+        }
+      }
+      // Lift final result to parent so it can be included in Save
+      onGenerated?.(assembled);
+    } catch {
+      setError("Failed to generate diagram. Please try again.");
+    } finally {
+      setStreaming(false);
+    }
+  };
+
+  return (
+    <div className="no-print" style={{
+      borderTop: `1px solid ${t.sectionCardBorder}`,
+      marginTop: 32,
+      paddingTop: 24,
+    }}>
+      {/* Header row */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: triggered ? 16 : 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={accent} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2" y="3" width="6" height="6" rx="1"/><rect x="16" y="3" width="6" height="6" rx="1"/>
+            <rect x="9" y="15" width="6" height="6" rx="1"/>
+            <path d="M5 9v3a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M12 14v1"/>
+          </svg>
+          <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color: t.textDim }}>
+            Architecture Diagram
+          </span>
+          {streaming && (
+            <span className="animate-pulse-dot" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: accent, marginLeft: 4 }} />
+          )}
+        </div>
+        {!triggered && (
+          <button
+            onClick={generate}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: 6,
+              fontSize: 12, fontWeight: 600, padding: "7px 16px", borderRadius: 8,
+              background: "rgba(15,98,254,0.13)", border: "1px solid rgba(15,98,254,0.35)",
+              color: "rgba(69,137,255,0.9)", cursor: "pointer",
+              fontFamily: "var(--app-font-sans)", transition: "all 0.15s",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#0f62fe"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.borderColor = "#0f62fe"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(15,98,254,0.13)"; e.currentTarget.style.color = "rgba(69,137,255,0.9)"; e.currentTarget.style.borderColor = "rgba(15,98,254,0.35)"; }}
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="5 3 19 12 5 21 5 3"/>
+            </svg>
+            Generate
+          </button>
+        )}
+        {triggered && !streaming && (
+          <button
+            onClick={generate}
+            style={{
+              fontSize: 11, padding: "5px 12px", borderRadius: 6,
+              background: t.btnSm, border: `1px solid ${t.btnSmBorder}`,
+              color: t.textDim, cursor: "pointer", fontFamily: "var(--app-font-sans)",
+            }}
+          >↺ Regenerate</button>
+        )}
+      </div>
+
+      {error && (
+        <p style={{ fontSize: 12, color: "#ff6b6b", marginTop: 8 }}>{error}</p>
+      )}
+
+      {triggered && (
+        <>
+          {/* Mermaid diagram */}
+          {parsed.hasDiagram || streaming ? (
+            <div style={{
+              background: t.sectionCard, border: `1px solid ${t.sectionCardBorder}`,
+              borderRadius: 12, padding: "16px 20px", marginBottom: 16, overflowX: "auto",
+            }}>
+              {streaming && !parsed.hasDiagram && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, color: t.textDim, fontSize: 12 }}>
+                  <span className="animate-pulse-dot" style={{ display: "inline-block", width: 5, height: 5, borderRadius: "50%", background: accent }} />
+                  Building diagram…
+                </div>
+              )}
+              <div ref={diagramRef} style={{ lineHeight: 1 }} />
+            </div>
+          ) : null}
+
+          {/* Upgrade path */}
+          {parsed.upgradePath && (
+            <div style={{
+              background: t.sectionCard, border: `1px solid ${t.sectionCardBorder}`,
+              borderRadius: 12, padding: "16px 20px",
+            }}>
+              <div style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase",
+                color: accent, marginBottom: 12,
+              }}>IBM Upgrade Path</div>
+              <MarkdownBody body={parsed.upgradePath} t={t} accent={accent} />
+            </div>
+          )}
+
+          {/* Still streaming — show raw text as fallback while no fence yet */}
+          {streaming && !parsed.hasDiagram && raw && (
+            <pre style={{
+              fontSize: 11, color: t.textDim, background: t.sectionCard,
+              border: `1px solid ${t.sectionCardBorder}`, borderRadius: 8,
+              padding: "12px 16px", overflowX: "auto", whiteSpace: "pre-wrap",
+            }}>{raw}</pre>
+          )}
+        </>
+      )}
     </div>
   );
 }

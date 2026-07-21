@@ -4,7 +4,7 @@ import tailwindcss from "@tailwindcss/vite";
 import path from "path";
 
 // Use PORT from environment or default to 5173
-const rawPort = process.env.PORT || "5173";
+const rawPort = process.env.VITE_PORT || process.env.PORT || "3002";
 const port = Number(rawPort);
 
 if (Number.isNaN(port) || port <= 0) {
@@ -34,7 +34,7 @@ export default defineConfig({
   },
   server: {
     port,
-    strictPort: true,
+    strictPort: false,
     host: "0.0.0.0",
     allowedHosts: true,
     fs: {
@@ -42,7 +42,7 @@ export default defineConfig({
     },
     proxy: {
       "/api": {
-        target: "http://[::1]:3000",
+        target: "http://localhost:3001",
         changeOrigin: true,
       },
     },

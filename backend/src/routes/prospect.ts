@@ -1,13 +1,11 @@
 import { Router, type IRouter } from "express";
-import { generateText } from "../lib/watsonx-client";
+import { generateAnthropicText } from "../lib/anthropic-client";
 import { fetchSiteText } from "../lib/scrape";
+import { perplexitySearch } from "../lib/perplexity-client";
+import { db } from "../lib/db";
+import { prospectResults } from "../lib/schema";
 
 const router: IRouter = Router();
-
-// Use the larger model for quality; the two sections run in parallel so
-// latency stays in the 15–30s range the UI already advertises. Drop to
-// "meta-llama/llama-3-1-8b-instruct" if you want it faster at lower quality.
-const MODEL = "meta-llama/llama-3-3-70b-instruct";
 
 // ---------------------------------------------------------------------------
 // IBM product strategy — injected into every section so recommendations stay
@@ -122,18 +120,41 @@ router.post("/generate", async (req, res) => {
   try {
     req.log.info({ companyName }, "Prospect generation starting");
 
-    const scraped = site ? await fetchSiteText(site) : "";
+    // Run site scrape + Perplexity research in parallel to keep latency down.
+    const [scraped, perplexitySummary] = await Promise.all([
+      site ? fetchSiteText(site) : Promise.resolve(""),
+      perplexitySearch(
+        `You are a senior enterprise sales intelligence analyst. Your job is to give an IBM seller the richest possible factual briefing on an account before a call. Write in dense, specific prose — no bullet templates, no word limits per section. Include every relevant number, name, date, product name, and deal you can find. The seller will use this to sound like they've done weeks of research in 30 seconds.`,
+        `Give me everything I need to know about ${companyName} before an IBM Data & AI sales call.
 
-    // Two sections in parallel — no chaining, no streaming.
+Cover all of the following in as much depth as the sources allow:
+1. What does the company actually do, who are their customers, what markets do they serve, and what is their revenue / scale?
+2. What is their current competitive position — who are they competing against and how are they differentiated?
+3. What is their known technology stack — cloud providers, data platforms, analytics tools, ERP, and any AI/ML investments or vendor relationships (especially Microsoft, AWS, Snowflake, Databricks, Google, SAP, Palantir, or open-source)?
+4. What are the most important recent developments in the last 12–18 months — earnings surprises, CEO/CTO changes, major acquisitions or divestitures, layoffs, regulatory actions, or strategic pivots?
+5. What specific business pressures, cost or compliance challenges, or transformation initiatives create an opening for IBM's Data & AI portfolio right now?
+
+Be as specific as possible. Include dollar figures, percentages, executive names, product names, and dates. Do not summarise — give the full picture.`,
+        1500,
+      ),
+    ]);
+
+    // Merge Perplexity grounded research into the context injected into prompts.
+    const enrichedCtx = [
+      ctx,
+      perplexitySummary ? `\n\nLive web research (verified facts — use as primary source):\n${perplexitySummary}` : "",
+    ].join("");
+
+    // Two sections in parallel — Claude Sonnet for reliable structured output.
     const [step1, step2] = await Promise.all([
-      generateText(researchPrompt(companyName, site, scraped, ctx), {
-        model: MODEL,
-        maxTokens: 950,
+      generateAnthropicText(researchPrompt(companyName, site, scraped, enrichedCtx), {
+        model: "claude-sonnet-4-5",
+        maxTokens: 1200,
         temperature: 0.3,
       }),
-      generateText(salesPlayPrompt(companyName, site, scraped, ctx), {
-        model: MODEL,
-        maxTokens: 1600,
+      generateAnthropicText(salesPlayPrompt(companyName, site, scraped, enrichedCtx), {
+        model: "claude-sonnet-4-5",
+        maxTokens: 2000,
         temperature: 0.3,
       }),
     ]);
@@ -143,7 +164,24 @@ router.post("/generate", async (req, res) => {
       "Prospect generation complete"
     );
 
+    // Persist to SQLite (non-fatal)
+    let savedId: number | undefined;
+    try {
+      const saved = db.insert(prospectResults).values({
+        companyName,
+        websiteUrl: site,
+        step1,
+        step2,
+        createdAt: new Date(),
+      }).returning().get();
+      savedId = saved.id;
+      req.log.info({ companyName, id: savedId }, "Prospect result saved to DB");
+    } catch (dbErr) {
+      req.log.warn({ dbErr }, "Failed to save prospect result to DB (non-fatal)");
+    }
+
     res.json({
+      id: savedId,
       companyName,
       websiteUrl: site,
       step1,
