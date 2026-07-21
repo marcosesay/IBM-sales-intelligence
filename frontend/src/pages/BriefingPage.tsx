@@ -1119,7 +1119,7 @@ function parseSalesPlay(body: string): { title: string; do: string; say: string;
     step[m[1].toLowerCase()] = m[2].replace(/\*\*/g, "").trim();
   };
   for (const raw of lines) {
-    const line = raw.trim();
+    const line = raw.trim().replace(/^\*+\s*/, "");
     if (!line) continue;
     const num = line.match(/^(\d+)[.)]\s*(.*)$/);
     if (num) {

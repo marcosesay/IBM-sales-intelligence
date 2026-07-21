@@ -48,7 +48,7 @@ export async function perplexitySearch(
         temperature: 0.1,
         return_citations: true,
       }),
-      signal: AbortSignal.timeout(25_000),
+      signal: AbortSignal.timeout(60_000),
     });
 
     if (!response.ok) {

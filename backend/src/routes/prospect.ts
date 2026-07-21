@@ -4,6 +4,7 @@ import { fetchSiteText } from "../lib/scrape";
 import { perplexitySearch } from "../lib/perplexity-client";
 import { db } from "../lib/db";
 import { prospectResults } from "../lib/schema";
+import { IBM_PRODUCTS } from "../data/ibm-products";
 
 const router: IRouter = Router();
 
@@ -18,7 +19,10 @@ Lead with IBM's core Data & AI focus products, prioritized in this DATA-FIRST or
 2) Governance & trust — IBM Guardium, watsonx.governance
 3) AI & productivity — watsonx.ai, watsonx Orchestrate, watsonx Code Assistant
 4) Analytics & automation — Cognos Analytics, Planning Analytics, SPSS, Decision Optimization, FileNet
-Recommend a MAXIMUM of 4 products across the whole brief. Choose only the most relevant for this account's business problem, industry, and call type. Be decisive: name ONE product per need — never list alternatives or "options". Every AI use case must be anchored in data readiness (data + governance precede AI). For each product, make explicit: WHY this specific product (not an alternative), the exact business pain it removes for THIS account, and a measurable business outcome. Write like a top IBM seller — lead with hybrid-cloud, governance, integration, and data-gravity differentiation vs Azure/OpenAI, AWS, and open-source. No generic AI messaging. Do not recommend legacy or non-core IBM products unless clearly the best fit.`;
+Recommend a MAXIMUM of 4 products across the whole brief. Choose only the most relevant for this account's business problem, industry, and call type. Be decisive: name ONE product per need — never list alternatives or "options". Every AI use case must be anchored in data readiness (data + governance precede AI). For each product, make explicit: WHY this specific product (not an alternative), the exact business pain it removes for THIS account, and a measurable business outcome. Write like a top IBM seller — lead with hybrid-cloud, governance, integration, and data-gravity differentiation vs Azure/OpenAI, AWS, and open-source. No generic AI messaging. Do not recommend legacy or non-core IBM products unless clearly the best fit.
+
+PRODUCT CAPABILITY REFERENCE (ground all product claims in this — do not invent capabilities beyond it; the 4-product maximum above still applies):
+${IBM_PRODUCTS}`;
 
 
 // ---------------------------------------------------------------------------
