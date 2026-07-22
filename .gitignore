@@ -62,3 +62,4 @@ Thumbs.db
 
 # Made with Bob
 IBM-sales-intelligence/
+backend/data/*.db*
