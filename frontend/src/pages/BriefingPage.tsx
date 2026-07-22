@@ -1478,7 +1478,7 @@ export default function BriefingPage() {
   // Ref mirrors prospectResult so the generate callback (useCallback) always reads the latest value
   const prospectResultRef = useRef<{companyName:string;websiteUrl:string;step1:string;step2:string;generatedAt:string}|null>(null);
   useEffect(() => { prospectResultRef.current = prospectResult; }, [prospectResult]);
-  const [_prospectError, setProspectError] = useState("");
+  const [prospectError, setProspectError] = useState("");
   const [openRefs, setOpenRefs] = useState<Record<string, boolean>>({});
   const [showMore, setShowMore] = useState(false);
 
@@ -1781,6 +1781,7 @@ export default function BriefingPage() {
       try {
         const pr = await fetch(`${getBaseUrl()}/api/prospect/generate`, {
           method: "POST",
+          signal: AbortSignal.timeout(120000),
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             companyName: effectiveCompany,
@@ -1810,9 +1811,11 @@ export default function BriefingPage() {
               body: JSON.stringify({ prospectStep1: step1, prospectStep2: step2 }),
             }).catch(() => { /* non-fatal */ });
           }
+        } else {
+          setProspectError("Sales play generation failed. The briefing above is still valid \u2014 retry to add the sales play.");
         }
       } catch {
-        /* non-fatal — brief still renders */
+        setProspectError("Sales play generation timed out or failed. The briefing above is still valid \u2014 retry to add the sales play.");
       } finally {
         setProspectGenerating(false);
       }
