@@ -497,7 +497,7 @@ ${buildSections(ct, company, ind, title, contactName)}`;
       context: userContext,
     });
     res.write(`data: ${JSON.stringify({ content: fallbackBriefing })}\n\n`);
-    res.write(`data: ${JSON.stringify({ done: true, fallback: true })}\n\n`);
+    res.write(`data: ${JSON.stringify({ done: true, fallback: true, error: "generation_failed" })}\n\n`);
     res.end();
   }
 });
