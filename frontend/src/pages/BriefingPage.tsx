@@ -234,7 +234,7 @@ function dbRowToBriefing(row: any): SavedBriefing {
 
 async function loadSavedFromApi(): Promise<SavedBriefing[]> {
   try {
-    const r = await fetch("/api/history/briefings");
+    const r = await fetch(getBaseUrl() + "/api/history/briefings");
     if (!r.ok) return [];
     const rows = await r.json();
     return (rows as any[]).map(dbRowToBriefing);
@@ -1802,7 +1802,7 @@ export default function BriefingPage() {
           // Persist to DB if the briefing was already auto-saved
           const dbId = currentBriefingRef.current?._id;
           if (dbId) {
-            fetch(`/api/history/briefings/${dbId}`, {
+            fetch(`${getBaseUrl()}/api/history/briefings/${dbId}`, {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ prospectStep1: step1, prospectStep2: step2 }),
@@ -1933,7 +1933,7 @@ export default function BriefingPage() {
       const existingId = (currentBriefing as any)._id as number | undefined;
       const r = existingId
         // Already auto-saved — just patch the fields that may have updated since
-        ? await fetch(`/api/history/briefings/${existingId}`, {
+        ? await fetch(`${getBaseUrl()}/api/history/briefings/${existingId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1945,7 +1945,7 @@ export default function BriefingPage() {
             }),
           })
         // No auto-save id — insert a fresh row (fallback / edge case)
-        : await fetch("/api/history/briefings", {
+        : await fetch(getBaseUrl() + "/api/history/briefings", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1977,7 +1977,7 @@ export default function BriefingPage() {
     const target = saved.find(b => b.ts === ts) as any;
     if (target?._id) {
       try {
-        await fetch(`/api/history/briefings/${target._id}`, { method: "DELETE" });
+        await fetch(`${getBaseUrl()}/api/history/briefings/${target._id}`, { method: "DELETE" });
       } catch { /* non-fatal */ }
     }
     setSaved(prev => prev.filter(b => b.ts !== ts));
@@ -2592,7 +2592,7 @@ export default function BriefingPage() {
                   setCurrentBriefingAndRef(prev => prev ? { ...prev, architectureDiagram: raw } : prev);
                   const dbId = currentBriefingRef.current?._id;
                   if (dbId) {
-                    fetch(`/api/history/briefings/${dbId}`, {
+                    fetch(`${getBaseUrl()}/api/history/briefings/${dbId}`, {
                       method: "PATCH",
                       headers: { "Content-Type": "application/json" },
                       body: JSON.stringify({ architectureDiagram: raw }),
