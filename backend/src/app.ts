@@ -1,6 +1,7 @@
 import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
+import fs from "fs";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import path from "path";
@@ -34,11 +35,17 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api", router);
 
-// Serve frontend static files
+// Serve frontend static files (local all-in-one dev mode only)
 const frontendDist = path.join(__dirname, "../../frontend/dist");
-app.use(express.static(frontendDist));
-app.get("/{*path}", (_req, res) => {
-  res.sendFile(path.join(frontendDist, "index.html"));
-});
+if (fs.existsSync(frontendDist)) {
+  app.use(express.static(frontendDist));
+  app.get("/{*path}", (_req, res) => {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  });
+} else {
+  app.use((_req, res) => {
+    res.status(404).json({ error: "Not found" });
+  });
+}
 
 export default app;
