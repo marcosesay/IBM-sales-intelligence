@@ -1413,6 +1413,7 @@ export default function BriefingPage() {
   const [generating, setGenerating]   = useState(false);
   const [briefingText, setBriefingText] = useState("");
   const [briefingReady, setBriefingReady] = useState(false);
+  const [generationFallback, setGenerationFallback] = useState(false);
   const [currentBriefing, setCurrentBriefing] = useState<SavedBriefing | null>(null);
   // Ref mirrors currentBriefing so async closures always read the latest _id synchronously.
   // useEffect syncs too late (after commit) so we update both via this helper everywhere.
@@ -1763,6 +1764,7 @@ export default function BriefingPage() {
       return;
     }
     setError("");
+    setGenerationFallback(false);
     setGenerating(true);
     setBriefingText("");
     setBriefingReady(false);
@@ -1894,7 +1896,7 @@ export default function BriefingPage() {
         for (const event of events) {
           if (!event.startsWith("data: ")) continue;
           const data = JSON.parse(event.slice(6));
-          if (data.done) { savedDbId = data.briefingId ?? null; streamDone = true; break; }
+          if (data.done) { savedDbId = data.briefingId ?? null; setGenerationFallback(Boolean(data.fallback) || data.error === "generation_failed"); streamDone = true; break; }
           if (data.error) throw new Error(data.error);
           if (data.replace) { textRef.current = data.replace; setBriefingText(data.replace); }
           else if (data.content) { textRef.current += data.content; setBriefingText(textRef.current); }
@@ -2492,6 +2494,11 @@ export default function BriefingPage() {
 
             </div>
 
+            {generationFallback && (
+              <div style={{background:"rgba(245,158,11,0.12)",border:"1px solid rgba(245,158,11,0.5)",borderRadius:8,padding:"10px 14px",marginBottom:14,fontSize:12,color:"#f59e0b",fontWeight:500}}>
+                ⚠ Live generation failed — this briefing is template content, not account-specific research. Retry to get a real briefing.
+              </div>
+            )}
             {/* ════════ SALES CARD — first in content column, above Elevator Pitch ════════ */}
             {dashCard && <SalesCard body={dashCard.body} t={t} accent={t.accent}/>}
 
