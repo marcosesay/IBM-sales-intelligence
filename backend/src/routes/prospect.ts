@@ -171,13 +171,13 @@ Be as specific as possible. Include dollar figures, percentages, executive names
     // Persist to SQLite (non-fatal)
     let savedId: number | undefined;
     try {
-      const saved = db.insert(prospectResults).values({
+      const [saved] = await db.insert(prospectResults).values({
         companyName,
         websiteUrl: site,
         step1,
         step2,
         createdAt: new Date(),
-      }).returning().get();
+      }).returning();
       savedId = saved.id;
       req.log.info({ companyName, id: savedId }, "Prospect result saved to DB");
     } catch (dbErr) {

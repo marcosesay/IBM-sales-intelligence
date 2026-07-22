@@ -1,7 +1,7 @@
 // history.ts — CRUD endpoints for persisted briefings and prospect results.
 // GET    /api/history/briefings              — list all briefings, newest first
 // POST   /api/history/briefings              — save a new briefing
-// PATCH  /api/history/briefings/:id          — update all fields on an existing briefing
+// PATCH  /api/history/briefings/:id          — update fields on an existing briefing (404 if missing)
 // DELETE /api/history/briefings/:id          — delete a briefing
 // GET    /api/history/prospects              — list all prospect results, newest first
 // POST   /api/history/prospects              — save a new prospect result
@@ -16,16 +16,15 @@ const router: IRouter = Router();
 
 // ── Briefings ────────────────────────────────────────────────────────────────
 
-router.get("/briefings", (_req, res) => {
-  const rows = db
+router.get("/briefings", async (_req, res) => {
+  const rows = await db
     .select()
     .from(briefings)
-    .orderBy(desc(briefings.createdAt))
-    .all();
+    .orderBy(desc(briefings.createdAt));
   res.json(rows);
 });
 
-router.post("/briefings", (req, res) => {
+router.post("/briefings", async (req, res) => {
   const { company, contactName, contactTitle, industry, callType, text, logoUrl, contactPhotoUrl, prospectStep1, prospectStep2, architectureDiagram } =
     req.body as {
       company: string;
@@ -46,7 +45,7 @@ router.post("/briefings", (req, res) => {
     return;
   }
 
-  const row = db
+  const [row] = await db
     .insert(briefings)
     .values({
       company,
@@ -62,13 +61,12 @@ router.post("/briefings", (req, res) => {
       architectureDiagram: architectureDiagram ?? "",
       createdAt:           new Date(),
     })
-    .returning()
-    .get();
+    .returning();
 
   res.status(201).json(row);
 });
 
-router.patch("/briefings/:id", (req, res) => {
+router.patch("/briefings/:id", async (req, res) => {
   const id = Number(req.params["id"]);
   if (!id) { res.status(400).json({ error: "invalid id" }); return; }
   const { logoUrl, contactPhotoUrl, prospectStep1, prospectStep2, architectureDiagram } =
@@ -79,7 +77,6 @@ router.patch("/briefings/:id", (req, res) => {
       prospectStep2?: string;
       architectureDiagram?: string;
     };
-  // Build a typed partial so Drizzle maps camelCase keys → snake_case columns correctly.
   const patch: Partial<typeof briefings.$inferInsert> = {};
   if (logoUrl             !== undefined) patch.logoUrl             = logoUrl;
   if (contactPhotoUrl     !== undefined) patch.contactPhotoUrl     = contactPhotoUrl;
@@ -87,29 +84,29 @@ router.patch("/briefings/:id", (req, res) => {
   if (prospectStep2       !== undefined) patch.prospectStep2       = prospectStep2;
   if (architectureDiagram !== undefined) patch.architectureDiagram = architectureDiagram;
   if (Object.keys(patch).length === 0) { res.json({ ok: true }); return; }
-  db.update(briefings).set(patch).where(eq(briefings.id, id)).run();
+  const updated = await db.update(briefings).set(patch).where(eq(briefings.id, id)).returning();
+  if (updated.length === 0) { res.status(404).json({ error: "not found" }); return; }
   res.json({ ok: true });
 });
 
-router.delete("/briefings/:id", (req, res) => {
+router.delete("/briefings/:id", async (req, res) => {
   const id = Number(req.params["id"]);
   if (!id) { res.status(400).json({ error: "invalid id" }); return; }
-  db.delete(briefings).where(eq(briefings.id, id)).run();
+  await db.delete(briefings).where(eq(briefings.id, id));
   res.json({ ok: true });
 });
 
 // ── Prospect results ─────────────────────────────────────────────────────────
 
-router.get("/prospects", (_req, res) => {
-  const rows = db
+router.get("/prospects", async (_req, res) => {
+  const rows = await db
     .select()
     .from(prospectResults)
-    .orderBy(desc(prospectResults.createdAt))
-    .all();
+    .orderBy(desc(prospectResults.createdAt));
   res.json(rows);
 });
 
-router.post("/prospects", (req, res) => {
+router.post("/prospects", async (req, res) => {
   const { companyName, websiteUrl, step1, step2 } = req.body as {
     companyName: string;
     websiteUrl?: string;
@@ -122,7 +119,7 @@ router.post("/prospects", (req, res) => {
     return;
   }
 
-  const row = db
+  const [row] = await db
     .insert(prospectResults)
     .values({
       companyName,
@@ -131,16 +128,15 @@ router.post("/prospects", (req, res) => {
       step2,
       createdAt: new Date(),
     })
-    .returning()
-    .get();
+    .returning();
 
   res.status(201).json(row);
 });
 
-router.delete("/prospects/:id", (req, res) => {
+router.delete("/prospects/:id", async (req, res) => {
   const id = Number(req.params["id"]);
   if (!id) { res.status(400).json({ error: "invalid id" }); return; }
-  db.delete(prospectResults).where(eq(prospectResults.id, id)).run();
+  await db.delete(prospectResults).where(eq(prospectResults.id, id));
   res.json({ ok: true });
 });
 

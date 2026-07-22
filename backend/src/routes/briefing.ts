@@ -467,7 +467,7 @@ ${buildSections(ct, company, ind, title, contactName)}`;
     // return the new row id in the done event.
     let savedBriefingId: number | undefined;
     try {
-      const saved = db.insert(briefings).values({
+      const [saved] = await db.insert(briefings).values({
         company,
         contactName:  contactName  ?? "",
         contactTitle: title,
@@ -477,7 +477,7 @@ ${buildSections(ct, company, ind, title, contactName)}`;
         logoUrl:      "",
         contactPhotoUrl: "",
         createdAt:    new Date(),
-      }).returning().get();
+      }).returning();
       savedBriefingId = saved.id;
       req.log.info({ company, id: savedBriefingId }, "Briefing auto-saved to DB");
     } catch (dbErr) {
