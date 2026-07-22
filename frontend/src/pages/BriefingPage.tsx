@@ -2095,6 +2095,15 @@ export default function BriefingPage() {
                           color:t.badgeText,background:t.badgeBg,border:`1px solid ${t.badgeBorder}`,borderRadius:3,padding:"1px 4px"}}>
                           {b.callType}
                         </span>
+                        <span
+                          role="button"
+                          aria-label={`Delete ${b.co} briefing`}
+                          title="Delete briefing"
+                          onClick={(e)=>{ e.stopPropagation(); if (window.confirm(`Delete the ${b.co} briefing?`)) deleteSaved(b.ts); }}
+                          style={{flexShrink:0,cursor:"pointer",color:t.textMuted,fontSize:14,lineHeight:1,padding:"0 2px",borderRadius:3}}
+                          onMouseEnter={(e)=>{ e.currentTarget.style.color = "#ef4444"; }}
+                          onMouseLeave={(e)=>{ e.currentTarget.style.color = t.textMuted; }}
+                        >×</span>
                       </div>
                       <div style={{fontSize:10.5,color:t.textDim}}>{b.date}{b.ct ? ` · ${b.ct}` : ""}</div>
                     </button>
