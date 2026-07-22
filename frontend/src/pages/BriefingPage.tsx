@@ -1929,10 +1929,28 @@ export default function BriefingPage() {
 
   const saveBriefing = async () => {
     if (!currentBriefing) return;
+    const postBriefing = () =>
+      fetch(getBaseUrl() + "/api/history/briefings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          company:            currentBriefing.co,
+          contactName:        currentBriefing.ct,
+          contactTitle:       currentBriefing.ti,
+          industry:           currentBriefing.ind,
+          callType:           currentBriefing.callType,
+          text:               currentBriefing.text,
+          logoUrl:            currentBriefing.logoUrl,
+          contactPhotoUrl:    currentBriefing.contactPhotoUrl,
+          prospectStep1:      currentBriefing.prospectStep1      || "",
+          prospectStep2:      currentBriefing.prospectStep2      || "",
+          architectureDiagram:currentBriefing.architectureDiagram|| "",
+        }),
+      });
     try {
       const existingId = (currentBriefing as any)._id as number | undefined;
-      const r = existingId
-        // Already auto-saved — just patch the fields that may have updated since
+      let r = existingId
+        // Already auto-saved — patch the fields that may have updated since
         ? await fetch(`${getBaseUrl()}/api/history/briefings/${existingId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
@@ -1944,24 +1962,14 @@ export default function BriefingPage() {
               architectureDiagram:currentBriefing.architectureDiagram|| "",
             }),
           })
-        // No auto-save id — insert a fresh row (fallback / edge case)
-        : await fetch(getBaseUrl() + "/api/history/briefings", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              company:            currentBriefing.co,
-              contactName:        currentBriefing.ct,
-              contactTitle:       currentBriefing.ti,
-              industry:           currentBriefing.ind,
-              callType:           currentBriefing.callType,
-              text:               currentBriefing.text,
-              logoUrl:            currentBriefing.logoUrl,
-              contactPhotoUrl:    currentBriefing.contactPhotoUrl,
-              prospectStep1:      currentBriefing.prospectStep1      || "",
-              prospectStep2:      currentBriefing.prospectStep2      || "",
-              architectureDiagram:currentBriefing.architectureDiagram|| "",
-            }),
-          });
+        // No auto-save id — insert a fresh row
+        : await postBriefing();
+      // Stale auto-save id (record gone from server, e.g. DB reset):
+      // fall back to inserting a fresh row.
+      if (existingId && r.status === 404) {
+        (currentBriefing as any)._id = undefined;
+        r = await postBriefing();
+      }
       if (!r.ok) {
         const body = await r.text();
         console.error("Save failed:", r.status, body);
