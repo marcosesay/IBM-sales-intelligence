@@ -2688,7 +2688,7 @@ function BriefingChat({ briefingText, companyName, t }: {
     setMessages(m => [...m, { role: "assistant", content: "" }]);
 
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch(`${getBaseUrl()}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -2975,7 +2975,7 @@ function ArchitectureDiagram({
     renderedSrc.current = "";
     if (diagramRef.current) diagramRef.current.innerHTML = "";
     try {
-      const res = await fetch("/api/architecture/generate", {
+      const res = await fetch(`${getBaseUrl()}/api/architecture/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ companyName, briefingText, prospectStep1, prospectStep2 }),
