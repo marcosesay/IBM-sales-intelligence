@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "sales-intel": {
+      "type": "stdio",
+      "command": "pnpm",
+      "args": [
+        "--silent",
+        "--filter",
+        "./backend",
+        "run",
+        "mcp"
+      ],
+      "env": {}
+    }
+  }
+}
