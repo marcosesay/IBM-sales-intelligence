@@ -3,6 +3,7 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import fs from "fs";
 import router from "./routes";
+import mcpRouter from "./mcp/http";
 import { logger } from "./lib/logger";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -34,6 +35,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use("/api", router);
+// Ahead of the catch-all below, which would otherwise 404 (or serve index.html)
+// every MCP request.
+app.use("/mcp", mcpRouter);
 
 // Serve frontend static files (local all-in-one dev mode only)
 const frontendDist = path.join(__dirname, "../../frontend/dist");
