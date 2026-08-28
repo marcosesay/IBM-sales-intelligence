@@ -2581,6 +2581,15 @@ export default function BriefingPage() {
                 <span style={{fontSize:13,fontWeight:300}}>Building product mapping & sales play…</span>
               </div>
             )}
+            {/* Prospect enrichment runs independently of the brief stream, so its
+                failure surfaces here rather than through the top-level `error` banner.
+                no-print: the printed PDF stays client-ready. */}
+            {prospectError && !prospectGenerating && !prospectResult && (
+              <div className="no-print dash-card" style={{...dashCardBase,borderColor:"rgba(255,100,100,0.4)",display:"flex",alignItems:"flex-start",gap:10}}>
+                <span aria-hidden="true" style={{color:"rgba(255,100,100,0.9)",fontSize:13,fontWeight:700,lineHeight:1.7}}>!</span>
+                <span role="alert" style={{fontSize:13,color:"rgba(255,100,100,0.9)",lineHeight:1.7}}>{prospectError}</span>
+              </div>
+            )}
 
             {/* ════════ TIER 3 · REFERENCE ════════ */}
             {/* Discovery Questions always expanded — no accordion */}
