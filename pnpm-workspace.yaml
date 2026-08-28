@@ -4,6 +4,5 @@ packages:
 allowBuilds:
   core-js: true
   esbuild: true
-  better-sqlite3: true
 
 # Made with Bob
