@@ -4,7 +4,7 @@
 
 import { McpServer, type ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { count, desc, eq, ilike, max, sql } from "drizzle-orm";
+import { and, count, desc, eq, gt, ilike, max, ne, sql } from "drizzle-orm";
 import { IBM_PRODUCTS } from "../data/ibm-products";
 import { db } from "../lib/db";
 import { perplexitySearchOrThrow } from "../lib/perplexity-client";
@@ -237,6 +237,109 @@ function safeTool<Args extends z.ZodRawShape>(
 
 
 
+// ── Generation lifecycle ─────────────────────────────────────────────────────
+// start_briefing writes a row at status "running" and hands its id to the
+// generation route, which flips it to "done" or "failed". Nothing rescues a row
+// whose run died between those two writes — the backend restarted, the socket
+// dropped, the process was killed — so a row still "running" past this cutoff is
+// read as failed everywhere rather than reported as in progress forever.
+const RUNNING_TIMEOUT_MS = 5 * 60_000;
+
+function runningCutoff(): Date {
+  return new Date(Date.now() - RUNNING_TIMEOUT_MS);
+}
+
+function isStale(row: { status: string; createdAt: Date }): boolean {
+  return row.status === "running" && row.createdAt.getTime() < runningCutoff().getTime();
+}
+
+// The status a caller should see, with a timed-out run counted as failed.
+function effectiveStatus(row: { status: string; createdAt: Date }): string {
+  return isStale(row) ? "failed" : row.status;
+}
+
+function elapsedSince(started: Date): string {
+  const seconds = Math.max(0, Math.round((Date.now() - started.getTime()) / 1000));
+  return seconds < 90 ? `${seconds}s` : `${Math.round(seconds / 60)}m`;
+}
+
+// How many rows list_briefings / search_accounts are hiding, under the same
+// company filter they were given. Counted in SQL rather than by fetching the
+// rows: the two tools only need the tally for their footer.
+async function incompleteTally(filter?: string): Promise<{ running: number; failed: number }> {
+  const incomplete = ne(briefings.status, "done");
+  const where = filter ? and(incomplete, ilike(briefings.company, `%${filter}%`)) : incomplete;
+
+  const [row] = await db
+    .select({
+      running: sql<number>`cast(count(*) filter (
+        where ${briefings.status} = 'running' and ${briefings.createdAt} > ${runningCutoff()}
+      ) as int)`,
+      total: sql<number>`cast(count(*) as int)`,
+    })
+    .from(briefings)
+    .where(where);
+
+  const running = row?.running ?? 0;
+  return { running, failed: (row?.total ?? 0) - running };
+}
+
+function incompleteFooter({ running, failed }: { running: number; failed: number }): string {
+  if (running === 0 && failed === 0) return "";
+  return `\n\nHidden: ${running} running, ${failed} failed. Pass include_incomplete: true to include them.`;
+}
+
+const INCLUDE_INCOMPLETE_DESCRIPTION =
+  "Include briefings that are still generating or that failed (excluded by default)";
+
+function backendUrl(): string {
+  return (process.env.BACKEND_URL || "http://localhost:3001").replace(/\/+$/, "");
+}
+
+type BriefingFields = {
+  company: string;
+  contactName: string;
+  contactTitle: string;
+  industry: string;
+  callType: string;
+};
+
+// Drive the backend's own /api/briefing/generate rather than calling Anthropic
+// here, so an MCP-started briefing goes through exactly the prompt, fallback and
+// persistence path the UI uses. The route writes the finished text to the row we
+// pre-created, which is why the id can be returned before any of this runs.
+async function generateInBackground(id: number, fields: BriefingFields): Promise<void> {
+  const response = await fetch(`${backendUrl()}/api/briefing/generate`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...fields, briefingId: id }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`POST /api/briefing/generate returned ${response.status} ${response.statusText}`);
+  }
+
+  // Read the SSE stream to the end and discard it — the briefing text lands in
+  // the row, not here, but the route only gets to that write once its stream is
+  // done, and an unread body would leave this request hanging open.
+  const reader = response.body?.getReader();
+  if (!reader) return;
+  for (;;) {
+    const { done } = await reader.read();
+    if (done) return;
+  }
+}
+
+// Only ever narrows a row that is still "running": if the route already recorded
+// an outcome, that outcome is the truthful one.
+async function markFailed(id: number, message: string): Promise<void> {
+  await db
+    .update(briefings)
+    .set({ status: "failed", error: message })
+    .where(and(eq(briefings.id, id), eq(briefings.status, "running")));
+}
+
+
 function parseHeading(line: string): { title: string; level: number } | null {
   const match = /^(#{2,6})\s+(.*\S)\s*$/.exec(line);
   return match ? { title: match[2]!, level: match[1]!.length } : null;
@@ -342,9 +445,10 @@ export function registerTools(server: McpServer): void {
       inputSchema: {
         company: z.string().optional().describe("Case-insensitive substring of the company name"),
         limit: z.number().int().min(1).max(100).optional().describe("Max rows to return (default 20)"),
+        include_incomplete: z.boolean().optional().describe(INCLUDE_INCOMPLETE_DESCRIPTION),
       },
     },
-    async ({ company, limit }) => {
+    async ({ company, limit, include_incomplete: includeIncomplete }) => {
       // Select explicit columns — `briefings.text` (and the prospect/architecture
       // blobs) must never leave this tool.
       const query = db
@@ -355,37 +459,51 @@ export function registerTools(server: McpServer): void {
           contactTitle: briefings.contactTitle,
           industry: briefings.industry,
           callType: briefings.callType,
+          status: briefings.status,
+          error: briefings.error,
           createdAt: briefings.createdAt,
         })
         .from(briefings);
 
       const filter = company?.trim();
-      const rows = await (filter ? query.where(ilike(briefings.company, `%${filter}%`)) : query)
+      const conditions = [
+        filter ? ilike(briefings.company, `%${filter}%`) : undefined,
+        // A half-written or failed briefing is not a briefing as far as a caller
+        // asking "what do we have on this account" is concerned.
+        includeIncomplete ? undefined : eq(briefings.status, "done"),
+      ].filter((c) => c !== undefined);
+
+      const rows = await (conditions.length ? query.where(and(...conditions)) : query)
         .orderBy(desc(briefings.createdAt))
         .limit(limit ?? 20);
 
+      const footer = includeIncomplete ? "" : incompleteFooter(await incompleteTally(filter));
+
       if (rows.length === 0) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: filter ? `No briefings found for company "${filter}".` : "No briefings saved yet.",
-            },
-          ],
-        };
+        const nothing = filter
+          ? `No ${includeIncomplete ? "" : "completed "}briefings found for company "${filter}".`
+          : `No ${includeIncomplete ? "" : "completed "}briefings saved yet.`;
+        return { content: [{ type: "text", text: `${nothing}${footer}` }] };
       }
 
       const text = [
         `${rows.length} briefing${rows.length === 1 ? "" : "s"}${filter ? ` matching "${filter}"` : ""}:`,
         "",
         JSON.stringify(
-          rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })),
+          rows.map(({ error, ...row }) => ({
+            ...row,
+            status: effectiveStatus(row),
+            // Only carried when there is one — every completed row would
+            // otherwise report a null field.
+            ...(error ? { error } : {}),
+            createdAt: row.createdAt.toISOString(),
+          })),
           null,
           2,
         ),
       ].join("\n");
 
-      return { content: [{ type: "text", text }] };
+      return { content: [{ type: "text", text: `${text}${footer}` }] };
     },
   );
 
@@ -408,9 +526,10 @@ export function registerTools(server: McpServer): void {
           .max(100)
           .optional()
           .describe("Max accounts to return (default 20)"),
+        include_incomplete: z.boolean().optional().describe(INCLUDE_INCOMPLETE_DESCRIPTION),
       },
     },
-    async ({ query, limit }) => {
+    async ({ query, limit, include_incomplete: includeIncomplete }) => {
       // One row per company — eleven HSBC briefings collapse to a single line.
       // array_agg picks the id of the newest row; max(id) would only agree with
       // it by accident of the serial sequence.
@@ -424,20 +543,25 @@ export function registerTools(server: McpServer): void {
         .from(briefings);
 
       const filter = query?.trim();
-      const rows = await (filter ? select.where(ilike(briefings.company, `%${filter}%`)) : select)
+      // Counts and "latest briefing" have to mean completed work, or an account
+      // whose only briefing is still generating reads as ready to open.
+      const conditions = [
+        filter ? ilike(briefings.company, `%${filter}%`) : undefined,
+        includeIncomplete ? undefined : eq(briefings.status, "done"),
+      ].filter((c) => c !== undefined);
+
+      const rows = await (conditions.length ? select.where(and(...conditions)) : select)
         .groupBy(briefings.company)
         .orderBy(desc(max(briefings.createdAt)))
         .limit(limit ?? 20);
 
+      const footer = includeIncomplete ? "" : incompleteFooter(await incompleteTally(filter));
+
       if (rows.length === 0) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: filter ? `No accounts matched "${filter}".` : "No briefings saved yet.",
-            },
-          ],
-        };
+        const nothing = filter
+          ? `No accounts matched "${filter}".`
+          : `No ${includeIncomplete ? "" : "completed "}briefings saved yet.`;
+        return { content: [{ type: "text", text: `${nothing}${footer}` }] };
       }
 
       const total = rows.reduce((sum, row) => sum + row.briefingCount, 0);
@@ -456,7 +580,7 @@ export function registerTools(server: McpServer): void {
         ),
       ].join("\n");
 
-      return { content: [{ type: "text", text }] };
+      return { content: [{ type: "text", text: `${text}${footer}` }] };
     },
   );
 
@@ -541,6 +665,134 @@ export function registerTools(server: McpServer): void {
         .join("\n");
 
       return { content: [{ type: "text", text: `${header}\n\n${body}` }] };
+    },
+  );
+
+  safeTool(
+    server,
+    "start_briefing",
+    {
+      failurePrefix: "Failed to start briefing",
+      description:
+        "Start generating a new pre-call briefing and return its id immediately, without waiting for it to finish. Poll get_briefing_status with that id, then read the finished brief with get_briefing.",
+      inputSchema: {
+        company: z.string().min(1).describe('Company the briefing is for, e.g. "HSBC"'),
+        contactName: z.string().optional().describe("Name of the person being met"),
+        contactTitle: z.string().optional().describe("Their job title"),
+        industry: z.string().optional().describe('Industry of the account, e.g. "Banking"'),
+        callType: z
+          .string()
+          .optional()
+          .describe('Discovery | Competitive | Renewal & Upsell | EBC (default "Discovery")'),
+      },
+    },
+    async ({ company, contactName, contactTitle, industry, callType }) => {
+      const name = company.trim();
+      if (!name) {
+        return { isError: true, content: [{ type: "text", text: "company must not be empty." }] };
+      }
+
+      const fields: BriefingFields = {
+        company: name,
+        contactName: contactName?.trim() ?? "",
+        contactTitle: contactTitle?.trim() ?? "",
+        industry: industry?.trim() ?? "",
+        callType: callType?.trim() || "Discovery",
+      };
+
+      // The generation route only writes its row once the model stream has
+      // finished, so the row is opened here and its id handed over — that is
+      // what makes returning before generation completes possible at all.
+      const [row] = await db
+        .insert(briefings)
+        .values({ ...fields, text: "", status: "running", createdAt: new Date() })
+        .returning({ id: briefings.id });
+
+      // Deliberately not awaited — the point of this tool is to return now. The
+      // route owns the terminal write to this row, so this catch covers only
+      // never reaching it (backend down, request rejected, socket dropped); a
+      // failure with nothing left to record it is caught by the running timeout.
+      void generateInBackground(row.id, fields).catch((err: unknown) => {
+        void markFailed(row.id, err instanceof Error ? err.message : String(err)).catch(() => {});
+      });
+
+      const text = [
+        `Briefing ${row.id} started for ${name} (${fields.callType}).`,
+        "Status: running — generation takes roughly a minute.",
+        `Check it with get_briefing_status({ id: ${row.id} }), then read it with get_briefing({ id: ${row.id} }).`,
+      ].join("\n");
+
+      return { content: [{ type: "text", text }] };
+    },
+  );
+
+  safeTool(
+    server,
+    "get_briefing_status",
+    {
+      failurePrefix: "Failed to check briefing status",
+      description:
+        "Check whether a briefing started with start_briefing has finished. Returns running, done, or failed — a run that has made no progress for over five minutes is reported as failed.",
+      inputSchema: {
+        id: z.number().int().describe("Briefing id, as returned by start_briefing"),
+      },
+    },
+    async ({ id }) => {
+      const [row] = await db
+        .select({
+          id: briefings.id,
+          company: briefings.company,
+          callType: briefings.callType,
+          status: briefings.status,
+          error: briefings.error,
+          createdAt: briefings.createdAt,
+        })
+        .from(briefings)
+        .where(eq(briefings.id, id))
+        .limit(1);
+
+      if (!row) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `No briefing found with id ${id}.` }],
+        };
+      }
+
+      const header = `Briefing ${row.id} — ${row.company} (${row.callType})`;
+      const status = effectiveStatus(row);
+
+      if (status === "done") {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `${header}\nStatus: done\nRead it with get_briefing({ id: ${row.id} }).`,
+            },
+          ],
+        };
+      }
+
+      if (status === "running") {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `${header}\nStatus: running for ${elapsedSince(row.createdAt)}. Check again shortly.`,
+            },
+          ],
+        };
+      }
+
+      // A row that timed out has no recorded error — whatever was generating it
+      // never came back to write one — so say that rather than inventing a cause.
+      const reason = isStale(row)
+        ? `Generation has been running for ${elapsedSince(row.createdAt)} with no result, so it is being treated as failed.`
+        : row.error?.trim() || "Generation failed; no error was recorded.";
+
+      return {
+        isError: true,
+        content: [{ type: "text", text: `${header}\nStatus: failed\n${reason}` }],
+      };
     },
   );
 

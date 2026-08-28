@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { eq } from "drizzle-orm";
 import { generateTextStreamTrue as generateTextStream } from "../lib/watsonx-client";
 import { streamAnthropicChat } from "../lib/anthropic-client";
 import { fetchSiteText } from "../lib/scrape";
@@ -348,7 +349,7 @@ Combined positioning: Supports measurable operational improvement with better vi
 }
 
 router.post("/generate", async (req, res) => {
-  const { company, industry, contactName, contactTitle, context, callType, websiteUrl, companyContext } = req.body as {
+  const { company, industry, contactName, contactTitle, context, callType, websiteUrl, companyContext, briefingId } = req.body as {
     company: string;
     industry?: string;
     contactName?: string;
@@ -357,6 +358,10 @@ router.post("/generate", async (req, res) => {
     callType?: string;
     websiteUrl?: string;
     companyContext?: string;
+    // Set by a caller that already inserted a status='running' row and needs
+    // the id before generation finishes (the MCP start_briefing tool). This
+    // route fills that row in instead of inserting its own.
+    briefingId?: number;
   };
 
   if (!company) {
@@ -463,22 +468,35 @@ ${buildSections(ct, company, ind, title, contactName)}`;
       res.write(`data: ${JSON.stringify({ content: chunk })}\n\n`);
     }
 
-    // Persist briefing to SQLite before closing the stream so we can
-    // return the new row id in the done event.
+    // Persist briefing before closing the stream so we can return the new row
+    // id in the done event.
     let savedBriefingId: number | undefined;
     try {
-      const [saved] = await db.insert(briefings).values({
-        company,
-        contactName:  contactName  ?? "",
-        contactTitle: title,
-        industry:     ind,
-        callType:     ct,
-        text:         fullText,
-        logoUrl:      "",
-        contactPhotoUrl: "",
-        createdAt:    new Date(),
-      }).returning();
-      savedBriefingId = saved.id;
+      // A pre-created row is filled in rather than duplicated. If it has since
+      // been deleted, fall through to a fresh insert — the same PATCH-then-POST
+      // fallback the explicit save path uses.
+      if (typeof briefingId === "number") {
+        const [updated] = await db.update(briefings)
+          .set({ text: fullText, status: "done", error: null })
+          .where(eq(briefings.id, briefingId))
+          .returning({ id: briefings.id });
+        savedBriefingId = updated?.id;
+      }
+
+      if (savedBriefingId === undefined) {
+        const [saved] = await db.insert(briefings).values({
+          company,
+          contactName:  contactName  ?? "",
+          contactTitle: title,
+          industry:     ind,
+          callType:     ct,
+          text:         fullText,
+          logoUrl:      "",
+          contactPhotoUrl: "",
+          createdAt:    new Date(),
+        }).returning();
+        savedBriefingId = saved.id;
+      }
       req.log.info({ company, id: savedBriefingId }, "Briefing auto-saved to DB");
     } catch (dbErr) {
       req.log.warn({ dbErr }, "Failed to auto-save briefing to DB (non-fatal)");
@@ -488,6 +506,20 @@ ${buildSections(ct, company, ind, title, contactName)}`;
     res.end();
   } catch (err) {
     req.log.error({ err, company, callType: ct }, "Briefing generation failed");
+
+    // A pre-created row would otherwise sit at status='running' forever, so
+    // record the failure on it. The SSE contract below is unchanged: the client
+    // still gets a fallback briefing and done:true, never an HTTP error.
+    if (typeof briefingId === "number") {
+      try {
+        await db.update(briefings)
+          .set({ status: "failed", error: err instanceof Error ? err.message : String(err) })
+          .where(eq(briefings.id, briefingId));
+      } catch (dbErr) {
+        req.log.warn({ dbErr, briefingId }, "Failed to mark briefing row failed (non-fatal)");
+      }
+    }
+
     const fallbackBriefing = buildFallbackBriefing({
       company,
       industry: ind,
