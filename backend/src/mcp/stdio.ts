@@ -1,7 +1,10 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
+import { desc, ilike } from "drizzle-orm";
 import { IBM_PRODUCTS } from "../data/ibm-products";
+import { db } from "../lib/db";
+import { briefings } from "../lib/schema";
 
 type Product = {
   name: string;
@@ -221,6 +224,73 @@ server.registerTool(
     ].join("\n");
 
     return { content: [{ type: "text", text }] };
+  },
+);
+
+server.registerTool(
+  "list_briefings",
+  {
+    description:
+      "List saved pre-call briefings (metadata only, never the briefing text). Optionally filter by company.",
+    inputSchema: {
+      company: z.string().optional().describe("Case-insensitive substring of the company name"),
+      limit: z.number().int().min(1).max(100).optional().describe("Max rows to return (default 20)"),
+    },
+  },
+  async ({ company, limit }) => {
+    try {
+      // Select explicit columns — `briefings.text` (and the prospect/architecture
+      // blobs) must never leave this tool.
+      const query = db
+        .select({
+          id: briefings.id,
+          company: briefings.company,
+          contactName: briefings.contactName,
+          contactTitle: briefings.contactTitle,
+          industry: briefings.industry,
+          callType: briefings.callType,
+          createdAt: briefings.createdAt,
+        })
+        .from(briefings);
+
+      const filter = company?.trim();
+      const rows = await (filter ? query.where(ilike(briefings.company, `%${filter}%`)) : query)
+        .orderBy(desc(briefings.createdAt))
+        .limit(limit ?? 20);
+
+      if (rows.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: filter ? `No briefings found for company "${filter}".` : "No briefings saved yet.",
+            },
+          ],
+        };
+      }
+
+      const text = [
+        `${rows.length} briefing${rows.length === 1 ? "" : "s"}${filter ? ` matching "${filter}"` : ""}:`,
+        "",
+        JSON.stringify(
+          rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })),
+          null,
+          2,
+        ),
+      ].join("\n");
+
+      return { content: [{ type: "text", text }] };
+    } catch (err) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `Failed to list briefings: ${err instanceof Error ? err.message : String(err)}`,
+          },
+        ],
+      };
+    }
   },
 );
 
