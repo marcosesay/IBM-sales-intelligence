@@ -1,6 +1,7 @@
 // db.ts — Shared PostgreSQL connection pool (IBM Cloud Databases for PostgreSQL).
 // Connection via DATABASE_URL; TLS CA cert via PG_CA_CERT_BASE64.
-// Tables are created automatically on first run — no migrations needed.
+// Tables are created automatically on first run, and column additions applied via
+// ALTER ... ADD COLUMN IF NOT EXISTS in ensureTables() — no migration files.
 
 import pg from "pg";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -39,6 +40,8 @@ export async function ensureTables(): Promise<void> {
       prospect_step1       TEXT NOT NULL DEFAULT '',
       prospect_step2       TEXT NOT NULL DEFAULT '',
       architecture_diagram TEXT NOT NULL DEFAULT '',
+      status               TEXT NOT NULL DEFAULT 'done',
+      error                TEXT,
       created_at           TIMESTAMPTZ NOT NULL
     );
 
@@ -50,5 +53,14 @@ export async function ensureTables(): Promise<void> {
       step2        TEXT NOT NULL,
       created_at   TIMESTAMPTZ NOT NULL
     );
+  `);
+
+  // CREATE TABLE IF NOT EXISTS above is a no-op on databases where the table
+  // already exists, so column additions have to be applied separately. Postgres
+  // fills the NOT NULL DEFAULT in for existing rows, so briefings saved before
+  // these columns existed read back as status='done', error=NULL — no backfill.
+  await pool.query(`
+    ALTER TABLE briefings ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'done';
+    ALTER TABLE briefings ADD COLUMN IF NOT EXISTS error  TEXT;
   `);
 }

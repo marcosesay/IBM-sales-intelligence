@@ -17,6 +17,10 @@ export const briefings = pgTable("briefings", {
   prospectStep1:  text("prospect_step1").notNull().default(""),
   prospectStep2:  text("prospect_step2").notNull().default(""),
   architectureDiagram: text("architecture_diagram").notNull().default(""),
+  // Generation lifecycle. Defaults to "done" so pre-existing rows — saved before
+  // this column existed — read back as completed briefings with no backfill.
+  status:         text("status").notNull().default("done"),
+  error:          text("error"),
   createdAt:      timestamp("created_at", { withTimezone: true }).notNull(),
 });
 
