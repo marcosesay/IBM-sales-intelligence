@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer, type ToolCallback } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
 import { count, desc, eq, ilike, max, sql } from "drizzle-orm";
@@ -198,9 +198,44 @@ function catalogListing(): string {
 
 const server = new McpServer({ name: "ibm-sales-intelligence", version: "0.1.0" });
 
-server.registerTool(
+// Every tool reported a throw the same way: isError plus a per-tool prefix on
+// the message. That try/catch was copied into each handler; it lives here now,
+// so a handler can let a db call or a fetch throw and say nothing about it.
+// ToolCallback<Args> is the SDK's own handler type, so each tool's args stay
+// inferred from its inputSchema exactly as they were under registerTool.
+function safeTool<Args extends z.ZodRawShape>(
+  name: string,
+  {
+    failurePrefix,
+    ...config
+  }: { description: string; inputSchema: Args; failurePrefix: string },
+  handler: ToolCallback<Args>,
+): void {
+  const run = handler as (...args: unknown[]) => Promise<{ content: unknown[] }>;
+
+  const guarded = async (...args: unknown[]) => {
+    try {
+      return await run(...args);
+    } catch (err) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text" as const,
+            text: `${failurePrefix}: ${err instanceof Error ? err.message : String(err)}`,
+          },
+        ],
+      };
+    }
+  };
+
+  server.registerTool(name, config, guarded as unknown as ToolCallback<Args>);
+}
+
+safeTool(
   "lookup_ibm_product",
   {
+    failurePrefix: "Failed to look up product",
     description: "Look up IBM Data & AI product capabilities relevant to a customer pain point.",
     inputSchema: { query: z.string().describe("Customer pain point or product name") },
   },
@@ -228,9 +263,10 @@ server.registerTool(
   },
 );
 
-server.registerTool(
+safeTool(
   "list_briefings",
   {
+    failurePrefix: "Failed to list briefings",
     description:
       "List saved pre-call briefings (metadata only, never the briefing text). Optionally filter by company.",
     inputSchema: {
@@ -239,65 +275,54 @@ server.registerTool(
     },
   },
   async ({ company, limit }) => {
-    try {
-      // Select explicit columns — `briefings.text` (and the prospect/architecture
-      // blobs) must never leave this tool.
-      const query = db
-        .select({
-          id: briefings.id,
-          company: briefings.company,
-          contactName: briefings.contactName,
-          contactTitle: briefings.contactTitle,
-          industry: briefings.industry,
-          callType: briefings.callType,
-          createdAt: briefings.createdAt,
-        })
-        .from(briefings);
+    // Select explicit columns — `briefings.text` (and the prospect/architecture
+    // blobs) must never leave this tool.
+    const query = db
+      .select({
+        id: briefings.id,
+        company: briefings.company,
+        contactName: briefings.contactName,
+        contactTitle: briefings.contactTitle,
+        industry: briefings.industry,
+        callType: briefings.callType,
+        createdAt: briefings.createdAt,
+      })
+      .from(briefings);
 
-      const filter = company?.trim();
-      const rows = await (filter ? query.where(ilike(briefings.company, `%${filter}%`)) : query)
-        .orderBy(desc(briefings.createdAt))
-        .limit(limit ?? 20);
+    const filter = company?.trim();
+    const rows = await (filter ? query.where(ilike(briefings.company, `%${filter}%`)) : query)
+      .orderBy(desc(briefings.createdAt))
+      .limit(limit ?? 20);
 
-      if (rows.length === 0) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: filter ? `No briefings found for company "${filter}".` : "No briefings saved yet.",
-            },
-          ],
-        };
-      }
-
-      const text = [
-        `${rows.length} briefing${rows.length === 1 ? "" : "s"}${filter ? ` matching "${filter}"` : ""}:`,
-        "",
-        JSON.stringify(
-          rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })),
-          null,
-          2,
-        ),
-      ].join("\n");
-
-      return { content: [{ type: "text", text }] };
-    } catch (err) {
+    if (rows.length === 0) {
       return {
-        isError: true,
         content: [
           {
             type: "text",
-            text: `Failed to list briefings: ${err instanceof Error ? err.message : String(err)}`,
+            text: filter ? `No briefings found for company "${filter}".` : "No briefings saved yet.",
           },
         ],
       };
     }
+
+    const text = [
+      `${rows.length} briefing${rows.length === 1 ? "" : "s"}${filter ? ` matching "${filter}"` : ""}:`,
+      "",
+      JSON.stringify(
+        rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() })),
+        null,
+        2,
+      ),
+    ].join("\n");
+
+    return { content: [{ type: "text", text }] };
   },
 );
 
-server.registerTool(
+safeTool(
   "search_accounts",
   {
+    failurePrefix: "Failed to search accounts",
     description:
       "Search saved briefings by company and return one row per account — briefing count, most recent briefing id, most recent date. Use this instead of list_briefings to see which accounts exist.",
     inputSchema: {
@@ -315,64 +340,52 @@ server.registerTool(
     },
   },
   async ({ query, limit }) => {
-    try {
-      // One row per company — eleven HSBC briefings collapse to a single line.
-      // array_agg picks the id of the newest row; max(id) would only agree with
-      // it by accident of the serial sequence.
-      const select = db
-        .select({
-          company: briefings.company,
-          briefingCount: count(briefings.id),
-          latestBriefingId: sql<number>`(array_agg(${briefings.id} order by ${briefings.createdAt} desc))[1]`,
-          latestCreatedAt: max(briefings.createdAt),
-        })
-        .from(briefings);
+    // One row per company — eleven HSBC briefings collapse to a single line.
+    // array_agg picks the id of the newest row; max(id) would only agree with
+    // it by accident of the serial sequence.
+    const select = db
+      .select({
+        company: briefings.company,
+        briefingCount: count(briefings.id),
+        latestBriefingId: sql<number>`(array_agg(${briefings.id} order by ${briefings.createdAt} desc))[1]`,
+        latestCreatedAt: max(briefings.createdAt),
+      })
+      .from(briefings);
 
-      const filter = query?.trim();
-      const rows = await (filter ? select.where(ilike(briefings.company, `%${filter}%`)) : select)
-        .groupBy(briefings.company)
-        .orderBy(desc(max(briefings.createdAt)))
-        .limit(limit ?? 20);
+    const filter = query?.trim();
+    const rows = await (filter ? select.where(ilike(briefings.company, `%${filter}%`)) : select)
+      .groupBy(briefings.company)
+      .orderBy(desc(max(briefings.createdAt)))
+      .limit(limit ?? 20);
 
-      if (rows.length === 0) {
-        return {
-          content: [
-            {
-              type: "text",
-              text: filter ? `No accounts matched "${filter}".` : "No briefings saved yet.",
-            },
-          ],
-        };
-      }
-
-      const total = rows.reduce((sum, row) => sum + row.briefingCount, 0);
-      const text = [
-        `${rows.length} account${rows.length === 1 ? "" : "s"}${
-          filter ? ` matching "${filter}"` : ""
-        } across ${total} briefing${total === 1 ? "" : "s"}:`,
-        "",
-        JSON.stringify(
-          rows.map((row) => ({
-            ...row,
-            latestCreatedAt: row.latestCreatedAt?.toISOString() ?? null,
-          })),
-          null,
-          2,
-        ),
-      ].join("\n");
-
-      return { content: [{ type: "text", text }] };
-    } catch (err) {
+    if (rows.length === 0) {
       return {
-        isError: true,
         content: [
           {
             type: "text",
-            text: `Failed to search accounts: ${err instanceof Error ? err.message : String(err)}`,
+            text: filter ? `No accounts matched "${filter}".` : "No briefings saved yet.",
           },
         ],
       };
     }
+
+    const total = rows.reduce((sum, row) => sum + row.briefingCount, 0);
+    const text = [
+      `${rows.length} account${rows.length === 1 ? "" : "s"}${
+        filter ? ` matching "${filter}"` : ""
+      } across ${total} briefing${total === 1 ? "" : "s"}:`,
+      "",
+      JSON.stringify(
+        rows.map((row) => ({
+          ...row,
+          latestCreatedAt: row.latestCreatedAt?.toISOString() ?? null,
+        })),
+        null,
+        2,
+      ),
+    ].join("\n");
+
+    return { content: [{ type: "text", text }] };
   },
 );
 
@@ -418,9 +431,10 @@ function extractSection(text: string, wanted: string): string | null {
   return start === -1 ? null : lines.slice(start).join("\n").trim();
 }
 
-server.registerTool(
+safeTool(
   "get_briefing",
   {
+    failurePrefix: "Failed to fetch briefing",
     description:
       "Fetch one saved pre-call briefing by id, including its text. Pass `section` to return only one markdown section, or `headings_only` to list the section headings without the body.",
     inputSchema: {
@@ -436,79 +450,67 @@ server.registerTool(
     },
   },
   async ({ id, section, headings_only: headingsOnly }) => {
-    try {
-      // industry and contact_title are never populated by the generator, so they
-      // are left out rather than returned as empty strings.
-      const [row] = await db
-        .select({
-          id: briefings.id,
-          company: briefings.company,
-          contactName: briefings.contactName,
-          callType: briefings.callType,
-          createdAt: briefings.createdAt,
-          text: briefings.text,
-        })
-        .from(briefings)
-        .where(eq(briefings.id, id))
-        .limit(1);
+    // industry and contact_title are never populated by the generator, so they
+    // are left out rather than returned as empty strings.
+    const [row] = await db
+      .select({
+        id: briefings.id,
+        company: briefings.company,
+        contactName: briefings.contactName,
+        callType: briefings.callType,
+        createdAt: briefings.createdAt,
+        text: briefings.text,
+      })
+      .from(briefings)
+      .where(eq(briefings.id, id))
+      .limit(1);
 
-      if (!row) {
-        return {
-          isError: true,
-          content: [{ type: "text", text: `No briefing found with id ${id}.` }],
-        };
-      }
-
-      // headings_only is a discovery call — it wins over `section`, which asks
-      // for a body this caller has said it doesn't want.
-      const wanted = headingsOnly ? "" : section?.trim();
-      let body = row.text;
-
-      if (headingsOnly) {
-        const headings = listHeadings(row.text);
-        body = headings.length
-          ? `Sections:\n  ${headings.join("\n  ")}`
-          : "This briefing has no markdown headings.";
-      } else if (wanted) {
-        const match = extractSection(row.text, wanted);
-        if (!match) {
-          const available = listHeadings(row.text);
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Briefing ${id} has no section matching "${wanted}".${
-                  available.length ? `\n\nSections in this briefing:\n  ${available.join("\n  ")}` : ""
-                }`,
-              },
-            ],
-          };
-        }
-        body = match;
-      }
-
-      const header = [
-        `Briefing ${row.id} — ${row.company}`,
-        row.contactName ? `Contact: ${row.contactName}` : "",
-        `Call type: ${row.callType}`,
-        `Created: ${row.createdAt.toISOString()}`,
-        wanted ? `Section: ${wanted}` : "",
-      ]
-        .filter(Boolean)
-        .join("\n");
-
-      return { content: [{ type: "text", text: `${header}\n\n${body}` }] };
-    } catch (err) {
+    if (!row) {
       return {
         isError: true,
-        content: [
-          {
-            type: "text",
-            text: `Failed to fetch briefing: ${err instanceof Error ? err.message : String(err)}`,
-          },
-        ],
+        content: [{ type: "text", text: `No briefing found with id ${id}.` }],
       };
     }
+
+    // headings_only is a discovery call — it wins over `section`, which asks
+    // for a body this caller has said it doesn't want.
+    const wanted = headingsOnly ? "" : section?.trim();
+    let body = row.text;
+
+    if (headingsOnly) {
+      const headings = listHeadings(row.text);
+      body = headings.length
+        ? `Sections:\n  ${headings.join("\n  ")}`
+        : "This briefing has no markdown headings.";
+    } else if (wanted) {
+      const match = extractSection(row.text, wanted);
+      if (!match) {
+        const available = listHeadings(row.text);
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Briefing ${id} has no section matching "${wanted}".${
+                available.length ? `\n\nSections in this briefing:\n  ${available.join("\n  ")}` : ""
+              }`,
+            },
+          ],
+        };
+      }
+      body = match;
+    }
+
+    const header = [
+      `Briefing ${row.id} — ${row.company}`,
+      row.contactName ? `Contact: ${row.contactName}` : "",
+      `Call type: ${row.callType}`,
+      `Created: ${row.createdAt.toISOString()}`,
+      wanted ? `Section: ${wanted}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    return { content: [{ type: "text", text: `${header}\n\n${body}` }] };
   },
 );
 
