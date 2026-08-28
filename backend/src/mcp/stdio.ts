@@ -5,6 +5,7 @@ import { z } from "zod";
 import { count, desc, eq, ilike, max, sql } from "drizzle-orm";
 import { IBM_PRODUCTS } from "../data/ibm-products";
 import { db } from "../lib/db";
+import { perplexitySearchOrThrow } from "../lib/perplexity-client";
 import { briefings } from "../lib/schema";
 
 type Product = {
@@ -511,6 +512,74 @@ safeTool(
       .join("\n");
 
     return { content: [{ type: "text", text: `${header}\n\n${body}` }] };
+  },
+);
+
+// Mirrors the analyst persona and the five research axes the prospect route
+// sends to Perplexity (routes/prospect.ts), condensed for a tool caller that
+// wants the research on its own rather than folded into a generated brief.
+const RESEARCH_SYSTEM =
+  "You are a senior enterprise sales intelligence analyst. Your job is to give an IBM seller the richest possible factual briefing on an account before a call. Write in dense, specific prose — no bullet templates. Include every relevant number, name, date, product name, and deal you can find.";
+
+function researchQuestion(company: string, focus: string): string {
+  return `Give me everything I need to know about ${company} before an IBM Data & AI sales call.
+
+Cover, in as much depth as the sources allow:
+1. What the company does, who its customers are, the markets it serves, and its revenue / scale.
+2. Its competitive position — who it competes against and how it is differentiated.
+3. Its known technology stack — cloud providers, data platforms, analytics tools, ERP, and any AI/ML investments or vendor relationships (especially Microsoft, AWS, Snowflake, Databricks, Google, SAP, Palantir, or open-source).
+4. The most important developments of the last 12–18 months — earnings surprises, CEO/CTO changes, acquisitions or divestitures, layoffs, regulatory actions, strategic pivots.
+5. The business pressures, cost or compliance challenges, or transformation initiatives that create an opening for IBM's Data & AI portfolio right now.
+${focus ? `\nWeight the answer toward this in particular: ${focus}. Still cover the ground above, but lead with what bears on it.\n` : ""}
+Be specific: dollar figures, percentages, executive names, product names, dates. Do not summarise — give the full picture.`;
+}
+
+safeTool(
+  "research_account",
+  {
+    failurePrefix: "Perplexity research failed",
+    description:
+      "Run live, citation-backed web research on a company via Perplexity — the same grounded search that backs the prospect route. Use for an account with no saved briefing, or to refresh a stale one.",
+    inputSchema: {
+      company: z.string().min(1).describe('Company to research, e.g. "HSBC"'),
+      focus: z
+        .string()
+        .optional()
+        .describe('Narrow the research, e.g. "their Snowflake migration" or "recent regulatory actions"'),
+    },
+  },
+  async ({ company, focus }) => {
+    const name = company.trim();
+    if (!name) {
+      return { isError: true, content: [{ type: "text", text: "company must not be empty." }] };
+    }
+
+    const narrowing = focus?.trim() ?? "";
+
+    // perplexitySearchOrThrow, not perplexitySearch: the routes swallow failures
+    // into "" because research is optional enrichment there, but a caller that
+    // asked for research and got silence would read it as "no information
+    // exists" rather than "the call failed". safeTool turns the throw into
+    // isError; the 60s timeout is the client's own AbortSignal.
+    const summary = await perplexitySearchOrThrow(
+      RESEARCH_SYSTEM,
+      researchQuestion(name, narrowing),
+      1500,
+    );
+
+    // A 200 with no content is a failed research call, not an empty answer.
+    if (!summary) {
+      return {
+        isError: true,
+        content: [{ type: "text", text: `Perplexity returned an empty response for "${name}".` }],
+      };
+    }
+
+    const header = [`Live web research — ${name}`, narrowing ? `Focus: ${narrowing}` : ""]
+      .filter(Boolean)
+      .join("\n");
+
+    return { content: [{ type: "text", text: `${header}\n\n${summary}` }] };
   },
 );
 
