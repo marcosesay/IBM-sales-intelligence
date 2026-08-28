@@ -2,7 +2,7 @@ import "dotenv/config";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { desc, eq, ilike } from "drizzle-orm";
+import { count, desc, eq, ilike, max, sql } from "drizzle-orm";
 import { IBM_PRODUCTS } from "../data/ibm-products";
 import { db } from "../lib/db";
 import { briefings } from "../lib/schema";
@@ -295,6 +295,87 @@ server.registerTool(
   },
 );
 
+server.registerTool(
+  "search_accounts",
+  {
+    description:
+      "Search saved briefings by company and return one row per account — briefing count, most recent briefing id, most recent date. Use this instead of list_briefings to see which accounts exist.",
+    inputSchema: {
+      query: z
+        .string()
+        .optional()
+        .describe("Case-insensitive substring of the company name; omit to return every account"),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(100)
+        .optional()
+        .describe("Max accounts to return (default 20)"),
+    },
+  },
+  async ({ query, limit }) => {
+    try {
+      // One row per company — eleven HSBC briefings collapse to a single line.
+      // array_agg picks the id of the newest row; max(id) would only agree with
+      // it by accident of the serial sequence.
+      const select = db
+        .select({
+          company: briefings.company,
+          briefingCount: count(briefings.id),
+          latestBriefingId: sql<number>`(array_agg(${briefings.id} order by ${briefings.createdAt} desc))[1]`,
+          latestCreatedAt: max(briefings.createdAt),
+        })
+        .from(briefings);
+
+      const filter = query?.trim();
+      const rows = await (filter ? select.where(ilike(briefings.company, `%${filter}%`)) : select)
+        .groupBy(briefings.company)
+        .orderBy(desc(max(briefings.createdAt)))
+        .limit(limit ?? 20);
+
+      if (rows.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: filter ? `No accounts matched "${filter}".` : "No briefings saved yet.",
+            },
+          ],
+        };
+      }
+
+      const total = rows.reduce((sum, row) => sum + row.briefingCount, 0);
+      const text = [
+        `${rows.length} account${rows.length === 1 ? "" : "s"}${
+          filter ? ` matching "${filter}"` : ""
+        } across ${total} briefing${total === 1 ? "" : "s"}:`,
+        "",
+        JSON.stringify(
+          rows.map((row) => ({
+            ...row,
+            latestCreatedAt: row.latestCreatedAt?.toISOString() ?? null,
+          })),
+          null,
+          2,
+        ),
+      ].join("\n");
+
+      return { content: [{ type: "text", text }] };
+    } catch (err) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `Failed to search accounts: ${err instanceof Error ? err.message : String(err)}`,
+          },
+        ],
+      };
+    }
+  },
+);
+
 function parseHeading(line: string): { title: string; level: number } | null {
   const match = /^(#{2,6})\s+(.*\S)\s*$/.exec(line);
   return match ? { title: match[2]!, level: match[1]!.length } : null;
@@ -341,16 +422,20 @@ server.registerTool(
   "get_briefing",
   {
     description:
-      "Fetch one saved pre-call briefing by id, including its text. Pass `section` to return only one markdown section.",
+      "Fetch one saved pre-call briefing by id, including its text. Pass `section` to return only one markdown section, or `headings_only` to list the section headings without the body.",
     inputSchema: {
       id: z.number().int().describe("Briefing id, as returned by list_briefings"),
       section: z
         .string()
         .optional()
         .describe('Markdown heading to return on its own, e.g. "Discovery Questions"'),
+      headings_only: z
+        .boolean()
+        .optional()
+        .describe("Return only the list of section headings, not the briefing body. Overrides `section`."),
     },
   },
-  async ({ id, section }) => {
+  async ({ id, section, headings_only: headingsOnly }) => {
     try {
       // industry and contact_title are never populated by the generator, so they
       // are left out rather than returned as empty strings.
@@ -374,10 +459,17 @@ server.registerTool(
         };
       }
 
-      const wanted = section?.trim();
+      // headings_only is a discovery call — it wins over `section`, which asks
+      // for a body this caller has said it doesn't want.
+      const wanted = headingsOnly ? "" : section?.trim();
       let body = row.text;
 
-      if (wanted) {
+      if (headingsOnly) {
+        const headings = listHeadings(row.text);
+        body = headings.length
+          ? `Sections:\n  ${headings.join("\n  ")}`
+          : "This briefing has no markdown headings.";
+      } else if (wanted) {
         const match = extractSection(row.text, wanted);
         if (!match) {
           const available = listHeadings(row.text);
