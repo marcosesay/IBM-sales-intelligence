@@ -587,7 +587,7 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
   const gap = 1.5;
   
   // Extract "Who is [Name]?" content from AI-generated sections
-  const whoIsKey = `Who is ${ct}?`;
+  const whoIsKey = `Who is ${ct || "the Contact"}?`;
   const whoIsContent = sections[whoIsKey] || [];
   
   // Fallback to generic content if AI didn't generate this section
@@ -627,7 +627,7 @@ async function buildPDF(text: string, co: string, ct: string, ind: string, conta
   
   // Row 2 - Who is [Name]?
   y += companyH + gap;
-  renderBox(m, y, fullW, contactH, `Who is ${ct}?`, contactInfo, false);
+  renderBox(m, y, fullW, contactH, ct ? `Who is ${ct}?` : "Contact", contactInfo, false);
   
   // Row 3 - Discovery Questions (left) + Opportunity Qualification (right), same height
   y += contactH + gap;

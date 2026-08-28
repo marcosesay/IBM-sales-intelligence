@@ -2,7 +2,7 @@ import "dotenv/config";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import { desc, ilike } from "drizzle-orm";
+import { desc, eq, ilike } from "drizzle-orm";
 import { IBM_PRODUCTS } from "../data/ibm-products";
 import { db } from "../lib/db";
 import { briefings } from "../lib/schema";
@@ -288,6 +288,131 @@ server.registerTool(
           {
             type: "text",
             text: `Failed to list briefings: ${err instanceof Error ? err.message : String(err)}`,
+          },
+        ],
+      };
+    }
+  },
+);
+
+function parseHeading(line: string): { title: string; level: number } | null {
+  const match = /^(#{2,6})\s+(.*\S)\s*$/.exec(line);
+  return match ? { title: match[2]!, level: match[1]!.length } : null;
+}
+
+function normalizeHeading(text: string): string {
+  return text.replace(/[*_`#]/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function listHeadings(text: string): string[] {
+  return text.split("\n").flatMap((line) => parseHeading(line)?.title ?? []);
+}
+
+// Callers ask for "Discovery Questions" but the generated heading may be
+// "Who is <name>?", so match on a normalized substring. A section runs to the
+// next heading of the same or a shallower level, keeping nested "###" content.
+function extractSection(text: string, wanted: string): string | null {
+  const lines = text.split("\n");
+  const needle = normalizeHeading(wanted);
+  if (!needle) return null;
+
+  let start = -1;
+  let level = 0;
+
+  for (let i = 0; i < lines.length; i++) {
+    const heading = parseHeading(lines[i]!);
+    if (!heading) continue;
+
+    if (start === -1) {
+      if (normalizeHeading(heading.title).includes(needle)) {
+        start = i;
+        level = heading.level;
+      }
+      continue;
+    }
+
+    if (heading.level <= level) return lines.slice(start, i).join("\n").trim();
+  }
+
+  return start === -1 ? null : lines.slice(start).join("\n").trim();
+}
+
+server.registerTool(
+  "get_briefing",
+  {
+    description:
+      "Fetch one saved pre-call briefing by id, including its text. Pass `section` to return only one markdown section.",
+    inputSchema: {
+      id: z.number().int().describe("Briefing id, as returned by list_briefings"),
+      section: z
+        .string()
+        .optional()
+        .describe('Markdown heading to return on its own, e.g. "Discovery Questions"'),
+    },
+  },
+  async ({ id, section }) => {
+    try {
+      // industry and contact_title are never populated by the generator, so they
+      // are left out rather than returned as empty strings.
+      const [row] = await db
+        .select({
+          id: briefings.id,
+          company: briefings.company,
+          contactName: briefings.contactName,
+          callType: briefings.callType,
+          createdAt: briefings.createdAt,
+          text: briefings.text,
+        })
+        .from(briefings)
+        .where(eq(briefings.id, id))
+        .limit(1);
+
+      if (!row) {
+        return {
+          isError: true,
+          content: [{ type: "text", text: `No briefing found with id ${id}.` }],
+        };
+      }
+
+      const wanted = section?.trim();
+      let body = row.text;
+
+      if (wanted) {
+        const match = extractSection(row.text, wanted);
+        if (!match) {
+          const available = listHeadings(row.text);
+          return {
+            content: [
+              {
+                type: "text",
+                text: `Briefing ${id} has no section matching "${wanted}".${
+                  available.length ? `\n\nSections in this briefing:\n  ${available.join("\n  ")}` : ""
+                }`,
+              },
+            ],
+          };
+        }
+        body = match;
+      }
+
+      const header = [
+        `Briefing ${row.id} — ${row.company}`,
+        row.contactName ? `Contact: ${row.contactName}` : "",
+        `Call type: ${row.callType}`,
+        `Created: ${row.createdAt.toISOString()}`,
+        wanted ? `Section: ${wanted}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      return { content: [{ type: "text", text: `${header}\n\n${body}` }] };
+    } catch (err) {
+      return {
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: `Failed to fetch briefing: ${err instanceof Error ? err.message : String(err)}`,
           },
         ],
       };
